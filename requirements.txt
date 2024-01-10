@@ -1,0 +1,13 @@
+streamlit==1.29.0
+PyYAML==6.0.1
+pysrt==1.1.2
+langchain==0.0.353
+tiktoken==0.5.2
+streamlit-chat==0.1.1
+pypdf==3.17.4
+sentence-transformers==2.2.2
+faiss-cpu==1.7.4
+ctransformers==0.2.27
+python-dotenv==1.0.0
+openai==1.6.1
+pymupdf==1.23.8

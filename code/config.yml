@@ -1,0 +1,26 @@
+embedding_options:
+  embedd_files: True # bool
+  persist_directory: null # str or None
+  data_path: '../data' # str
+  db_option : 'FAISS' # str
+  db_path : 'vectorstores' # str
+  model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
+llm_params: 
+  use_history: False # bool
+  llm_loader: 'openai' # str [ctransformers, openai]
+  openai_params:
+    model: 'gpt-4' # str [gpt-3.5-turbo-1106, gpt-4]
+  ctransformers_params:
+    model: "TheBloke/Llama-2-7B-Chat-GGML"
+    model_type: "llama"
+splitter_options:
+  use_splitter: True # bool
+  split_by_token : True # bool
+  remove_leftover_delimiters: True # bool
+  remove_chunks: False # bool
+  chunk_size : 800 # int
+  chunk_overlap : 80 # int
+  chunk_separators : ["\n\n", "\n", " ", ""] # list of strings
+  front_chunks_to_remove : null # int or None
+  last_chunks_to_remove : null # int or None
+  delimiters_to_remove : ['\t', '\n', '   ', '  '] # list of strings
