@@ -11,3 +11,4 @@ ctransformers==0.2.27
 python-dotenv==1.0.0
 openai==1.6.1
 pymupdf==1.23.8
+chainlit==0.7.700

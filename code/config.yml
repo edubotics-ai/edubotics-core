@@ -6,7 +6,7 @@ embedding_options:
   db_path : 'vectorstores' # str
   model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
 llm_params: 
-  use_history: False # bool
+  use_history: True # bool
   llm_loader: 'openai' # str [ctransformers, openai]
   openai_params:
     model: 'gpt-4' # str [gpt-3.5-turbo-1106, gpt-4]
