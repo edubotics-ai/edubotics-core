@@ -47,7 +47,7 @@ class LLMTutor:
             qa_chain = ConversationalRetrievalChain.from_llm(
                 llm=llm,
                 chain_type="stuff",
-                retriever=db.as_retriever(search_kwargs={"k": 3}),
+                retriever=db.as_retriever(search_kwargs={"k": self.config["embedding_options"]["search_top_k"]}),
                 return_source_documents=True,
                 memory=memory,
                 combine_docs_chain_kwargs={"prompt": prompt},
@@ -56,7 +56,7 @@ class LLMTutor:
             qa_chain = RetrievalQA.from_chain_type(
                 llm=llm,
                 chain_type="stuff",
-                retriever=db.as_retriever(search_kwargs={"k": 3}),
+                retriever=db.as_retriever(search_kwargs={"k": self.config["embedding_options"]["search_top_k"]}),
                 return_source_documents=True,
                 chain_type_kwargs={"prompt": prompt},
             )

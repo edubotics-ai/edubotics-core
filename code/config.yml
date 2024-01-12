@@ -5,6 +5,7 @@ embedding_options:
   db_option : 'FAISS' # str
   db_path : 'vectorstores' # str
   model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
+  search_top_k : 5 # int
 llm_params: 
   use_history: True # bool
   llm_loader: 'openai' # str [ctransformers, openai]
