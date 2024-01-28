@@ -1,0 +1,19 @@
+name: Sync with Hugging Face Hub
+
+on:
+  push:
+    branches:
+      - hf_sync
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Sync with Hugging Face
+      uses: nateraw/huggingface-sync-action@v0.0.4
+      with:
+        github_repo_id: DL4DS/dl4ds_tutor
+        huggingface_repo_id: dl4ds/dl4ds_tutor
+        repo_type: space
+        space_sdk: static
+        hf_token: ${{ secrets.HF_TOKEN }}
