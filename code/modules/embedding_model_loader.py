@@ -1,6 +1,8 @@
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import LlamaCppEmbeddings
 from modules.constants import *
+import os
 
 
 class EmbeddingModelLoader:
@@ -20,4 +22,8 @@ class EmbeddingModelLoader:
                 model_name="sentence-transformers/all-MiniLM-L6-v2",
                 model_kwargs={"device": "cpu"},
             )
+            # embedding_model = LlamaCppEmbeddings(
+            #     model_path=os.path.abspath("storage/llama-7b.ggmlv3.q4_0.bin")
+            # )
+
         return embedding_model

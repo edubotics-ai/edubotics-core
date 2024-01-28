@@ -225,21 +225,24 @@ class DataLoader:
 
             # Handle link by link
             for link_index, link in enumerate(weblinks):
-                logger.info(f"\tSplitting link {link_index+1} : {link}")
-                if "youtube" in link:
-                    title, document_chunks = get_youtube_transcript(link)
-                else:
-                    title, document_chunks = get_html(link)
+                try:
+                    logger.info(f"\tSplitting link {link_index+1} : {link}")
+                    if "youtube" in link:
+                        title, document_chunks = get_youtube_transcript(link)
+                    else:
+                        title, document_chunks = get_html(link)
 
-                # Additional wrangling - Remove leftover delimiters and any specified chunks
-                if self.remove_leftover_delimiters:
-                    document_chunks = remove_delimiters(document_chunks)
-                if self.config["splitter_options"]["remove_chunks"]:
-                    document_chunks = remove_chunks(document_chunks)
+                    # Additional wrangling - Remove leftover delimiters and any specified chunks
+                    if self.remove_leftover_delimiters:
+                        document_chunks = remove_delimiters(document_chunks)
+                    if self.config["splitter_options"]["remove_chunks"]:
+                        document_chunks = remove_chunks(document_chunks)
 
-                print(f"\t\tExtracted no. of chunks: {len(document_chunks)}")
-                self.document_names.append(title)
-                self.document_chunks_full.extend(document_chunks)
+                    print(f"\t\tExtracted no. of chunks: {len(document_chunks)}")
+                    self.document_names.append(title)
+                    self.document_chunks_full.extend(document_chunks)
+                except:
+                    logger.info(f"\t\tError splitting link {link_index+1} : {link}")
 
         logger.info(
             f"\tNumber of document chunks extracted in total: {len(self.document_chunks_full)}\n\n"
