@@ -18,7 +18,7 @@ class LLMTutor:
     def __init__(self, config, logger=None):
         self.config = config
         self.vector_db = VectorDB(config, logger=logger)
-        if self.config['embedding_options']['embedd_files']:
+        if self.config["embedding_options"]["embedd_files"]:
             self.vector_db.create_database()
             self.vector_db.save_database()
 
@@ -47,7 +47,11 @@ class LLMTutor:
             qa_chain = ConversationalRetrievalChain.from_llm(
                 llm=llm,
                 chain_type="stuff",
-                retriever=db.as_retriever(search_kwargs={"k": self.config["embedding_options"]["search_top_k"]}),
+                retriever=db.as_retriever(
+                    search_kwargs={
+                        "k": self.config["embedding_options"]["search_top_k"]
+                    }
+                ),
                 return_source_documents=True,
                 memory=memory,
                 combine_docs_chain_kwargs={"prompt": prompt},
@@ -56,7 +60,11 @@ class LLMTutor:
             qa_chain = RetrievalQA.from_chain_type(
                 llm=llm,
                 chain_type="stuff",
-                retriever=db.as_retriever(search_kwargs={"k": self.config["embedding_options"]["search_top_k"]}),
+                retriever=db.as_retriever(
+                    search_kwargs={
+                        "k": self.config["embedding_options"]["search_top_k"]
+                    }
+                ),
                 return_source_documents=True,
                 chain_type_kwargs={"prompt": prompt},
             )
