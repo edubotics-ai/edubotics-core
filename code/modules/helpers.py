@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 from urllib.parse import urlparse
 import chainlit as cl
+from langchain import PromptTemplate
+from modules.constants import *
 
 """
 Ref: https://python.plainenglish.io/scraping-the-subpages-on-a-website-ea2d4e3db113
@@ -95,6 +97,30 @@ def get_base_url(url):
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
     return base_url
 
+def get_prompt(config):
+    if config["llm_params"]["use_history"]:
+        if config["llm_params"]["llm_loader"] == "local_llm":
+            custom_prompt_template = tinyllama_prompt_template_with_history
+        elif config["llm_params"]["llm_loader"] == "openai":
+            custom_prompt_template = openai_prompt_template_with_history
+        # else:
+        #     custom_prompt_template = tinyllama_prompt_template_with_history # default
+        prompt = PromptTemplate(
+            template=custom_prompt_template,
+            input_variables=["context", "chat_history", "question"],
+        )
+    else:
+        if config["llm_params"]["llm_loader"] == "local_llm":
+            custom_prompt_template = tinyllama_prompt_template
+        elif config["llm_params"]["llm_loader"] == "openai":
+            custom_prompt_template = openai_prompt_template
+        # else:
+        #     custom_prompt_template = tinyllama_prompt_template
+        prompt = PromptTemplate(
+            template=custom_prompt_template,
+            input_variables=["context", "question"],
+        )
+    return prompt
 
 def get_sources(res, answer):
     source_elements_dict = {}
