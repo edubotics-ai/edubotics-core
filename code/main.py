@@ -96,7 +96,7 @@ async def start():
     model = config["llm_params"]["local_llm_params"]["model"]
     msg = cl.Message(content=f"Starting the bot {model}...")
     await msg.send()
-    msg.content = f"Hey, What Can I Help You With?\n\nYou can me ask me questions about the course logistics, course content, about the final project, or anything else! You can find me at {model}"
+    msg.content = f"Hey, What Can I Help You With?\n\nYou can me ask me questions about the course logistics, course content, about the final project, or anything else!"
     await msg.update()
 
     cl.user_session.set("chain", chain)

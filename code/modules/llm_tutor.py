@@ -10,6 +10,7 @@ from langchain.chains.conversational_retrieval.prompts import QA_PROMPT
 import os
 
 from modules.constants import *
+from modules.helpers import get_prompt
 from modules.chat_model_loader import ChatModelLoader
 from modules.vector_db import VectorDB
 
@@ -26,14 +27,7 @@ class LLMTutor:
         """
         Prompt template for QA retrieval for each vectorstore
         """
-        if self.config["llm_params"]["use_history"]:
-            custom_prompt_template = prompt_template_with_history
-        else:
-            custom_prompt_template = prompt_template
-        prompt = PromptTemplate(
-            template=custom_prompt_template,
-            input_variables=["context", "chat_history", "question"],
-        )
+        prompt = get_prompt(self.config)
         # prompt = QA_PROMPT
 
         return prompt
