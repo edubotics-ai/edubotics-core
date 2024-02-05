@@ -5,6 +5,7 @@ colorFrom: green
 colorTo: red
 sdk: docker
 pinned: false
+hf_oauth: true
 ---
 
 DL4DS Tutor
