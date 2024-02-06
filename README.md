@@ -20,7 +20,8 @@ Clone the repository from: https://github.com/DL4DS/dl4ds_tutor
 Put your data under the `storage/data` directory. Note: You can add urls in the urls.txt file, and other pdf files in the `storage/data` directory.    
 
 To create the Vector Database, run the following command:   
-```python code/modules/vector_db.py```
+```python code/modules/vector_db.py```    
+(Note: You would need to run the above when you add new data to the `storage/data` directory, or if the ``storage/data/urls.txt`` file is updated. Or you can set ``["embedding_options"]["embedd_files"]`` to True in the `code/config.yaml` file, which would embed files from the storage directory everytime you run the below chainlit command.)
 
 To run the chainlit app, run the following command:   
 ```chainlit run code/main.py```
