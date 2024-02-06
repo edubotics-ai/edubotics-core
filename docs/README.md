@@ -42,3 +42,10 @@ set these in `code/config.yaml`:
 * ``["embedding_options"]["search_top_k"]`` - Number of sources that the retriever returns
 * ``["llm_params]["use_history"]`` - Whether to use history in the prompt or not
 * ``["llm_params]["memory_window"]`` - Number of interactions to keep a track of in the history
+
+
+## LlamaCpp
+* https://python.langchain.com/docs/integrations/llms/llamacpp
+
+## Hugging Face Models
+* Download the ``.gguf`` files for your Local LLM from Hugging Face (Example: https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF)
