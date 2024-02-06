@@ -37,6 +37,7 @@
 
 ## Useful Configurations
 set these in `code/config.yaml`:
+* ``["embedding_options"]["embedd_files"]`` - If set to True, embeds the files from the storage directory everytime you run the chainlit command. If set to False, uses the stored vector database.
 * ``["embedding_options"]["expand_urls"]`` - If set to True, gets and reads the data from all the links under the url provided. If set to False, only reads the data in the url provided.
 * ``["embedding_options"]["search_top_k"]`` - Number of sources that the retriever returns
 * ``["llm_params]["use_history"]`` - Whether to use history in the prompt or not
