@@ -1,12 +1,18 @@
 import logging
 import os
 import yaml
-
-from modules.embedding_model_loader import EmbeddingModelLoader
 from langchain.vectorstores import FAISS
-from modules.data_loader import DataLoader
-from modules.constants import *
-from modules.helpers import *
+
+try:
+    from modules.embedding_model_loader import EmbeddingModelLoader
+    from modules.data_loader import DataLoader
+    from modules.constants import *
+    from modules.helpers import *
+except:
+    from embedding_model_loader import EmbeddingModelLoader
+    from data_loader import DataLoader
+    from constants import *
+    from helpers import *
 
 
 class VectorDB:
@@ -108,7 +114,7 @@ class VectorDB:
 
 
 if __name__ == "__main__":
-    with open("config.yml", "r") as f:
+    with open("code/config.yml", "r") as f:
         config = yaml.safe_load(f)
     print(config)
     vector_db = VectorDB(config)
