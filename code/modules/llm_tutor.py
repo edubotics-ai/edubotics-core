@@ -5,7 +5,7 @@ from langchain_community.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain.llms import CTransformers
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory
 from langchain.chains.conversational_retrieval.prompts import QA_PROMPT
 import os
 
@@ -35,8 +35,9 @@ class LLMTutor:
     # Retrieval QA Chain
     def retrieval_qa_chain(self, llm, prompt, db):
         if self.config["llm_params"]["use_history"]:
-            memory = ConversationBufferMemory(
-                memory_key="chat_history", return_messages=True, output_key="answer"
+            memory = ConversationBufferWindowMemory(
+            k = self.config["llm_params"]["memory_window"], 
+            memory_key="chat_history", return_messages=True, output_key="answer"
             )
             qa_chain = ConversationalRetrievalChain.from_llm(
                 llm=llm,

@@ -10,6 +10,7 @@ embedding_options:
   search_top_k : 3 # int
 llm_params: 
   use_history: False # bool
+  memory_window: 3 # int
   llm_loader: 'local_llm' # str [local_llm, openai]
   openai_params:
     model: 'gpt-4' # str [gpt-3.5-turbo-1106, gpt-4]
