@@ -4,7 +4,10 @@ from tqdm import tqdm
 from urllib.parse import urlparse
 import chainlit as cl
 from langchain import PromptTemplate
-from modules.constants import *
+try:
+    from modules.constants import *
+except:
+    from constants import *
 
 """
 Ref: https://python.plainenglish.io/scraping-the-subpages-on-a-website-ea2d4e3db113

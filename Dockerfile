@@ -26,4 +26,4 @@ RUN mkdir /.cache && chmod -R 777 /.cache
 RUN --mount=type=secret,id=HUGGINGFACEHUB_API_TOKEN,mode=0444,required=true 
 RUN --mount=type=secret,id=OPENAI_API_KEY,mode=0444,required=true 
 
-CMD ["chainlit", "run", "code/main.py", "--host", "0.0.0.0", "--port", "7860"]
+CMD python code/modules/vector_db.py && chainlit run code/main.py --host 0.0.0.0 --port 7860

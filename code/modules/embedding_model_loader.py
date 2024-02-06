@@ -1,7 +1,10 @@
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import LlamaCppEmbeddings
-from modules.constants import *
+try:
+    from modules.constants import *
+except:
+    from constants import *
 import os
 
 

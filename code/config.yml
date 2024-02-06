@@ -1,5 +1,5 @@
 embedding_options:
-  embedd_files: True # bool
+  embedd_files: False # bool
   persist_directory: null # str or None
   data_path: 'storage/data' # str
   url_file_path: 'storage/data/urls.txt' # str
