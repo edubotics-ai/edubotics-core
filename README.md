@@ -13,6 +13,8 @@ DL4DS Tutor
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
 
+You can find an implementation of the Tutor at https://dl4ds-dl4ds-tutor.hf.space/, which is hosted on Hugging Face [here](https://huggingface.co/spaces/dl4ds/dl4ds_tutor)
+
 To run locally, 
 
 Clone the repository from: https://github.com/DL4DS/dl4ds_tutor    
@@ -27,3 +29,7 @@ To run the chainlit app, run the following command:
 ```chainlit run code/main.py```
 
 See the [docs](https://github.com/DL4DS/dl4ds_tutor/tree/main/docs) for more information.
+
+## Contributing
+
+Please create an issue if you have any suggestions or improvements, and start working on it by creating a branch and by making a pull request to the main branch.
