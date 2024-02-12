@@ -60,6 +60,14 @@ class VectorDB:
             urls = all_urls
         return files, urls
 
+    def clean_url_list(self, urls):
+        # get lecture pdf links 
+        lecture_pdfs = [link for link in urls if link.endswith(".pdf")]
+        lecture_pdfs = [link for link in lecture_pdfs if "lecture" in link.lower()]
+        urls = [link for link in urls if link.endswith("/")] # only keep links that end with a '/'. Extract Files Seperately
+
+        return urls, lecture_pdfs
+
     def create_embedding_model(self):
         self.logger.info("Creating embedding function")
         self.embedding_model_loader = EmbeddingModelLoader(self.config)
@@ -79,6 +87,9 @@ class VectorDB:
         data_loader = DataLoader(self.config)
         self.logger.info("Loading data")
         files, urls = self.load_files()
+        urls, lecture_pdfs = self.clean_url_list(urls)
+        files += lecture_pdfs
+        files.remove('storage/data/urls.txt')
         document_chunks, document_names = data_loader.get_chunks(files, urls)
         self.logger.info("Completed loading data")
 
