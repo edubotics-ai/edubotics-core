@@ -48,6 +48,27 @@ class DataLoader:
             self.splitter = None
         logger.info("InfoLoader instance created")
 
+    def extract_text_from_pdf(self, pdf_path):
+        text = ""
+        with open(pdf_path, "rb") as file:
+            reader = PyPDF2.PdfReader(file)
+            num_pages = len(reader.pages)
+            for page_num in range(num_pages):
+                page = reader.pages[page_num]
+                text += page.extract_text()
+        return text
+
+    def download_pdf_from_url(self, pdf_url):
+        response = requests.get(pdf_url)
+        if response.status_code == 200:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                temp_file.write(response.content)
+                temp_file_path = temp_file.name
+            return temp_file_path
+        else:
+            print("Failed to download PDF from URL:", pdf_url)
+            return None
+
     def get_chunks(self, uploaded_files, weblinks):
         # Main list of all documents
         self.document_chunks_full = []
@@ -77,6 +98,13 @@ class DataLoader:
                 document_chunks.pop()
                 logger.info(f"\tNumber of pages after skipping: {len(document_chunks)}")
             return document_chunks
+
+        def get_pdf_from_url(pdf_url: str):
+            temp_pdf_path = self.download_pdf_from_url(pdf_url)
+            if temp_pdf_path:
+                title, document_chunks = get_pdf(temp_pdf_path, pdf_url)
+                os.remove(temp_pdf_path)
+                return title, document_chunks
 
         def get_pdf(temp_file_path: str, title: str):
             """
@@ -201,7 +229,10 @@ class DataLoader:
 
             # Handle different file types
             if file_type == "pdf":
-                title, document_chunks = get_pdf(file_path, file_name)
+                try:
+                    title, document_chunks = get_pdf(file_path, file_name)
+                except:
+                    title, document_chunks = get_pdf_from_url(file_path)
             elif file_type == "txt":
                 title, document_chunks = get_txt(file_path, file_name)
             elif file_type == "docx":
@@ -215,7 +246,7 @@ class DataLoader:
             if self.config["splitter_options"]["remove_chunks"]:
                 document_chunks = remove_chunks(document_chunks)
 
-            logger.info(f"\t\tExtracted no. of chunks: {len(document_chunks)}")
+            logger.info(f"\t\tExtracted no. of chunks: {len(document_chunks)} from {file_name}")
             self.document_names.append(title)
             self.document_chunks_full.extend(document_chunks)
 
@@ -243,6 +274,7 @@ class DataLoader:
                     self.document_chunks_full.extend(document_chunks)
                 except:
                     logger.info(f"\t\tError splitting link {link_index+1} : {link}")
+                    exit()
 
         logger.info(
             f"\tNumber of document chunks extracted in total: {len(self.document_chunks_full)}\n\n"

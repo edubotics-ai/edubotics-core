@@ -36,6 +36,10 @@ class WebpageCrawler:
         soup = BeautifulSoup(html_data, "html.parser")
         list_links = []
         for link in soup.find_all("a", href=True):
+
+            # clean the link
+            # remove empty spaces
+            link["href"] = link["href"].strip()
             # Append to list if new link contains original link
             if str(link["href"]).startswith((str(website_link))):
                 list_links.append(link["href"])
@@ -56,14 +60,19 @@ class WebpageCrawler:
 
     def get_subpage_links(self, l, base_url):
         for link in tqdm(l):
-            # If not crawled through this page start crawling and get links
-            if l[link] == "Not-checked":
-                dict_links_subpages = self.get_links(link, base_url)
-                # Change the dictionary value of the link to "Checked"
+            print('checking link:', link)
+            if not link.endswith("/"):
                 l[link] = "Checked"
-            else:
-                # Create an empty dictionary in case every link is checked
                 dict_links_subpages = {}
+            else:
+                # If not crawled through this page start crawling and get links
+                if l[link] == "Not-checked":
+                    dict_links_subpages = self.get_links(link, base_url)
+                    # Change the dictionary value of the link to "Checked"
+                    l[link] = "Checked"
+                else:
+                    # Create an empty dictionary in case every link is checked
+                    dict_links_subpages = {}
             # Add new dictionary to old dictionary
             l = {**dict_links_subpages, **l}
         return l
