@@ -9,8 +9,10 @@ from langchain.document_loaders import (
     TextLoader,
 )
 from langchain.schema import Document
+import tempfile
 from tempfile import NamedTemporaryFile
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
