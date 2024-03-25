@@ -39,12 +39,14 @@ class DataLoader:
                     chunk_size=config["splitter_options"]["chunk_size"],
                     chunk_overlap=config["splitter_options"]["chunk_overlap"],
                     separators=config["splitter_options"]["chunk_separators"],
+                    disallowed_special=()
                 )
             else:
                 self.splitter = RecursiveCharacterTextSplitter(
                     chunk_size=config["splitter_options"]["chunk_size"],
                     chunk_overlap=config["splitter_options"]["chunk_overlap"],
                     separators=config["splitter_options"]["chunk_separators"],
+                    disallowed_special=()
                 )
         else:
             self.splitter = None
