@@ -14,7 +14,47 @@ from dotenv import load_dotenv
 from modules.llm_tutor import LLMTutor
 from modules.constants import *
 from modules.helpers import get_sources
+from fastapi import FastAPI
+# from modules.auth_fastapi import router as auth_router
+import firebase_admin
+from firebase_admin import credentials, auth
+from fastapi import Depends
+from chainlit.oauth_providers import get_oauth_provider
 
+# app = FastAPI()
+
+# app.include_router(auth_router)
+import os
+print(f"Current working directory: {os.getcwd()}")
+# Initialize Firebase Admin
+cred = credentials.Certificate('code/modules/famous-tree-389606-firebase-adminsdk-iljhx-0358d21dde.json')
+firebase_admin.initialize_app(cred)
+
+# Define your OAuth callback for Google
+@cl.oauth_callback
+async def oauth_callback(token: dict = Depends(get_oauth_provider)):
+    # The token dictionary will contain the OAuth tokens needed to authenticate with Firebase
+    id_token = token.get('id_token')
+    decoded_token = auth.verify_id_token(id_token)
+    uid = decoded_token.get('uid')
+    
+    try:
+        # Try to get the user from Firebase
+        user = auth.get_user(uid)
+    except auth.UserNotFoundError:
+        # If user is not found, create a new one using details from the decoded token
+        user = auth.create_user(
+            uid=uid,
+            email=decoded_token.get('email'),
+            display_name=decoded_token.get('name'),
+            photo_url=decoded_token.get('picture')
+        )
+    
+    # Set the user info in Chainlit session
+    cl.user_session.set("user", user)
+    
+    # You can now create a custom response or redirect the user
+    return {"message": "User authenticated successfully", "user_id": user.uid}
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
