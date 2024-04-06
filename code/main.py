@@ -16,45 +16,63 @@ from modules.constants import *
 from modules.helpers import get_sources
 from fastapi import FastAPI
 # from modules.auth_fastapi import router as auth_router
-import firebase_admin
-from firebase_admin import credentials, auth
+# import firebase_admin
+# from firebase_admin import credentials, auth
 from fastapi import Depends
 from chainlit.oauth_providers import get_oauth_provider
+from langchain.memory import ConversationBufferMemory
+from chainlit.types import ThreadDict
 
 # app = FastAPI()
 
 # app.include_router(auth_router)
 import os
-print(f"Current working directory: {os.getcwd()}")
-# Initialize Firebase Admin
-cred = credentials.Certificate('code/modules/famous-tree-389606-firebase-adminsdk-iljhx-0358d21dde.json')
-firebase_admin.initialize_app(cred)
+# print(f"Current working directory: {os.getcwd()}")
+# # Initialize Firebase Admin
+# cred = credentials.Certificate('code/modules/famous-tree-389606-firebase-adminsdk-iljhx-0358d21dde.json')
+# firebase_admin.initialize_app(cred)
 
-# Define your OAuth callback for Google
+# # Define your OAuth callback for Google
+# @cl.oauth_callback
+# async def oauth_callback(token: dict = Depends(get_oauth_provider)):
+#     # The token dictionary will contain the OAuth tokens needed to authenticate with Firebase
+#     id_token = token.get('id_token')
+#     decoded_token = auth.verify_id_token(id_token)
+#     uid = decoded_token.get('uid')
+    
+#     try:
+#         # Try to get the user from Firebase
+#         user = auth.get_user(uid)
+#     except auth.UserNotFoundError:
+#         # If user is not found, create a new one using details from the decoded token
+#         user = auth.create_user(
+#             uid=uid,
+#             email=decoded_token.get('email'),
+#             display_name=decoded_token.get('name'),
+#             photo_url=decoded_token.get('picture')
+#         )
+    
+#     # Set the user info in Chainlit session
+#     cl.user_session.set("user", user)
+    
+#     # You can now create a custom response or redirect the user
+#     return {"message": "User authenticated successfully", "user_id": user.uid}
+
+# LITERAL_API_KEY="lsk_l16pIsiqh6KGYnhy2vYaeGjIZeNukzkswDgoiUWKcns" chainlit run main.py
+
+# simple chainlit oauth decorator
+from typing import Dict, Optional
+import chainlit as cl
+
 @cl.oauth_callback
-async def oauth_callback(token: dict = Depends(get_oauth_provider)):
-    # The token dictionary will contain the OAuth tokens needed to authenticate with Firebase
-    id_token = token.get('id_token')
-    decoded_token = auth.verify_id_token(id_token)
-    uid = decoded_token.get('uid')
-    
-    try:
-        # Try to get the user from Firebase
-        user = auth.get_user(uid)
-    except auth.UserNotFoundError:
-        # If user is not found, create a new one using details from the decoded token
-        user = auth.create_user(
-            uid=uid,
-            email=decoded_token.get('email'),
-            display_name=decoded_token.get('name'),
-            photo_url=decoded_token.get('picture')
-        )
-    
-    # Set the user info in Chainlit session
-    cl.user_session.set("user", user)
-    
-    # You can now create a custom response or redirect the user
-    return {"message": "User authenticated successfully", "user_id": user.uid}
+def oauth_callback(
+  provider_id: str,
+  token: str,
+  raw_user_data: Dict[str, str],
+  default_user: cl.User,
+) -> Optional[cl.User]:
+  return default_user
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -141,6 +159,18 @@ async def start():
 
     cl.user_session.set("chain", chain)
 
+# trying resume chat decorator
+@cl.on_chat_resume
+async def on_chat_resume(thread: ThreadDict):
+    memory = ConversationBufferMemory(return_messages=True)
+    root_messages = [m for m in thread["steps"] if m["parentId"] == None]
+    for message in root_messages:
+        if message["type"] == "user_message":
+            memory.chat_memory.add_user_message(message["output"])
+        else:
+            memory.chat_memory.add_ai_message(message["output"])
+
+    cl.user_session.set("memory", memory)
 
 @cl.on_message
 async def main(message):
