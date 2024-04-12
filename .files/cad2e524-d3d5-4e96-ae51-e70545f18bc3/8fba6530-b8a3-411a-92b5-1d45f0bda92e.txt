@@ -1,4 +1,0 @@
-Source 1:
- Jan 19, 2024: A new Discussions page has been added to the navigation bar and the first two discusions have been added.    Jan 10, 2024: Added lecture titles and first version of the project description. The notes, codes and slides links are still placeholders.    Dec 4, 2023: This course web site is under active construction. Check back regularly for updates. The Schedule, Lectures, Assignments, Projects and Materials pages are being updated and will be posted soon.
-
-

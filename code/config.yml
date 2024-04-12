@@ -9,7 +9,7 @@ embedding_options:
   model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
   search_top_k : 3 # int
 llm_params: 
-  use_history: False # bool
+  use_history: True #claude #False # bool
   memory_window: 3 # int
   llm_loader: 'local_llm' # str [local_llm, openai]
   openai_params:

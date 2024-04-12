@@ -58,7 +58,6 @@ import os
 #     # You can now create a custom response or redirect the user
 #     return {"message": "User authenticated successfully", "user_id": user.uid}
 
-# LITERAL_API_KEY="lsk_l16pIsiqh6KGYnhy2vYaeGjIZeNukzkswDgoiUWKcns" chainlit run main.py
 
 # simple chainlit oauth decorator
 from typing import Dict, Optional
@@ -150,6 +149,9 @@ async def start():
 
     llm_tutor = LLMTutor(config, logger=logger)
 
+    #claude
+    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
+
     chain = llm_tutor.qa_bot()
     model = config["llm_params"]["local_llm_params"]["model"]
     msg = cl.Message(content=f"Starting the bot {model}...")
@@ -164,16 +166,65 @@ async def start():
 async def on_chat_resume(thread: ThreadDict):
     memory = ConversationBufferMemory(return_messages=True)
     root_messages = [m for m in thread["steps"] if m["parentId"] == None]
+    # for message in root_messages:
+        # if message["type"] == "user_message":
+        #     memory.chat_memory.add_user_message(message["output"])
+        # else:
+        #     memory.chat_memory.add_ai_message(message["output"])
+    
+    
+    #claude
     for message in root_messages:
         if message["type"] == "user_message":
             memory.chat_memory.add_user_message(message["output"])
+            await cl.Message(content=message["output"], author="User").send()
         else:
             memory.chat_memory.add_ai_message(message["output"])
+            await cl.Message(content=message["output"], author="Assistant").send()
+
 
     cl.user_session.set("memory", memory)
 
+import json
+import chainlit as cl
+
+import chainlit as cl
+
+import chainlit as cl
+
+# @cl.on_message
+# async def main(message: cl.Message):
+#     user = cl.user_session.get("user")
+#     chain = cl.user_session.get("chain")
+#     memory = cl.user_session.get("memory")
+
+#     # Use the context manager for creating a user step
+#     async with cl.Step(name="user_message") as user_step:
+#         user_step.input = message.content
+
+#         # Execute the chain call to get a response
+#         res = await chain.acall({"question": message.content, "chat_history": memory.chat_memory.messages})
+#         print(f"response: {res}")
+
+#         # Extract 'answer' directly from the response, fallback to "No answer found." if not available
+#         answer = res.get("answer", "No answer found.")
+#         print(f"answer: {answer}")
+
+#         # Set the output of the user_step to include the answer
+#         user_step.output = answer
+
+#         # Update memory with the conversation
+#         # Add the user message to the chat memory
+#         memory.chat_memory.add_user_message(message.content)
+#         # Add only the 'answer' to the chat memory, not the entire response or any serialized version
+#         memory.chat_memory.add_ai_message(answer)
+
+#         answer_with_sources, source_elements = get_sources(res, answer)
+#         print(f"answer_with_sources: {answer_with_sources}")
+#         await cl.Message(content=answer_with_sources, elements=source_elements).send()
+
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     user = cl.user_session.get("user")
     chain = cl.user_session.get("chain")
     # cb = cl.AsyncLangchainCallbackHandler(

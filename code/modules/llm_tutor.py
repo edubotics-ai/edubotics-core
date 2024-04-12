@@ -34,6 +34,7 @@ class LLMTutor:
 
     # Retrieval QA Chain
     def retrieval_qa_chain(self, llm, prompt, db):
+        
         if self.config["llm_params"]["use_history"]:
             memory = ConversationBufferWindowMemory(
             k = self.config["llm_params"]["memory_window"], 

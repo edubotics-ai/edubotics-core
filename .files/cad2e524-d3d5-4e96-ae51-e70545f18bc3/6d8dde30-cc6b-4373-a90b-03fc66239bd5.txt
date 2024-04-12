@@ -1,4 +1,0 @@
-Source 1:
- Assignments - Deep Learning for Data Science (DL4DS) / Spring 2024    Boston University Faculty for Computing and Data Science Deep Learning for Data Science (DL4DS) Spring 2024   Main Navigation  Home   Schedule   Lectures   Discussions   Assignments   Project   Materials    Assignments Assignments are posted on Gradescope. See the welcome message for the Entry Code if you donâ€™t have access. PS2 -- Supervised Learning     PS3 -- Shallow Networks     Project Proposal     PS4 -- Deep Networks     KC5 -- Loss Functions     KC6-9 -- Chapters 6-9 Knowledge Checks      Boston, MA USA
-
-

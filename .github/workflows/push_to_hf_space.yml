@@ -17,3 +17,15 @@ jobs:
         repo_type: space
         space_sdk: static
         hf_token: ${{ secrets.HF_TOKEN }}
+
+  run_script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+  
+      - name: Run script
+        env:
+          LITERAL_AI_API_KEY: ${{ secrets.LITERAL_AI_API_KEY }}
+        run: |
+          chainlit run code/main.py
