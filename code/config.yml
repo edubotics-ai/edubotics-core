@@ -1,6 +1,5 @@
 embedding_options:
   embedd_files: False # bool
-  persist_directory: null # str or None
   data_path: 'storage/data' # str
   url_file_path: 'storage/data/urls.txt' # str
   expand_urls: True # bool
@@ -8,8 +7,9 @@ embedding_options:
   db_path : 'vectorstores' # str
   model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
   search_top_k : 3 # int
+  score_threshold : 0.5 # float
 llm_params: 
-  use_history: False # bool
+  use_history: True # bool
   memory_window: 3 # int
   llm_loader: 'local_llm' # str [local_llm, openai]
   openai_params:
