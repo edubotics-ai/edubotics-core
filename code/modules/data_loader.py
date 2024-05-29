@@ -108,9 +108,6 @@ class FileReader:
 class ChunkProcessor:
     def __init__(self, config):
         self.config = config
-        self.remove_leftover_delimiters = config["splitter_options"][
-            "remove_leftover_delimiters"
-        ]
         self.document_chunks_full = []
         self.document_names = []
 
@@ -155,7 +152,7 @@ class ChunkProcessor:
         else:
             document_chunks = documents
 
-        if self.remove_leftover_delimiters:
+        if self.config["splitter_options"]["remove_leftover_delimiters"]:
             document_chunks = self.remove_delimiters(document_chunks)
         if self.config["splitter_options"]["remove_chunks"]:
             document_chunks = self.remove_chunks(document_chunks)
