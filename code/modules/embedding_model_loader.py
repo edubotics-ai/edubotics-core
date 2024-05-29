@@ -1,6 +1,7 @@
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import LlamaCppEmbeddings
+
 try:
     from modules.constants import *
 except:
@@ -19,6 +20,7 @@ class EmbeddingModelLoader:
                 model=self.config["embedding_options"]["model"],
                 show_progress_bar=True,
                 openai_api_key=OPENAI_API_KEY,
+                disallowed_special=(),
             )
         else:
             embedding_model = HuggingFaceEmbeddings(

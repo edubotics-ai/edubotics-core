@@ -4,6 +4,7 @@ from tqdm import tqdm
 from urllib.parse import urlparse
 import chainlit as cl
 from langchain import PromptTemplate
+
 try:
     from modules.constants import *
 except:
@@ -60,7 +61,7 @@ class WebpageCrawler:
 
     def get_subpage_links(self, l, base_url):
         for link in tqdm(l):
-            print('checking link:', link)
+            print("checking link:", link)
             if not link.endswith("/"):
                 l[link] = "Checked"
                 dict_links_subpages = {}
@@ -109,6 +110,7 @@ def get_base_url(url):
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
     return base_url
 
+
 def get_prompt(config):
     if config["llm_params"]["use_history"]:
         if config["llm_params"]["llm_loader"] == "local_llm":
@@ -134,6 +136,7 @@ def get_prompt(config):
         )
     return prompt
 
+
 def get_sources(res, answer):
     source_elements_dict = {}
     source_elements = []
@@ -144,21 +147,22 @@ def get_sources(res, answer):
     for idx, source in enumerate(res["source_documents"]):
         source_metadata = source.metadata
         url = source_metadata["source"]
+        score = source_metadata.get("score", "N/A")
 
         if url not in source_dict:
-            source_dict[url] = [source.page_content]
+            source_dict[url] = [(source.page_content, score)]
         else:
-            source_dict[url].append(source.page_content)
+            source_dict[url].append((source.page_content, score))
 
     for source_idx, (url, text_list) in enumerate(source_dict.items()):
         full_text = ""
-        for url_idx, text in enumerate(text_list):
-            full_text += f"Source {url_idx+1}:\n {text}\n\n\n"
+        for url_idx, (text, score) in enumerate(text_list):
+            full_text += f"Source {url_idx + 1} (Score: {score}):\n{text}\n\n\n"
         source_elements.append(cl.Text(name=url, content=full_text))
-        found_sources.append(url)
+        found_sources.append(f"{url} (Score: {score})")
 
     if found_sources:
-        answer += f"\n\nSources: {', '.join(found_sources)} "
+        answer += f"\n\nSources: {', '.join(found_sources)}"
     else:
         answer += f"\n\nNo source found."
 

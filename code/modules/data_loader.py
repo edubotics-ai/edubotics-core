@@ -1,6 +1,7 @@
+import os
 import re
+import requests
 import pysrt
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import (
     PyMuPDFLoader,
     Docx2txtLoader,
@@ -8,49 +9,32 @@ from langchain.document_loaders import (
     WebBaseLoader,
     TextLoader,
 )
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
+from llama_parse import LlamaParse
 from langchain.schema import Document
-import tempfile
-from tempfile import NamedTemporaryFile
 import logging
-import requests
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_openai.embeddings import OpenAIEmbeddings
 
 logger = logging.getLogger(__name__)
 
 
-class DataLoader:
-    def __init__(self, config):
-        """
-        Class for handling all data extraction and chunking
-        Inputs:
-            config - dictionary from yaml file, containing all important parameters
-        """
-        self.config = config
-        self.remove_leftover_delimiters = config["splitter_options"][
-            "remove_leftover_delimiters"
-        ]
+class PDFReader:
+    def __init__(self):
+        pass
 
-        # Main list of all documents
-        self.document_chunks_full = []
-        self.document_names = []
+    def get_loader(self, pdf_path):
+        loader = PyMuPDFLoader(pdf_path)
+        return loader
 
-        if config["splitter_options"]["use_splitter"]:
-            if config["splitter_options"]["split_by_token"]:
-                self.splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                    chunk_size=config["splitter_options"]["chunk_size"],
-                    chunk_overlap=config["splitter_options"]["chunk_overlap"],
-                    separators=config["splitter_options"]["chunk_separators"],
-                    disallowed_special=()
-                )
-            else:
-                self.splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=config["splitter_options"]["chunk_size"],
-                    chunk_overlap=config["splitter_options"]["chunk_overlap"],
-                    separators=config["splitter_options"]["chunk_separators"],
-                    disallowed_special=()
-                )
-        else:
-            self.splitter = None
-        logger.info("InfoLoader instance created")
+    def get_documents(self, loader):
+        return loader.load()
+
+
+class FileReader:
+    def __init__(self):
+        self.pdf_reader = PDFReader()
 
     def extract_text_from_pdf(self, pdf_path):
         text = ""
@@ -73,215 +57,173 @@ class DataLoader:
             print("Failed to download PDF from URL:", pdf_url)
             return None
 
-    def get_chunks(self, uploaded_files, weblinks):
-        # Main list of all documents
+    def read_pdf(self, temp_file_path: str):
+        # parser = LlamaParse(
+        #     api_key="",
+        #     result_type="markdown",
+        #     num_workers=4,
+        #     verbose=True,
+        #     language="en",
+        # )
+        # documents = parser.load_data(temp_file_path)
+
+        # with open("temp/output.md", "a") as f:
+        #     for doc in documents:
+        #         f.write(doc.text + "\n")
+
+        # markdown_path = "temp/output.md"
+        # loader = UnstructuredMarkdownLoader(markdown_path)
+        # loader = PyMuPDFLoader(temp_file_path)  # This loader preserves more metadata
+        # return loader.load()
+        loader = self.pdf_reader.get_loader(temp_file_path)
+        documents = self.pdf_reader.get_documents(loader)
+        return documents
+
+    def read_txt(self, temp_file_path: str):
+        loader = TextLoader(temp_file_path, autodetect_encoding=True)
+        return loader.load()
+
+    def read_docx(self, temp_file_path: str):
+        loader = Docx2txtLoader(temp_file_path)
+        return loader.load()
+
+    def read_srt(self, temp_file_path: str):
+        subs = pysrt.open(temp_file_path)
+        text = ""
+        for sub in subs:
+            text += sub.text
+        return [Document(page_content=text)]
+
+    def read_youtube_transcript(self, url: str):
+        loader = YoutubeLoader.from_youtube_url(
+            url, add_video_info=True, language=["en"], translation="en"
+        )
+        return loader.load()
+
+    def read_html(self, url: str):
+        loader = WebBaseLoader(url)
+        return loader.load()
+
+
+class ChunkProcessor:
+    def __init__(self, config):
+        self.config = config
+        self.remove_leftover_delimiters = config["splitter_options"][
+            "remove_leftover_delimiters"
+        ]
         self.document_chunks_full = []
         self.document_names = []
 
-        def remove_delimiters(document_chunks: list):
-            """
-            Helper function to remove remaining delimiters in document chunks
-            """
-            for chunk in document_chunks:
-                for delimiter in self.config["splitter_options"][
-                    "delimiters_to_remove"
-                ]:
-                    chunk.page_content = re.sub(delimiter, " ", chunk.page_content)
-            return document_chunks
-
-        def remove_chunks(document_chunks: list):
-            """
-            Helper function to remove any unwanted document chunks after splitting
-            """
-            front = self.config["splitter_options"]["front_chunk_to_remove"]
-            end = self.config["splitter_options"]["last_chunks_to_remove"]
-            # Remove pages
-            for _ in range(front):
-                del document_chunks[0]
-            for _ in range(end):
-                document_chunks.pop()
-                logger.info(f"\tNumber of pages after skipping: {len(document_chunks)}")
-            return document_chunks
-
-        def get_pdf_from_url(pdf_url: str):
-            temp_pdf_path = self.download_pdf_from_url(pdf_url)
-            if temp_pdf_path:
-                title, document_chunks = get_pdf(temp_pdf_path, pdf_url)
-                os.remove(temp_pdf_path)
-                return title, document_chunks
-
-        def get_pdf(temp_file_path: str, title: str):
-            """
-            Function to process PDF files
-            """
-            loader = PyMuPDFLoader(
-                temp_file_path
-            )  # This loader preserves more metadata
-
-            if self.splitter:
-                document_chunks = self.splitter.split_documents(loader.load())
+        if config["splitter_options"]["use_splitter"]:
+            if config["splitter_options"]["split_by_token"]:
+                self.splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                    chunk_size=config["splitter_options"]["chunk_size"],
+                    chunk_overlap=config["splitter_options"]["chunk_overlap"],
+                    separators=config["splitter_options"]["chunk_separators"],
+                    disallowed_special=(),
+                )
             else:
-                document_chunks = loader.load()
+                self.splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=config["splitter_options"]["chunk_size"],
+                    chunk_overlap=config["splitter_options"]["chunk_overlap"],
+                    separators=config["splitter_options"]["chunk_separators"],
+                    disallowed_special=(),
+                )
+        else:
+            self.splitter = None
+        logger.info("ChunkProcessor instance created")
 
-            if "title" in document_chunks[0].metadata.keys():
-                title = document_chunks[0].metadata["title"]
+    def remove_delimiters(self, document_chunks: list):
+        for chunk in document_chunks:
+            for delimiter in self.config["splitter_options"]["delimiters_to_remove"]:
+                chunk.page_content = re.sub(delimiter, " ", chunk.page_content)
+        return document_chunks
 
-            logger.info(
-                f"\t\tOriginal no. of pages: {document_chunks[0].metadata['total_pages']}"
-            )
+    def remove_chunks(self, document_chunks: list):
+        front = self.config["splitter_options"]["front_chunk_to_remove"]
+        end = self.config["splitter_options"]["last_chunks_to_remove"]
+        for _ in range(front):
+            del document_chunks[0]
+        for _ in range(end):
+            document_chunks.pop()
+        logger.info(f"\tNumber of pages after skipping: {len(document_chunks)}")
+        return document_chunks
 
-            return title, document_chunks
+    def process_chunks(self, documents):
+        if self.splitter:
+            document_chunks = self.splitter.split_documents(documents)
+        else:
+            document_chunks = documents
 
-        def get_txt(temp_file_path: str, title: str):
-            """
-            Function to process TXT files
-            """
-            loader = TextLoader(temp_file_path, autodetect_encoding=True)
+        if self.remove_leftover_delimiters:
+            document_chunks = self.remove_delimiters(document_chunks)
+        if self.config["splitter_options"]["remove_chunks"]:
+            document_chunks = self.remove_chunks(document_chunks)
 
-            if self.splitter:
-                document_chunks = self.splitter.split_documents(loader.load())
-            else:
-                document_chunks = loader.load()
+        return document_chunks
 
-            # Update the metadata
-            for chunk in document_chunks:
-                chunk.metadata["source"] = title
-                chunk.metadata["page"] = "N/A"
+    def get_chunks(self, file_reader, uploaded_files, weblinks):
+        self.document_chunks_full = []
+        self.document_names = []
 
-            return title, document_chunks
-
-        def get_srt(temp_file_path: str, title: str):
-            """
-            Function to process SRT files
-            """
-            subs = pysrt.open(temp_file_path)
-
-            text = ""
-            for sub in subs:
-                text += sub.text
-            document_chunks = [Document(page_content=text)]
-
-            if self.splitter:
-                document_chunks = self.splitter.split_documents(document_chunks)
-
-            # Update the metadata
-            for chunk in document_chunks:
-                chunk.metadata["source"] = title
-                chunk.metadata["page"] = "N/A"
-
-            return title, document_chunks
-
-        def get_docx(temp_file_path: str, title: str):
-            """
-            Function to process DOCX files
-            """
-            loader = Docx2txtLoader(temp_file_path)
-
-            if self.splitter:
-                document_chunks = self.splitter.split_documents(loader.load())
-            else:
-                document_chunks = loader.load()
-
-            # Update the metadata
-            for chunk in document_chunks:
-                chunk.metadata["source"] = title
-                chunk.metadata["page"] = "N/A"
-
-            return title, document_chunks
-
-        def get_youtube_transcript(url: str):
-            """
-            Function to retrieve youtube transcript and process text
-            """
-            loader = YoutubeLoader.from_youtube_url(
-                url, add_video_info=True, language=["en"], translation="en"
-            )
-
-            if self.splitter:
-                document_chunks = self.splitter.split_documents(loader.load())
-            else:
-                document_chunks = loader.load_and_split()
-
-            # Replace the source with title (for display in st UI later)
-            for chunk in document_chunks:
-                chunk.metadata["source"] = chunk.metadata["title"]
-            logger.info(chunk.metadata["title"])
-
-            return title, document_chunks
-
-        def get_html(url: str):
-            """
-            Function to process websites via HTML files
-            """
-            loader = WebBaseLoader(url)
-
-            if self.splitter:
-                document_chunks = self.splitter.split_documents(loader.load())
-            else:
-                document_chunks = loader.load_and_split()
-
-            title = document_chunks[0].metadata["title"]
-            logger.info(document_chunks[0].metadata)
-
-            return title, document_chunks
-
-        # Handle file by file
         for file_index, file_path in enumerate(uploaded_files):
+            file_name = os.path.basename(file_path)
+            file_type = file_name.split(".")[-1].lower()
 
-            file_name = file_path.split("/")[-1]
-            file_type = file_name.split(".")[-1]
+            try:
+                if file_type == "pdf":
+                    documents = file_reader.read_pdf(file_path)
+                elif file_type == "txt":
+                    documents = file_reader.read_txt(file_path)
+                elif file_type == "docx":
+                    documents = file_reader.read_docx(file_path)
+                elif file_type == "srt":
+                    documents = file_reader.read_srt(file_path)
+                else:
+                    logger.warning(f"Unsupported file type: {file_type}")
+                    continue
 
-            # Handle different file types
-            if file_type == "pdf":
-                try:
-                    title, document_chunks = get_pdf(file_path, file_name)
-                except:
-                    title, document_chunks = get_pdf_from_url(file_path)
-            elif file_type == "txt":
-                title, document_chunks = get_txt(file_path, file_name)
-            elif file_type == "docx":
-                title, document_chunks = get_docx(file_path, file_name)
-            elif file_type == "srt":
-                title, document_chunks = get_srt(file_path, file_name)
+                document_chunks = self.process_chunks(documents)
+                self.document_names.append(file_name)
+                self.document_chunks_full.extend(document_chunks)
 
-            # Additional wrangling - Remove leftover delimiters and any specified chunks
-            if self.remove_leftover_delimiters:
-                document_chunks = remove_delimiters(document_chunks)
-            if self.config["splitter_options"]["remove_chunks"]:
-                document_chunks = remove_chunks(document_chunks)
+            except Exception as e:
+                logger.error(f"Error processing file {file_name}: {str(e)}")
 
-            logger.info(f"\t\tExtracted no. of chunks: {len(document_chunks)} from {file_name}")
-            self.document_names.append(title)
-            self.document_chunks_full.extend(document_chunks)
+        self.process_weblinks(file_reader, weblinks)
 
-        # Handle youtube links:
+        logger.info(
+            f"Total document chunks extracted: {len(self.document_chunks_full)}"
+        )
+        return self.document_chunks_full, self.document_names
+
+    def process_weblinks(self, file_reader, weblinks):
         if weblinks[0] != "":
             logger.info(f"Splitting weblinks: total of {len(weblinks)}")
 
-            # Handle link by link
             for link_index, link in enumerate(weblinks):
                 try:
                     logger.info(f"\tSplitting link {link_index+1} : {link}")
                     if "youtube" in link:
-                        title, document_chunks = get_youtube_transcript(link)
+                        documents = file_reader.read_youtube_transcript(link)
                     else:
-                        title, document_chunks = get_html(link)
+                        documents = file_reader.read_html(link)
 
-                    # Additional wrangling - Remove leftover delimiters and any specified chunks
-                    if self.remove_leftover_delimiters:
-                        document_chunks = remove_delimiters(document_chunks)
-                    if self.config["splitter_options"]["remove_chunks"]:
-                        document_chunks = remove_chunks(document_chunks)
-
-                    print(f"\t\tExtracted no. of chunks: {len(document_chunks)}")
-                    self.document_names.append(title)
+                    document_chunks = self.process_chunks(documents)
+                    self.document_names.append(link)
                     self.document_chunks_full.extend(document_chunks)
-                except:
-                    logger.info(f"\t\tError splitting link {link_index+1} : {link}")
-                    exit()
+                except Exception as e:
+                    logger.error(
+                        f"Error splitting link {link_index+1} : {link}: {str(e)}"
+                    )
 
-        logger.info(
-            f"\tNumber of document chunks extracted in total: {len(self.document_chunks_full)}\n\n"
+
+class DataLoader:
+    def __init__(self, config):
+        self.file_reader = FileReader()
+        self.chunk_processor = ChunkProcessor(config)
+
+    def get_chunks(self, uploaded_files, weblinks):
+        return self.chunk_processor.get_chunks(
+            self.file_reader, uploaded_files, weblinks
         )
-
-        return self.document_chunks_full, self.document_names
