@@ -1,11 +1,12 @@
 import logging
 import os
 import yaml
-from langchain.vectorstores import FAISS, Chroma
+from langchain_community.vectorstores import FAISS, Chroma
 from langchain.schema.vectorstore import VectorStoreRetriever
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.document import Document
 from langchain_core.callbacks import AsyncCallbackManagerForRetrieverRun
+from ragatouille import RAGPretrainedModel
 
 try:
     from modules.embedding_model_loader import EmbeddingModelLoader
@@ -25,7 +26,7 @@ class VectorDBScore(VectorStoreRetriever):
 
     # See https://github.com/langchain-ai/langchain/blob/61dd92f8215daef3d9cf1734b0d1f8c70c1571c3/libs/langchain/langchain/vectorstores/base.py#L500
     def _get_relevant_documents(
-            self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         docs_and_similarities = (
             self.vectorstore.similarity_search_with_relevance_scores(
@@ -53,7 +54,6 @@ class VectorDBScore(VectorStoreRetriever):
 
         docs = [doc for doc, _ in docs_and_similarities]
         return docs
-
 
 
 class VectorDB:
@@ -116,7 +116,15 @@ class VectorDB:
         self.embedding_model_loader = EmbeddingModelLoader(self.config)
         self.embedding_model = self.embedding_model_loader.load_embedding_model()
 
-    def initialize_database(self, document_chunks: list, document_names: list):
+    def initialize_database(
+        self,
+        document_chunks: list,
+        document_names: list,
+        documents: list,
+        document_metadata: list,
+    ):
+        if self.db_option in ["FAISS", "Chroma"]:
+            self.create_embedding_model()
         # Track token usage
         self.logger.info("Initializing vector_db")
         self.logger.info("\tUsing {} as db_option".format(self.db_option))
@@ -136,6 +144,14 @@ class VectorDB:
                     + self.config["embedding_options"]["model"],
                 ),
             )
+        elif self.db_option == "RAGatouille":
+            self.RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+            index_path = self.RAG.index(
+                index_name="new_idx",
+                collection=documents,
+                document_ids=document_names,
+                document_metadatas=document_metadata,
+            )
         self.logger.info("Completed initializing vector_db")
 
     def create_database(self):
@@ -146,11 +162,13 @@ class VectorDB:
         files += lecture_pdfs
         if "storage/data/urls.txt" in files:
             files.remove("storage/data/urls.txt")
-        document_chunks, document_names = data_loader.get_chunks(files, urls)
+        document_chunks, document_names, documents, document_metadata = (
+            data_loader.get_chunks(files, urls)
+        )
         self.logger.info("Completed loading data")
-
-        self.create_embedding_model()
-        self.initialize_database(document_chunks, document_names)
+        self.initialize_database(
+            document_chunks, document_names, documents, document_metadata
+        )
 
     def save_database(self):
         if self.db_option == "FAISS":
@@ -166,6 +184,9 @@ class VectorDB:
         elif self.db_option == "Chroma":
             # db is saved in the persist directory during initialization
             pass
+        elif self.db_option == "RAGatouille":
+            # index is saved during initialization
+            pass
         self.logger.info("Saved database")
 
     def load_database(self):
@@ -180,7 +201,7 @@ class VectorDB:
                     + self.config["embedding_options"]["model"],
                 ),
                 self.embedding_model,
-                # allow_dangerous_deserialization=True, <- unexpected keyword argument to load_local
+                allow_dangerous_deserialization=True,
             )
         elif self.db_option == "Chroma":
             self.vector_db = Chroma(
@@ -192,6 +213,10 @@ class VectorDB:
                     + self.config["embedding_options"]["model"],
                 ),
                 embedding_function=self.embedding_model,
+            )
+        elif self.db_option == "RAGatouille":
+            self.vector_db = RAGPretrainedModel.from_index(
+                ".ragatouille/colbert/indexes/new_idx"
             )
         self.logger.info("Loaded database")
         return self.vector_db

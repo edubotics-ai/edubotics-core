@@ -1,6 +1,6 @@
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.embeddings import LlamaCppEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import LlamaCppEmbeddings
 
 try:
     from modules.constants import *

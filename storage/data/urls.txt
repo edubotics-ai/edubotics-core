@@ -1,1 +1,3 @@
 https://dl4ds.github.io/sp2024/
+https://dl4ds.github.io/sp2024/static_files/lectures/15_RAG_CoT.pdf
+https://dl4ds.github.io/sp2024/static_files/lectures/21_RL_RLHF_v2.pdf

@@ -2,14 +2,14 @@ embedding_options:
   embedd_files: False # bool
   data_path: 'storage/data' # str
   url_file_path: 'storage/data/urls.txt' # str
-  expand_urls: True # bool
-  db_option : 'FAISS' # str
+  expand_urls: False # bool
+  db_option : 'RAGatouille' # str [FAISS, Chroma, RAGatouille]
   db_path : 'vectorstores' # str
   model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
   search_top_k : 3 # int
-  score_threshold : 0.5 # float
+  score_threshold : 0.2 # float
 llm_params: 
-  use_history: True # bool
+  use_history: False # bool
   memory_window: 3 # int
   llm_loader: 'local_llm' # str [local_llm, openai]
   openai_params:
