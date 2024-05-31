@@ -2,7 +2,7 @@ import os
 import re
 import requests
 import pysrt
-from langchain.document_loaders import (
+from langchain_community.document_loaders import (
     PyMuPDFLoader,
     Docx2txtLoader,
     YoutubeLoader,
@@ -16,6 +16,15 @@ import logging
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai.embeddings import OpenAIEmbeddings
+from ragatouille import RAGPretrainedModel
+from langchain.chains import LLMChain
+from langchain.llms import OpenAI
+from langchain import PromptTemplate
+
+try:
+    from modules.helpers import get_lecture_metadata
+except:
+    from helpers import get_lecture_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -58,23 +67,6 @@ class FileReader:
             return None
 
     def read_pdf(self, temp_file_path: str):
-        # parser = LlamaParse(
-        #     api_key="",
-        #     result_type="markdown",
-        #     num_workers=4,
-        #     verbose=True,
-        #     language="en",
-        # )
-        # documents = parser.load_data(temp_file_path)
-
-        # with open("temp/output.md", "a") as f:
-        #     for doc in documents:
-        #         f.write(doc.text + "\n")
-
-        # markdown_path = "temp/output.md"
-        # loader = UnstructuredMarkdownLoader(markdown_path)
-        # loader = PyMuPDFLoader(temp_file_path)  # This loader preserves more metadata
-        # return loader.load()
         loader = self.pdf_reader.get_loader(temp_file_path)
         documents = self.pdf_reader.get_documents(loader)
         return documents
@@ -108,8 +100,6 @@ class FileReader:
 class ChunkProcessor:
     def __init__(self, config):
         self.config = config
-        self.document_chunks_full = []
-        self.document_names = []
 
         if config["splitter_options"]["use_splitter"]:
             if config["splitter_options"]["split_by_token"]:
@@ -130,6 +120,17 @@ class ChunkProcessor:
             self.splitter = None
         logger.info("ChunkProcessor instance created")
 
+    # def extract_metadata(self, document_content):
+
+    #     llm = OpenAI()
+    #     prompt_template = PromptTemplate(
+    #         input_variables=["document_content"],
+    #         template="Extract metadata for this document:\n\n{document_content}\n\nMetadata:",
+    #     )
+    #     chain = LLMChain(llm=llm, prompt=prompt_template)
+    #     metadata = chain.run(document_content=document_content)
+    #     return metadata
+
     def remove_delimiters(self, document_chunks: list):
         for chunk in document_chunks:
             for delimiter in self.config["splitter_options"]["delimiters_to_remove"]:
@@ -146,11 +147,23 @@ class ChunkProcessor:
         logger.info(f"\tNumber of pages after skipping: {len(document_chunks)}")
         return document_chunks
 
-    def process_chunks(self, documents):
-        if self.splitter:
+    def process_chunks(
+        self, documents, file_type="txt", source="", page=0, metadata={}
+    ):
+        documents = [Document(page_content=documents, source=source, page=page)]
+        if file_type == "txt":
             document_chunks = self.splitter.split_documents(documents)
-        else:
-            document_chunks = documents
+        elif file_type == "pdf":
+            document_chunks = documents  # Full page for now
+
+        # add the source and page number back to the metadata
+        for chunk in document_chunks:
+            chunk.metadata["source"] = source
+            chunk.metadata["page"] = page
+
+            # add the metadata extracted from the document
+            for key, value in metadata.items():
+                chunk.metadata[key] = value
 
         if self.config["splitter_options"]["remove_leftover_delimiters"]:
             document_chunks = self.remove_delimiters(document_chunks)
@@ -161,38 +174,77 @@ class ChunkProcessor:
 
     def get_chunks(self, file_reader, uploaded_files, weblinks):
         self.document_chunks_full = []
-        self.document_names = []
+        self.parent_document_names = []
+        self.child_document_names = []
+        self.documents = []
+        self.document_metadata = []
+
+        lecture_metadata = get_lecture_metadata(
+            "https://dl4ds.github.io/sp2024/lectures/"
+        )  # TODO: Use more efficiently
 
         for file_index, file_path in enumerate(uploaded_files):
             file_name = os.path.basename(file_path)
             file_type = file_name.split(".")[-1].lower()
 
-            try:
-                if file_type == "pdf":
-                    documents = file_reader.read_pdf(file_path)
-                elif file_type == "txt":
-                    documents = file_reader.read_txt(file_path)
-                elif file_type == "docx":
-                    documents = file_reader.read_docx(file_path)
-                elif file_type == "srt":
-                    documents = file_reader.read_srt(file_path)
+            # try:
+            if file_type == "pdf":
+                documents = file_reader.read_pdf(file_path)
+            elif file_type == "txt":
+                documents = file_reader.read_txt(file_path)
+            elif file_type == "docx":
+                documents = file_reader.read_docx(file_path)
+            elif file_type == "srt":
+                documents = file_reader.read_srt(file_path)
+            else:
+                logger.warning(f"Unsupported file type: {file_type}")
+                continue
+
+            # full_text = ""
+            # for doc in documents:
+            #     full_text += doc.page_content
+            #     break  # getting only first page for now
+
+            # extracted_metadata = self.extract_metadata(full_text)
+
+            for doc in documents:
+                page_num = doc.metadata.get("page", 0)
+                self.documents.append(doc.page_content)
+                self.document_metadata.append({"source": file_path, "page": page_num})
+                if "lecture" in file_path.lower():
+                    metadata = lecture_metadata.get(file_path, {})
+                    metadata["source_type"] = "lecture"
+                    self.document_metadata[-1].update(metadata)
                 else:
-                    logger.warning(f"Unsupported file type: {file_type}")
-                    continue
+                    metadata = {"source_type": "other"}
 
-                document_chunks = self.process_chunks(documents)
-                self.document_names.append(file_name)
-                self.document_chunks_full.extend(document_chunks)
+                self.child_document_names.append(f"{file_name}_{page_num}")
 
-            except Exception as e:
-                logger.error(f"Error processing file {file_name}: {str(e)}")
+                self.parent_document_names.append(file_name)
+                if self.config["embedding_options"]["db_option"] not in ["RAGatouille"]:
+                    document_chunks = self.process_chunks(
+                        self.documents[-1],
+                        file_type,
+                        source=file_path,
+                        page=page_num,
+                        metadata=metadata,
+                    )
+                    self.document_chunks_full.extend(document_chunks)
+
+            # except Exception as e:
+            #     logger.error(f"Error processing file {file_name}: {str(e)}")
 
         self.process_weblinks(file_reader, weblinks)
 
         logger.info(
             f"Total document chunks extracted: {len(self.document_chunks_full)}"
         )
-        return self.document_chunks_full, self.document_names
+        return (
+            self.document_chunks_full,
+            self.child_document_names,
+            self.documents,
+            self.document_metadata,
+        )
 
     def process_weblinks(self, file_reader, weblinks):
         if weblinks[0] != "":
@@ -206,9 +258,26 @@ class ChunkProcessor:
                     else:
                         documents = file_reader.read_html(link)
 
-                    document_chunks = self.process_chunks(documents)
-                    self.document_names.append(link)
-                    self.document_chunks_full.extend(document_chunks)
+                    for doc in documents:
+                        page_num = doc.metadata.get("page", 0)
+                        self.documents.append(doc.page_content)
+                        self.document_metadata.append(
+                            {"source": link, "page": page_num}
+                        )
+                        self.child_document_names.append(f"{link}")
+
+                    self.parent_document_names.append(link)
+                    if self.config["embedding_options"]["db_option"] not in [
+                        "RAGatouille"
+                    ]:
+                        document_chunks = self.process_chunks(
+                            self.documents[-1],
+                            "txt",
+                            source=link,
+                            page=0,
+                            metadata={"source_type": "webpage"},
+                        )
+                        self.document_chunks_full.extend(document_chunks)
                 except Exception as e:
                     logger.error(
                         f"Error splitting link {link_index+1} : {link}: {str(e)}"
