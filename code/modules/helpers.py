@@ -152,6 +152,7 @@ def get_sources(res, answer):
         lecture_tldr = source_metadata.get("tldr", "N/A")
         lecture_recording = source_metadata.get("lecture_recording", "N/A")
         suggested_readings = source_metadata.get("suggested_readings", "N/A")
+        date = source_metadata.get("date", "N/A")
 
         source_type = source_metadata.get("source_type", "N/A")
 
@@ -165,6 +166,7 @@ def get_sources(res, answer):
                 "lecture_tldr": lecture_tldr,
                 "lecture_recording": lecture_recording,
                 "suggested_readings": suggested_readings,
+                "date": date,
                 "source_type": source_type,
             }
         else:
@@ -206,6 +208,7 @@ def get_sources(res, answer):
         full_answer += f"\nSource: {source_data['url']}\n"
         full_answer += f"Page: {source_data['page']}\n"
         full_answer += f"Type: {source_data['source_type']}\n"
+        full_answer += f"Date: {source_data['date']}\n"
         full_answer += f"TL;DR: {source_data['lecture_tldr']}\n"
         full_answer += f"Lecture Recording: {source_data['lecture_recording']}\n"
         full_answer += f"Suggested Readings: {source_data['suggested_readings']}\n"
@@ -213,18 +216,42 @@ def get_sources(res, answer):
     return full_answer, source_elements
 
 
-def get_lecture_metadata(schedule_url):
+def get_lecture_metadata(lectures_url, schedule_url):
     """
-    Function to get the lecture metadata from the schedule URL.
+    Function to get the lecture metadata from the lectures and schedule URLs.
     """
     lecture_metadata = {}
 
+    # Get the main lectures page content
+    r_lectures = requests.get(lectures_url)
+    soup_lectures = BeautifulSoup(r_lectures.text, "html.parser")
+
     # Get the main schedule page content
-    r = requests.get(schedule_url)
-    soup = BeautifulSoup(r.text, "html.parser")
+    r_schedule = requests.get(schedule_url)
+    soup_schedule = BeautifulSoup(r_schedule.text, "html.parser")
 
     # Find all lecture blocks
-    lecture_blocks = soup.find_all("div", class_="lecture-container")
+    lecture_blocks = soup_lectures.find_all("div", class_="lecture-container")
+
+    # Create a mapping from slides link to date
+    date_mapping = {}
+    schedule_rows = soup_schedule.find_all("li", class_="table-row-lecture")
+    for row in schedule_rows:
+        try:
+            date = (
+                row.find("div", {"data-label": "Date"}).get_text(separator=" ").strip()
+            )
+            description_div = row.find("div", {"data-label": "Description"})
+            slides_link_tag = description_div.find("a", title="Download slides")
+            slides_link = slides_link_tag["href"].strip() if slides_link_tag else None
+            slides_link = (
+                f"https://dl4ds.github.io{slides_link}" if slides_link else None
+            )
+            if slides_link:
+                date_mapping[slides_link] = date
+        except Exception as e:
+            print(f"Error processing schedule row: {e}")
+            continue
 
     for block in lecture_blocks:
         try:
@@ -237,6 +264,9 @@ def get_lecture_metadata(schedule_url):
             # Extract the link to the slides
             slides_link_tag = block.find("a", title="Download slides")
             slides_link = slides_link_tag["href"].strip() if slides_link_tag else None
+            slides_link = (
+                f"https://dl4ds.github.io{slides_link}" if slides_link else None
+            )
 
             # Extract the link to the lecture recording
             recording_link_tag = block.find("a", title="Download lecture recording")
@@ -257,9 +287,12 @@ def get_lecture_metadata(schedule_url):
             else:
                 suggested_readings = "No specific readings provided."
 
+            # Get the date from the schedule
+            date = date_mapping.get(slides_link, "No date available")
+
             # Add to the dictionary
-            slides_link = f"https://dl4ds.github.io{slides_link}"
             lecture_metadata[slides_link] = {
+                "date": date,
                 "tldr": tldr,
                 "title": title,
                 "lecture_recording": recording_link,
