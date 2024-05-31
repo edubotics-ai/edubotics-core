@@ -180,7 +180,8 @@ class ChunkProcessor:
         self.document_metadata = []
 
         lecture_metadata = get_lecture_metadata(
-            "https://dl4ds.github.io/sp2024/lectures/"
+            "https://dl4ds.github.io/sp2024/lectures/",
+            "https://dl4ds.github.io/sp2024/schedule/",
         )  # TODO: Use more efficiently
 
         for file_index, file_path in enumerate(uploaded_files):
