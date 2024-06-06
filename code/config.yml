@@ -11,6 +11,7 @@ embedding_options:
 llm_params: 
   use_history: False # bool
   memory_window: 3 # int
+  pdf_reader: 'llama' # str [pymupdf, llama]
   llm_loader: 'local_llm' # str [local_llm, openai]
   openai_params:
     model: 'gpt-4' # str [gpt-3.5-turbo-1106, gpt-4]

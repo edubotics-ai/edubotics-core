@@ -1,5 +1,6 @@
 import os
-import re
+import bs4
+from urllib.parse import urljoin
 import requests
 import pysrt
 from langchain_community.document_loaders import (
@@ -9,6 +10,7 @@ from langchain_community.document_loaders import (
     WebBaseLoader,
     TextLoader,
 )
+import html2text
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from llama_parse import LlamaParse
 from langchain.schema import Document
@@ -23,8 +25,10 @@ from langchain import PromptTemplate
 
 try:
     from modules.helpers import get_lecture_metadata
+    from modules.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
 except:
     from helpers import get_lecture_metadata
+    from constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +45,77 @@ class PDFReader:
         return loader.load()
 
 
-class FileReader:
+class LlamaParser:
     def __init__(self):
-        self.pdf_reader = PDFReader()
+        self.parser = LlamaParse(
+            api_key=LLAMA_CLOUD_API_KEY,
+            result_type="markdown",
+            verbose=True,
+            language="en",
+            gpt4o_mode=True,
+            gpt4o_api_key=OPENAI_API_KEY,
+            parsing_instruction="The provided documents are PDFs of lecture slides of deep learning material. They contain LaTeX equations, images, and text. The goal is to extract the text and equations from the slides and convert them to markdown format. The markdown should be clean and easy to read, and any math equation should be converted to LaTeX, between $$."
+        )
+
+    def parse(self, pdf_path):
+        documents = self.parser.load_data(pdf_path)
+        documents = [document.to_langchain_format() for document in documents]
+        return documents
+
+
+class HTMLReader:
+    def __init__(self):
+        pass
+
+    def read_url(self, url):
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            logger.warning(f"Failed to download HTML from URL: {url}")
+            return None
+
+    def check_links(self, base_url, html_content):
+        soup = bs4.BeautifulSoup(html_content, "html.parser")
+        for link in soup.find_all("a"):
+            href = link.get("href")
+
+            if not href or href.startswith("#"):
+                continue
+            elif not href.startswith("https"):
+                href = href.replace("http", "https")
+
+            absolute_url = urljoin(base_url, href)
+            link['href'] = absolute_url
+
+            resp = requests.head(absolute_url)
+            if resp.status_code != 200:
+                logger.warning(f"Link {absolute_url} is broken")
+                logger.warning(f"Status code: {resp.status_code}")
+
+        return str(soup)
+
+    def html_to_md(self, url, html_content):
+        html_processed = self.check_links(url, html_content)
+        markdown_content = html2text.html2text(html_processed)
+        return markdown_content
+
+    def read_html(self, url):
+        html_content = self.read_url(url)
+        if html_content:
+            return self.html_to_md(url, html_content)
+        else:
+            return None
+
+
+class FileReader:
+    def __init__(self, kind):
+        self.kind = kind
+        if kind == "llama":
+            self.pdf_reader = LlamaParser()
+        else:
+            self.pdf_reader = PDFReader()
+        self.web_reader = HTMLReader()
 
     def extract_text_from_pdf(self, pdf_path):
         text = ""
@@ -67,8 +139,11 @@ class FileReader:
             return None
 
     def read_pdf(self, temp_file_path: str):
-        loader = self.pdf_reader.get_loader(temp_file_path)
-        documents = self.pdf_reader.get_documents(loader)
+        if self.kind == "llama":
+            documents = self.pdf_reader.parse(temp_file_path)
+        else:
+            loader = self.pdf_reader.get_loader(temp_file_path)
+            documents = self.pdf_reader.get_documents(loader)
         return documents
 
     def read_txt(self, temp_file_path: str):
@@ -93,8 +168,7 @@ class FileReader:
         return loader.load()
 
     def read_html(self, url: str):
-        loader = WebBaseLoader(url)
-        return loader.load()
+        return [Document(page_content=self.web_reader.read_html(url))]
 
 
 class ChunkProcessor:
@@ -120,17 +194,6 @@ class ChunkProcessor:
             self.splitter = None
         logger.info("ChunkProcessor instance created")
 
-    # def extract_metadata(self, document_content):
-
-    #     llm = OpenAI()
-    #     prompt_template = PromptTemplate(
-    #         input_variables=["document_content"],
-    #         template="Extract metadata for this document:\n\n{document_content}\n\nMetadata:",
-    #     )
-    #     chain = LLMChain(llm=llm, prompt=prompt_template)
-    #     metadata = chain.run(document_content=document_content)
-    #     return metadata
-
     def remove_delimiters(self, document_chunks: list):
         for chunk in document_chunks:
             for delimiter in self.config["splitter_options"]["delimiters_to_remove"]:
@@ -148,7 +211,7 @@ class ChunkProcessor:
         return document_chunks
 
     def process_chunks(
-        self, documents, file_type="txt", source="", page=0, metadata={}
+            self, documents, file_type="txt", source="", page=0, metadata={}
     ):
         documents = [Document(page_content=documents, source=source, page=page)]
         if file_type == "txt":
@@ -253,12 +316,13 @@ class ChunkProcessor:
 
             for link_index, link in enumerate(weblinks):
                 try:
-                    logger.info(f"\tSplitting link {link_index+1} : {link}")
+                    logger.info(f"\tSplitting link {link_index + 1} : {link}")
                     if "youtube" in link:
                         documents = file_reader.read_youtube_transcript(link)
                     else:
                         documents = file_reader.read_html(link)
-
+                        print(f"Link: {link}")
+                        print(documents)
                     for doc in documents:
                         page_num = doc.metadata.get("page", 0)
                         self.documents.append(doc.page_content)
@@ -281,16 +345,48 @@ class ChunkProcessor:
                         self.document_chunks_full.extend(document_chunks)
                 except Exception as e:
                     logger.error(
-                        f"Error splitting link {link_index+1} : {link}: {str(e)}"
+                        f"Error splitting link {link_index + 1} : {link}: {str(e)}"
                     )
 
 
 class DataLoader:
     def __init__(self, config):
-        self.file_reader = FileReader()
+        if config["llm_params"]["pdf_reader"] == "llama":
+            if LLAMA_CLOUD_API_KEY == None or OPENAI_API_KEY == None:
+                raise ValueError(
+                    "Please set the LLAMA_CLOUD_API_KEY and GPT4o_API_KEY environment variables"
+                )
+
+        self.file_reader = FileReader(kind=config["llm_params"]["pdf_reader"])
         self.chunk_processor = ChunkProcessor(config)
 
     def get_chunks(self, uploaded_files, weblinks):
         return self.chunk_processor.get_chunks(
             self.file_reader, uploaded_files, weblinks
         )
+
+
+if __name__ == "__main__":
+    # read config.yml file
+    import yaml
+    import os
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    with open(os.path.join(BASE_DIR, "../", "config.yml"), "r") as f:
+        config = yaml.safe_load(f)
+
+    # create DataLoader instance
+    chunk_processor = ChunkProcessor(config)
+    file_reader = FileReader(kind=config["llm_params"]["pdf_reader"])
+
+    weblinks = ["https://dl4ds.github.io/sp2024/"]
+
+    uploaded_files = []
+
+    # get document chunks
+    document_chunks, child_document_names, documents, document_metadata = chunk_processor.get_chunks(
+        file_reader, uploaded_files, weblinks
+    )
+
+
+    print(document_chunks)

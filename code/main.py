@@ -120,5 +120,6 @@ async def main(message):
     print(f"answer: {answer}")
 
     answer_with_sources, source_elements = get_sources(res, answer)
+    answer_with_sources = answer_with_sources.replace("\[", "$$").replace("\]", "$$").replace("\(", "$").replace("\)", "$")
 
     await cl.Message(content=answer_with_sources, elements=source_elements).send()
