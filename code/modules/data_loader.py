@@ -14,17 +14,15 @@ from llama_parse import LlamaParse
 from langchain.schema import Document
 import logging
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_experimental.text_splitter import SemanticChunker
-from langchain_openai.embeddings import OpenAIEmbeddings
 from ragatouille import RAGPretrainedModel
 from langchain.chains import LLMChain
 from langchain.llms import OpenAI
 from langchain import PromptTemplate
 
 try:
-    from modules.helpers import get_lecture_metadata
+    from modules.helpers import get_metadata
 except:
-    from helpers import get_lecture_metadata
+    from helpers import get_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +94,14 @@ class FileReader:
         loader = WebBaseLoader(url)
         return loader.load()
 
+    def read_tex_from_url(self, tex_url):
+        response = requests.get(tex_url)
+        if response.status_code == 200:
+            return [Document(page_content=response.text)]
+        else:
+            print("Failed to fetch .tex file from URL:", tex_url)
+            return None
+
 
 class ChunkProcessor:
     def __init__(self, config):
@@ -120,17 +126,6 @@ class ChunkProcessor:
             self.splitter = None
         logger.info("ChunkProcessor instance created")
 
-    # def extract_metadata(self, document_content):
-
-    #     llm = OpenAI()
-    #     prompt_template = PromptTemplate(
-    #         input_variables=["document_content"],
-    #         template="Extract metadata for this document:\n\n{document_content}\n\nMetadata:",
-    #     )
-    #     chain = LLMChain(llm=llm, prompt=prompt_template)
-    #     metadata = chain.run(document_content=document_content)
-    #     return metadata
-
     def remove_delimiters(self, document_chunks: list):
         for chunk in document_chunks:
             for delimiter in self.config["splitter_options"]["delimiters_to_remove"]:
@@ -151,7 +146,12 @@ class ChunkProcessor:
         self, documents, file_type="txt", source="", page=0, metadata={}
     ):
         documents = [Document(page_content=documents, source=source, page=page)]
-        if file_type == "txt":
+        if (
+            file_type == "txt"
+            or file_type == "docx"
+            or file_type == "srt"
+            or file_type == "tex"
+        ):
             document_chunks = self.splitter.split_documents(documents)
         elif file_type == "pdf":
             document_chunks = documents  # Full page for now
@@ -179,58 +179,54 @@ class ChunkProcessor:
         self.documents = []
         self.document_metadata = []
 
-        lecture_metadata = get_lecture_metadata(
+        addl_metadata = get_metadata(
             "https://dl4ds.github.io/sp2024/lectures/",
             "https://dl4ds.github.io/sp2024/schedule/",
-        )  # TODO: Use more efficiently
+        )  # For any additional metadata
 
         for file_index, file_path in enumerate(uploaded_files):
             file_name = os.path.basename(file_path)
-            file_type = file_name.split(".")[-1].lower()
+            if file_name not in self.parent_document_names:
+                file_type = file_name.split(".")[-1].lower()
 
-            # try:
-            if file_type == "pdf":
-                documents = file_reader.read_pdf(file_path)
-            elif file_type == "txt":
-                documents = file_reader.read_txt(file_path)
-            elif file_type == "docx":
-                documents = file_reader.read_docx(file_path)
-            elif file_type == "srt":
-                documents = file_reader.read_srt(file_path)
-            else:
-                logger.warning(f"Unsupported file type: {file_type}")
-                continue
-
-            # full_text = ""
-            # for doc in documents:
-            #     full_text += doc.page_content
-            #     break  # getting only first page for now
-
-            # extracted_metadata = self.extract_metadata(full_text)
-
-            for doc in documents:
-                page_num = doc.metadata.get("page", 0)
-                self.documents.append(doc.page_content)
-                self.document_metadata.append({"source": file_path, "page": page_num})
-                if "lecture" in file_path.lower():
-                    metadata = lecture_metadata.get(file_path, {})
-                    metadata["source_type"] = "lecture"
-                    self.document_metadata[-1].update(metadata)
+                # try:
+                if file_type == "pdf":
+                    documents = file_reader.read_pdf(file_path)
+                elif file_type == "txt":
+                    documents = file_reader.read_txt(file_path)
+                elif file_type == "docx":
+                    documents = file_reader.read_docx(file_path)
+                elif file_type == "srt":
+                    documents = file_reader.read_srt(file_path)
+                elif file_type == "tex":
+                    documents = file_reader.read_tex_from_url(file_path)
                 else:
-                    metadata = {"source_type": "other"}
+                    logger.warning(f"Unsupported file type: {file_type}")
+                    continue
 
-                self.child_document_names.append(f"{file_name}_{page_num}")
-
-                self.parent_document_names.append(file_name)
-                if self.config["embedding_options"]["db_option"] not in ["RAGatouille"]:
-                    document_chunks = self.process_chunks(
-                        self.documents[-1],
-                        file_type,
-                        source=file_path,
-                        page=page_num,
-                        metadata=metadata,
+                for doc in documents:
+                    page_num = doc.metadata.get("page", 0)
+                    self.documents.append(doc.page_content)
+                    self.document_metadata.append(
+                        {"source": file_path, "page": page_num}
                     )
-                    self.document_chunks_full.extend(document_chunks)
+                    metadata = addl_metadata.get(file_path, {})
+                    self.document_metadata[-1].update(metadata)
+
+                    self.child_document_names.append(f"{file_name}_{page_num}")
+
+                    self.parent_document_names.append(file_name)
+                    if self.config["embedding_options"]["db_option"] not in [
+                        "RAGatouille"
+                    ]:
+                        document_chunks = self.process_chunks(
+                            self.documents[-1],
+                            file_type,
+                            source=file_path,
+                            page=page_num,
+                            metadata=metadata,
+                        )
+                        self.document_chunks_full.extend(document_chunks)
 
             # except Exception as e:
             #     logger.error(f"Error processing file {file_name}: {str(e)}")
@@ -252,37 +248,38 @@ class ChunkProcessor:
             logger.info(f"Splitting weblinks: total of {len(weblinks)}")
 
             for link_index, link in enumerate(weblinks):
-                try:
-                    logger.info(f"\tSplitting link {link_index+1} : {link}")
-                    if "youtube" in link:
-                        documents = file_reader.read_youtube_transcript(link)
-                    else:
-                        documents = file_reader.read_html(link)
+                if link not in self.parent_document_names:
+                    try:
+                        logger.info(f"\tSplitting link {link_index+1} : {link}")
+                        if "youtube" in link:
+                            documents = file_reader.read_youtube_transcript(link)
+                        else:
+                            documents = file_reader.read_html(link)
 
-                    for doc in documents:
-                        page_num = doc.metadata.get("page", 0)
-                        self.documents.append(doc.page_content)
-                        self.document_metadata.append(
-                            {"source": link, "page": page_num}
-                        )
-                        self.child_document_names.append(f"{link}")
+                        for doc in documents:
+                            page_num = doc.metadata.get("page", 0)
+                            self.documents.append(doc.page_content)
+                            self.document_metadata.append(
+                                {"source": link, "page": page_num}
+                            )
+                            self.child_document_names.append(f"{link}")
 
-                    self.parent_document_names.append(link)
-                    if self.config["embedding_options"]["db_option"] not in [
-                        "RAGatouille"
-                    ]:
-                        document_chunks = self.process_chunks(
-                            self.documents[-1],
-                            "txt",
-                            source=link,
-                            page=0,
-                            metadata={"source_type": "webpage"},
+                        self.parent_document_names.append(link)
+                        if self.config["embedding_options"]["db_option"] not in [
+                            "RAGatouille"
+                        ]:
+                            document_chunks = self.process_chunks(
+                                self.documents[-1],
+                                "txt",
+                                source=link,
+                                page=0,
+                                metadata={"source_type": "webpage"},
+                            )
+                            self.document_chunks_full.extend(document_chunks)
+                    except Exception as e:
+                        logger.error(
+                            f"Error splitting link {link_index+1} : {link}: {str(e)}"
                         )
-                        self.document_chunks_full.extend(document_chunks)
-                except Exception as e:
-                    logger.error(
-                        f"Error splitting link {link_index+1} : {link}: {str(e)}"
-                    )
 
 
 class DataLoader:

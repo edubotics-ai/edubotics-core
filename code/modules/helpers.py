@@ -1,11 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
-from urllib.parse import urlparse
 import chainlit as cl
 from langchain import PromptTemplate
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse, urljoin, urldefrag
+import asyncio
+import aiohttp
+from aiohttp import ClientSession
+from typing import Dict, Any, List
 
 try:
     from modules.constants import *
@@ -19,82 +23,112 @@ Ref: https://python.plainenglish.io/scraping-the-subpages-on-a-website-ea2d4e3db
 
 class WebpageCrawler:
     def __init__(self):
-        pass
+        self.dict_href_links = {}
 
-    def getdata(self, url):
-        r = requests.get(url)
-        return r.text
+    async def fetch(self, session: ClientSession, url: str) -> str:
+        async with session.get(url) as response:
+            try:
+                return await response.text()
+            except UnicodeDecodeError:
+                return await response.text(encoding="latin1")
 
-    def url_exists(self, url):
+    def url_exists(self, url: str) -> bool:
         try:
             response = requests.head(url)
             return response.status_code == 200
         except requests.ConnectionError:
             return False
 
-    def get_links(self, website_link, base_url=None):
-        if base_url is None:
-            base_url = website_link
-        html_data = self.getdata(website_link)
+    async def get_links(self, session: ClientSession, website_link: str, base_url: str):
+        html_data = await self.fetch(session, website_link)
         soup = BeautifulSoup(html_data, "html.parser")
         list_links = []
         for link in soup.find_all("a", href=True):
+            href = link["href"].strip()
+            full_url = urljoin(base_url, href)
+            normalized_url = self.normalize_url(full_url)  # sections removed
+            if (
+                normalized_url not in self.dict_href_links
+                and self.is_child_url(normalized_url, base_url)
+                and self.url_exists(normalized_url)
+            ):
+                self.dict_href_links[normalized_url] = None
+                list_links.append(normalized_url)
 
-            # clean the link
-            # remove empty spaces
-            link["href"] = link["href"].strip()
-            # Append to list if new link contains original link
-            if str(link["href"]).startswith((str(website_link))):
-                list_links.append(link["href"])
+        return list_links
 
-            # Include all href that do not start with website link but with "/"
-            if str(link["href"]).startswith("/"):
-                if link["href"] not in self.dict_href_links:
-                    print(link["href"])
-                    self.dict_href_links[link["href"]] = None
-                    link_with_www = base_url + link["href"][1:]
-                    if self.url_exists(link_with_www):
-                        print("adjusted link =", link_with_www)
-                        list_links.append(link_with_www)
+    async def get_subpage_links(
+        self, session: ClientSession, urls: list, base_url: str
+    ):
+        tasks = [self.get_links(session, url, base_url) for url in urls]
+        results = await asyncio.gather(*tasks)
+        all_links = [link for sublist in results for link in sublist]
+        return all_links
 
-        # Convert list of links to dictionary and define keys as the links and the values as "Not-checked"
-        dict_links = dict.fromkeys(list_links, "Not-checked")
-        return dict_links
+    async def get_all_pages(self, url: str, base_url: str):
+        async with aiohttp.ClientSession() as session:
+            dict_links = {url: "Not-checked"}
+            counter = None
+            while counter != 0:
+                unchecked_links = [
+                    link
+                    for link, status in dict_links.items()
+                    if status == "Not-checked"
+                ]
+                if not unchecked_links:
+                    break
+                new_links = await self.get_subpage_links(
+                    session, unchecked_links, base_url
+                )
+                for link in unchecked_links:
+                    dict_links[link] = "Checked"
+                    print(f"Checked: {link}")
+                dict_links.update(
+                    {
+                        link: "Not-checked"
+                        for link in new_links
+                        if link not in dict_links
+                    }
+                )
+                counter = len(
+                    [
+                        status
+                        for status in dict_links.values()
+                        if status == "Not-checked"
+                    ]
+                )
 
-    def get_subpage_links(self, l, base_url):
-        for link in tqdm(l):
-            print("checking link:", link)
-            if not link.endswith("/"):
-                l[link] = "Checked"
-                dict_links_subpages = {}
+            checked_urls = [
+                url for url, status in dict_links.items() if status == "Checked"
+            ]
+            return checked_urls
+
+    def is_webpage(self, url: str) -> bool:
+        try:
+            response = requests.head(url, allow_redirects=True)
+            content_type = response.headers.get("Content-Type", "").lower()
+            return "text/html" in content_type
+        except requests.RequestException:
+            return False
+
+    def clean_url_list(self, urls):
+        files, webpages = [], []
+
+        for url in urls:
+            if self.is_webpage(url):
+                webpages.append(url)
             else:
-                # If not crawled through this page start crawling and get links
-                if l[link] == "Not-checked":
-                    dict_links_subpages = self.get_links(link, base_url)
-                    # Change the dictionary value of the link to "Checked"
-                    l[link] = "Checked"
-                else:
-                    # Create an empty dictionary in case every link is checked
-                    dict_links_subpages = {}
-            # Add new dictionary to old dictionary
-            l = {**dict_links_subpages, **l}
-        return l
+                files.append(url)
 
-    def get_all_pages(self, url, base_url):
-        dict_links = {url: "Not-checked"}
-        self.dict_href_links = {}
-        counter, counter2 = None, 0
-        while counter != 0:
-            counter2 += 1
-            dict_links2 = self.get_subpage_links(dict_links, base_url)
-            # Count number of non-values and set counter to 0 if there are no values within the dictionary equal to the string "Not-checked"
-            # https://stackoverflow.com/questions/48371856/count-the-number-of-occurrences-of-a-certain-value-in-a-dictionary-in-python
-            counter = sum(value == "Not-checked" for value in dict_links2.values())
-            dict_links = dict_links2
-        checked_urls = [
-            url for url, status in dict_links.items() if status == "Checked"
-        ]
-        return checked_urls
+        return files, webpages
+
+    def is_child_url(self, url, base_url):
+        return url.startswith(base_url)
+
+    def normalize_url(self, url: str):
+        # Strip the fragment identifier
+        defragged_url, _ = urldefrag(url)
+        return defragged_url
 
 
 def get_urls_from_file(file_path: str):
@@ -183,40 +217,38 @@ def get_sources(res, answer):
 
         name = f"Source {idx + 1} Text\n"
         full_answer += name
-        source_elements.append(cl.Text(name=name, content=source_data["text"]))
+        source_elements.append(
+            cl.Text(name=name, content=source_data["text"], display="side")
+        )
 
         # Add a PDF element if the source is a PDF file
         if source_data["url"].lower().endswith(".pdf"):
             name = f"Source {idx + 1} PDF\n"
             full_answer += name
             pdf_url = f"{source_data['url']}#page={source_data['page']+1}"
-            source_elements.append(cl.Pdf(name=name, url=pdf_url))
+            source_elements.append(cl.Pdf(name=name, url=pdf_url, display="side"))
 
-    # Finally, include lecture metadata for each unique source
-    # displayed_urls = set()
-    # full_answer += "\n**Metadata:**\n"
-    # for url_name, source_data in source_dict.items():
-    #     if source_data["url"] not in displayed_urls:
-    #         full_answer += f"\nSource: {source_data['url']}\n"
-    #         full_answer += f"Type: {source_data['source_type']}\n"
-    #         full_answer += f"TL;DR: {source_data['lecture_tldr']}\n"
-    #         full_answer += f"Lecture Recording: {source_data['lecture_recording']}\n"
-    #         full_answer += f"Suggested Readings: {source_data['suggested_readings']}\n"
-    #         displayed_urls.add(source_data["url"])
     full_answer += "\n**Metadata:**\n"
-    for url_name, source_data in source_dict.items():
-        full_answer += f"\nSource: {source_data['url']}\n"
-        full_answer += f"Page: {source_data['page']}\n"
-        full_answer += f"Type: {source_data['source_type']}\n"
-        full_answer += f"Date: {source_data['date']}\n"
-        full_answer += f"TL;DR: {source_data['lecture_tldr']}\n"
-        full_answer += f"Lecture Recording: {source_data['lecture_recording']}\n"
-        full_answer += f"Suggested Readings: {source_data['suggested_readings']}\n"
+    for idx, (url_name, source_data) in enumerate(source_dict.items()):
+        full_answer += f"\nSource {idx + 1} Metadata:\n"
+        source_elements.append(
+            cl.Text(
+                name=f"Source {idx + 1} Metadata",
+                content=f"Source: {source_data['url']}\n"
+                f"Page: {source_data['page']}\n"
+                f"Type: {source_data['source_type']}\n"
+                f"Date: {source_data['date']}\n"
+                f"TL;DR: {source_data['lecture_tldr']}\n"
+                f"Lecture Recording: {source_data['lecture_recording']}\n"
+                f"Suggested Readings: {source_data['suggested_readings']}\n",
+                display="side",
+            )
+        )
 
     return full_answer, source_elements
 
 
-def get_lecture_metadata(lectures_url, schedule_url):
+def get_metadata(lectures_url, schedule_url):
     """
     Function to get the lecture metadata from the lectures and schedule URLs.
     """

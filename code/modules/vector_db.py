@@ -96,20 +96,16 @@ class VectorDB:
         if self.config["embedding_options"]["expand_urls"]:
             all_urls = []
             for url in urls:
-                base_url = get_base_url(url)
-                all_urls.extend(self.webpage_crawler.get_all_pages(url, base_url))
+                loop = asyncio.get_event_loop()
+                all_urls.extend(
+                    loop.run_until_complete(
+                        self.webpage_crawler.get_all_pages(
+                            url, url
+                        )  # only get child urls, if you want to get all urls, replace the second argument with the base url
+                    )
+                )
             urls = all_urls
         return files, urls
-
-    def clean_url_list(self, urls):
-        # get lecture pdf links
-        lecture_pdfs = [link for link in urls if link.endswith(".pdf")]
-        lecture_pdfs = [link for link in lecture_pdfs if "lecture" in link.lower()]
-        urls = [
-            link for link in urls if link.endswith("/")
-        ]  # only keep links that end with a '/'. Extract Files Seperately
-
-        return urls, lecture_pdfs
 
     def create_embedding_model(self):
         self.logger.info("Creating embedding function")
@@ -158,12 +154,11 @@ class VectorDB:
         data_loader = DataLoader(self.config)
         self.logger.info("Loading data")
         files, urls = self.load_files()
-        urls, lecture_pdfs = self.clean_url_list(urls)
-        files += lecture_pdfs
+        files, webpages = self.webpage_crawler.clean_url_list(urls)
         if "storage/data/urls.txt" in files:
             files.remove("storage/data/urls.txt")
         document_chunks, document_names, documents, document_metadata = (
-            data_loader.get_chunks(files, urls)
+            data_loader.get_chunks(files, webpages)
         )
         self.logger.info("Completed loading data")
         self.initialize_database(
