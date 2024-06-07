@@ -24,8 +24,12 @@ class EmbeddingModelLoader:
             )
         else:
             embedding_model = HuggingFaceEmbeddings(
-                model_name="sentence-transformers/all-MiniLM-L6-v2",
-                model_kwargs={"device": "cpu"},
+                model_name=self.config["embedding_options"]["model"],
+                model_kwargs={
+                    "device": "cpu",
+                    "token": f"{HUGGINGFACE_TOKEN}",
+                    "trust_remote_code": True,
+                },
             )
             # embedding_model = LlamaCppEmbeddings(
             #     model_path=os.path.abspath("storage/llama-7b.ggmlv3.q4_0.bin")

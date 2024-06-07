@@ -38,10 +38,6 @@ logger.addHandler(file_handler)
 @cl.set_chat_profiles
 async def chat_profile():
     return [
-        cl.ChatProfile(
-            name="Llama",
-            markdown_description="Use the local LLM: **Tiny Llama**.",
-        ),
         # cl.ChatProfile(
         #     name="Mistral",
         #     markdown_description="Use the local LLM: **Mistral**.",
@@ -53,6 +49,10 @@ async def chat_profile():
         cl.ChatProfile(
             name="gpt-4",
             markdown_description="Use OpenAI API for **gpt-4**.",
+        ),
+        cl.ChatProfile(
+            name="Llama",
+            markdown_description="Use the local LLM: **Tiny Llama**.",
         ),
     ]
 
@@ -96,7 +96,7 @@ async def start():
     model = config["llm_params"]["local_llm_params"]["model"]
     msg = cl.Message(content=f"Starting the bot {model}...")
     await msg.send()
-    msg.content = f"Hey, What Can I Help You With?\n\nYou can me ask me questions about the course logistics, course content, about the final project, or anything else!"
+    msg.content = opening_message
     await msg.update()
 
     cl.user_session.set("chain", chain)
@@ -118,6 +118,10 @@ async def main(message):
     except:
         answer = res["result"]
     print(f"answer: {answer}")
+
+    logger.info(f"Question: {res['question']}")
+    logger.info(f"History: {res['chat_history']}")
+    logger.info(f"Answer: {answer}\n")
 
     answer_with_sources, source_elements = get_sources(res, answer)
 
