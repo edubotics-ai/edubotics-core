@@ -1,1 +1,21 @@
+name: Push Prototype to HuggingFace
+
+on:
+  push:
+    branches:
+    - prototype_deploy
+    
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Sync with Hugging Face
+      uses: nateraw/huggingface-sync-action@v0.0.4
+      with:
+        github_repo_id: DL4DS/dl4ds_tutor
+        huggingface_repo_id: dl4ds/tutor_dev
+        repo_type: space
+        space_sdk: static
+        hf_token: ${{ secrets.HF_TOKEN }}
 
