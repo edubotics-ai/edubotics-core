@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Sync with Hugging Face
+    - name: Deploy Prototype to HuggingFace
       uses: nateraw/huggingface-sync-action@v0.0.4
       with:
         github_repo_id: DL4DS/dl4ds_tutor
