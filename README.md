@@ -8,7 +8,7 @@ pinned: false
 hf_oauth: true
 ---
 
-DL4DS Tutor
+DL4DS Tutor - DS598
 ===========
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
