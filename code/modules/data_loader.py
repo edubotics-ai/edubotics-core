@@ -20,8 +20,9 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai.embeddings import OpenAIEmbeddings
 from ragatouille import RAGPretrainedModel
 from langchain.chains import LLMChain
-from langchain.llms import OpenAI
-from langchain import PromptTemplate
+from langchain_community.llms import OpenAI
+# from langchain import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 try:
     from modules.helpers import get_lecture_metadata
