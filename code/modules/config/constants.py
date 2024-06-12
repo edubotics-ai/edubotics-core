@@ -6,7 +6,6 @@ load_dotenv()
 # API Keys - Loaded from the .env file
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GPT4o_API_KEY = os.getenv("GPT4o_API_KEY")
 LLAMA_CLOUD_API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
 LITERAL_API_KEY = os.getenv("LITERAL_API_KEY")
