@@ -1,9 +1,9 @@
 name: Push Prototype to HuggingFace
 
 on:
-  push:
+  pull_request:
     branches:
-    - prototype_deploy
+    - dev_branch
     
 
 jobs:
