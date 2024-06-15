@@ -1,5 +1,6 @@
 from modules.vectorstore.faiss import FaissVectorStore
 from modules.vectorstore.chroma import ChromaVectorStore
+from modules.vectorstore.colbert import ColbertVectorStore
 from modules.vectorstore.helpers import *
 from modules.dataloader.webpage_crawler import WebpageCrawler
 from modules.dataloader.data_loader import DataLoader
@@ -94,31 +95,8 @@ class VectorStoreManager:
             self.vector_db = ChromaVectorStore(self.config)
             self.vector_db.create_database(document_chunks, self.embedding_model)
         elif self.db_option == "RAGatouille":
-            self.RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
-            # index_path = self.RAG.index(
-            #     index_name="new_idx",
-            #     collection=documents,
-            #     document_ids=document_names,
-            #     document_metadatas=document_metadata,
-            # )
-            batch_size = 32
-            for i in range(0, len(documents), batch_size):
-                if i == 0:
-                    self.RAG.index(
-                        index_name="new_idx",
-                        collection=documents[i : i + batch_size],
-                        document_ids=document_names[i : i + batch_size],
-                        document_metadatas=document_metadata[i : i + batch_size],
-                    )
-                else:
-                    self.RAG = RAGPretrainedModel.from_index(
-                        ".ragatouille/colbert/indexes/new_idx"
-                    )
-                    self.RAG.add_to_index(
-                        new_collection=documents[i : i + batch_size],
-                        new_document_ids=document_names[i : i + batch_size],
-                        new_document_metadatas=document_metadata[i : i + batch_size],
-                    )
+            self.vector_db = ColbertVectorStore(self.config)
+            self.vector_db.create_database(documents, document_names, document_metadata)
 
     def create_database(self):
         start_time = time.time()  # Start time for creating database
@@ -147,30 +125,6 @@ class VectorStoreManager:
             f"Time taken to create database: {end_time - start_time} seconds"
         )
 
-    # def save_database(self):
-    #     start_time = time.time()  # Start time for saving database
-    #     if self.db_option == "FAISS":
-    #         self.vector_db.save_local(
-    #             os.path.join(
-    #                 self.config["vectorstore"]["db_path"],
-    #                 "db_"
-    #                 + self.config["vectorstore"]["db_option"]
-    #                 + "_"
-    #                 + self.config["vectorstore"]["model"],
-    #             )
-    #         )
-    #     elif self.db_option == "Chroma":
-    #         # db is saved in the persist directory during initialization
-    #         pass
-    #     elif self.db_option == "RAGatouille":
-    #         # index is saved during initialization
-    #         pass
-    #     self.logger.info("Saved database")
-    #     end_time = time.time()  # End time for saving database
-    #     self.logger.info(
-    #         f"Time taken to save database: {end_time - start_time} seconds"
-    #     )
-
     def load_database(self):
         start_time = time.time()  # Start time for loading database
         if self.db_option in ["FAISS", "Chroma"]:
@@ -181,33 +135,9 @@ class VectorStoreManager:
         elif self.db_option == "Chroma":
             self.vector_db = ChromaVectorStore(self.config)
             self.loaded_vector_db = self.vector_db.load_database(self.embedding_model)
-        # if self.db_option == "FAISS":
-        #     self.vector_db = FAISS.load_local(
-        #         os.path.join(
-        #             self.config["vectorstore"]["db_path"],
-        #             "db_"
-        #             + self.config["vectorstore"]["db_option"]
-        #             + "_"
-        #             + self.config["vectorstore"]["model"],
-        #         ),
-        #         self.embedding_model,
-        #         allow_dangerous_deserialization=True,
-        #     )
-        # elif self.db_option == "Chroma":
-        #     self.vector_db = Chroma(
-        #         persist_directory=os.path.join(
-        #             self.config["embedding_options"]["db_path"],
-        #             "db_"
-        #             + self.config["embedding_options"]["db_option"]
-        #             + "_"
-        #             + self.config["embedding_options"]["model"],
-        #         ),
-        #         embedding_function=self.embedding_model,
-        #     )
-        # elif self.db_option == "RAGatouille":
-        #     self.vector_db = RAGPretrainedModel.from_index(
-        #         ".ragatouille/colbert/indexes/new_idx"
-        #     )
+        elif self.db_option == "RAGatouille":
+            self.vector_db = ColbertVectorStore(self.config)
+            self.loaded_vector_db = self.vector_db.load_database()
         end_time = time.time()  # End time for loading database
         self.logger.info(
             f"Time taken to load database: {end_time - start_time} seconds"
