@@ -86,6 +86,8 @@ class VectorStoreManager:
     ):
         if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma"]:
             self.embedding_model = self.create_embedding_model()
+        else:
+            self.embedding_model = None
 
         self.logger.info("Initializing vector_db")
         self.logger.info(
@@ -132,6 +134,8 @@ class VectorStoreManager:
         start_time = time.time()  # Start time for loading database
         if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma"]:
             self.embedding_model = self.create_embedding_model()
+        else:
+            self.embedding_model = None
         self.loaded_vector_db = self.vector_db._load_database(self.embedding_model)
         end_time = time.time()  # End time for loading database
         self.logger.info(
