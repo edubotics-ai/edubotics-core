@@ -6,5 +6,5 @@ class ColbertRetriever(BaseRetriever):
         pass
 
     def return_retriever(self, db, config):
-        retriever = db.as_retriever()
+        retriever = db.as_langchain_retriever(k=config["vectorstore"]["search_top_k"])
         return retriever

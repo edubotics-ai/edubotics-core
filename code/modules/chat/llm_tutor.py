@@ -102,7 +102,7 @@ class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
             # Prepare the final prompt with metadata
             context = "\n\n".join(
                 [
-                    f"Context {idx+1}: \n(Document content: {doc.page_content}\nMetadata: (source_file: {doc.metadata['source']}))"
+                    f"Context {idx+1}: \n(Document content: {doc.page_content}\nMetadata: (source_file: {doc.metadata['source'] if 'source' in doc.metadata else 'unknown'}))"
                     for idx, doc in enumerate(docs)
                 ]
             )

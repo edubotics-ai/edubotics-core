@@ -1,6 +1,7 @@
 from modules.retriever.faiss_retriever import FaissRetriever
 from modules.retriever.chroma_retriever import ChromaRetriever
 from modules.retriever.colbert_retriever import ColbertRetriever
+from modules.retriever.raptor_retriever import RaptorRetriever
 
 
 class Retriever:
@@ -10,6 +11,7 @@ class Retriever:
             "FAISS": FaissRetriever,
             "Chroma": ChromaRetriever,
             "RAGatouille": ColbertRetriever,
+            "RAPTOR": RaptorRetriever,
         }
         self._create_retriever()
 

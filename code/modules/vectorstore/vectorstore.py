@@ -1,6 +1,7 @@
 from modules.vectorstore.faiss import FaissVectorStore
 from modules.vectorstore.chroma import ChromaVectorStore
 from modules.vectorstore.colbert import ColbertVectorStore
+from modules.vectorstore.raptor import RAPTORVectoreStore
 
 
 class VectorStore:
@@ -11,6 +12,7 @@ class VectorStore:
             "FAISS": FaissVectorStore,
             "Chroma": ChromaVectorStore,
             "RAGatouille": ColbertVectorStore,
+            "RAPTOR": RAPTORVectoreStore,
         }
 
     def _create_database(
