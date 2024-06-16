@@ -7,6 +7,11 @@ class VectorStore:
     def __init__(self, config):
         self.config = config
         self.vectorstore = None
+        self.vectorstore_classes = {
+            "FAISS": FaissVectorStore,
+            "Chroma": ChromaVectorStore,
+            "RAGatouille": ColbertVectorStore,
+        }
 
     def _create_database(
         self,
@@ -16,32 +21,32 @@ class VectorStore:
         document_metadata,
         embedding_model,
     ):
-        if self.config["vectorstore"]["db_option"] == "FAISS":
-            self.vectorstore = FaissVectorStore(self.config)
-            self.vectorstore.create_database(document_chunks, embedding_model)
-        elif self.config["vectorstore"]["db_option"] == "Chroma":
-            self.vectorstore = ChromaVectorStore(self.config)
-            self.vectorstore.create_database(document_chunks, embedding_model)
-        elif self.config["vectorstore"]["db_option"] == "RAGatouille":
-            self.vectorstore = ColbertVectorStore(self.config)
+        db_option = self.config["vectorstore"]["db_option"]
+        vectorstore_class = self.vectorstore_classes.get(db_option)
+        if not vectorstore_class:
+            raise ValueError(f"Invalid db_option: {db_option}")
+
+        self.vectorstore = vectorstore_class(self.config)
+
+        if db_option == "RAGatouille":
             self.vectorstore.create_database(
                 documents, document_names, document_metadata
             )
         else:
-            raise ValueError(
-                "Invalid db_option: {}".format(self.config["vectorstore"]["db_option"])
-            )
+            self.vectorstore.create_database(document_chunks, embedding_model)
 
     def _load_database(self, embedding_model):
-        if self.config["vectorstore"]["db_option"] == "FAISS":
-            self.vectorstore = FaissVectorStore(self.config)
-            return self.vectorstore.load_database(embedding_model)
-        elif self.config["vectorstore"]["db_option"] == "Chroma":
-            self.vectorstore = ChromaVectorStore(self.config)
-            return self.vectorstore.load_database(embedding_model)
-        elif self.config["vectorstore"]["db_option"] == "RAGatouille":
-            self.vectorstore = ColbertVectorStore(self.config)
+        db_option = self.config["vectorstore"]["db_option"]
+        vectorstore_class = self.vectorstore_classes.get(db_option)
+        if not vectorstore_class:
+            raise ValueError(f"Invalid db_option: {db_option}")
+
+        self.vectorstore = vectorstore_class(self.config)
+
+        if db_option == "RAGatouille":
             return self.vectorstore.load_database()
+        else:
+            return self.vectorstore.load_database(embedding_model)
 
     def _as_retriever(self):
         return self.vectorstore.as_retriever()
