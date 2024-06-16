@@ -1,6 +1,4 @@
-from modules.vectorstore.faiss import FaissVectorStore
-from modules.vectorstore.chroma import ChromaVectorStore
-from modules.vectorstore.colbert import ColbertVectorStore
+from modules.vectorstore.vectorstore import VectorStore
 from modules.vectorstore.helpers import *
 from modules.dataloader.webpage_crawler import WebpageCrawler
 from modules.dataloader.data_loader import DataLoader
@@ -15,7 +13,6 @@ import asyncio
 class VectorStoreManager:
     def __init__(self, config, logger=None):
         self.config = config
-        self.db_option = config["vectorstore"]["db_option"]
         self.document_names = None
 
         # Set up logging to both console and a file
@@ -47,9 +44,12 @@ class VectorStoreManager:
 
         self.webpage_crawler = WebpageCrawler()
 
+        self.vector_db = VectorStore(self.config)
+
         self.logger.info("VectorDB instance instantiated")
 
     def load_files(self):
+
         files = os.listdir(self.config["vectorstore"]["data_path"])
         files = [
             os.path.join(self.config["vectorstore"]["data_path"], file)
@@ -71,6 +71,7 @@ class VectorStoreManager:
         return files, urls
 
     def create_embedding_model(self):
+
         self.logger.info("Creating embedding function")
         embedding_model_loader = EmbeddingModelLoader(self.config)
         embedding_model = embedding_model_loader.load_embedding_model()
@@ -83,22 +84,23 @@ class VectorStoreManager:
         documents: list,
         document_metadata: list,
     ):
-        if self.db_option in ["FAISS", "Chroma"]:
+        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma"]:
             self.embedding_model = self.create_embedding_model()
 
         self.logger.info("Initializing vector_db")
-        self.logger.info("\tUsing {} as db_option".format(self.db_option))
-        if self.db_option == "FAISS":
-            self.vector_db = FaissVectorStore(self.config)
-            self.vector_db.create_database(document_chunks, self.embedding_model)
-        elif self.db_option == "Chroma":
-            self.vector_db = ChromaVectorStore(self.config)
-            self.vector_db.create_database(document_chunks, self.embedding_model)
-        elif self.db_option == "RAGatouille":
-            self.vector_db = ColbertVectorStore(self.config)
-            self.vector_db.create_database(documents, document_names, document_metadata)
+        self.logger.info(
+            "\tUsing {} as db_option".format(self.config["vectorstore"]["db_option"])
+        )
+        self.vector_db._create_database(
+            document_chunks,
+            document_names,
+            documents,
+            document_metadata,
+            self.embedding_model,
+        )
 
     def create_database(self):
+
         start_time = time.time()  # Start time for creating database
         data_loader = DataLoader(self.config, self.logger)
         self.logger.info("Loading data")
@@ -126,18 +128,11 @@ class VectorStoreManager:
         )
 
     def load_database(self):
+
         start_time = time.time()  # Start time for loading database
-        if self.db_option in ["FAISS", "Chroma"]:
+        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma"]:
             self.embedding_model = self.create_embedding_model()
-        if self.db_option == "FAISS":
-            self.vector_db = FaissVectorStore(self.config)
-            self.loaded_vector_db = self.vector_db.load_database(self.embedding_model)
-        elif self.db_option == "Chroma":
-            self.vector_db = ChromaVectorStore(self.config)
-            self.loaded_vector_db = self.vector_db.load_database(self.embedding_model)
-        elif self.db_option == "RAGatouille":
-            self.vector_db = ColbertVectorStore(self.config)
-            self.loaded_vector_db = self.vector_db.load_database()
+        self.loaded_vector_db = self.vector_db._load_database(self.embedding_model)
         end_time = time.time()  # End time for loading database
         self.logger.info(
             f"Time taken to load database: {end_time - start_time} seconds"

@@ -10,7 +10,7 @@ from modules.chat.helpers import get_prompt
 from modules.chat.chat_model_loader import ChatModelLoader
 from modules.vectorstore.store_manager import VectorStoreManager
 
-from modules.retriever import FaissRetriever, ChromaRetriever
+from modules.retriever import Retriever
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
@@ -159,16 +159,7 @@ class LLMTutor:
     # Retrieval QA Chain
     def retrieval_qa_chain(self, llm, prompt, db):
 
-        if self.config["vectorstore"]["db_option"] == "FAISS":
-            retriever = FaissRetriever().return_retriever(db, self.config)
-
-        elif self.config["vectorstore"]["db_option"] == "Chroma":
-            retriever = ChromaRetriever().return_retriever(db, self.config)
-
-        elif self.config["vectorstore"]["db_option"] == "RAGatouille":
-            retriever = db.as_langchain_retriever(
-                k=self.config["vectorstore"]["search_top_k"]
-            )
+        retriever = Retriever(self.config)._return_retriever(db)
 
         if self.config["llm_params"]["use_history"]:
             memory = ConversationBufferWindowMemory(
