@@ -84,7 +84,7 @@ class VectorStoreManager:
         documents: list,
         document_metadata: list,
     ):
-        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma"]:
+        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma", "RAPTOR"]:
             self.embedding_model = self.create_embedding_model()
         else:
             self.embedding_model = None
@@ -132,7 +132,7 @@ class VectorStoreManager:
     def load_database(self):
 
         start_time = time.time()  # Start time for loading database
-        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma"]:
+        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma", "RAPTOR"]:
             self.embedding_model = self.create_embedding_model()
         else:
             self.embedding_model = None

@@ -1,5 +1,5 @@
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
-from langchain import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
@@ -20,7 +20,7 @@ sys.path.append(current_dir)
 from modules.chat.llm_tutor import LLMTutor
 from modules.config.constants import *
 from modules.chat.helpers import get_sources
-
+from modules.chat_processor.chat_processor import ChatProcessor
 
 global logger
 logger = logging.getLogger(__name__)
@@ -113,7 +113,16 @@ async def start():
     msg.content = opening_message
     await msg.update()
 
+    tags = [chat_profile, config["vectorstore"]["db_option"]]
+    chat_processor = ChatProcessor(config["chat_logging"]["platform"], tags=tags)
     cl.user_session.set("chain", chain)
+    cl.user_session.set("counter", 0)
+    cl.user_session.set("chat_processor", chat_processor)
+
+
+@cl.on_chat_end
+async def on_chat_end():
+    await cl.Message(content="Sorry, I have to go now. Goodbye!").send()
 
 
 @cl.on_message
@@ -121,15 +130,28 @@ async def main(message):
     global logger
     user = cl.user_session.get("user")
     chain = cl.user_session.get("chain")
+
+    counter = cl.user_session.get("counter")
+    counter += 1
+    cl.user_session.set("counter", counter)
+
+    # if counter >= 3:  # Ensure the counter condition is checked
+    #     await cl.Message(content="Your credits are up!").send()
+    #     await on_chat_end()  # Call the on_chat_end function to handle the end of the chat
+    #     return  # Exit the function to stop further processing
+    # else:
+
     cb = cl.AsyncLangchainCallbackHandler()  # TODO: fix streaming here
     cb.answer_reached = True
-    res = await chain.acall(message.content, callbacks=[cb])
-    # res = await chain.acall(message.content)
+
+    processor = cl.user_session.get("chat_processor")
+    res = await processor.rag(message.content, chain, cb)
     try:
         answer = res["answer"]
     except:
         answer = res["result"]
 
-    answer_with_sources, source_elements = get_sources(res, answer)
+    answer_with_sources, source_elements, sources_dict = get_sources(res, answer)
+    processor._process(message.content, answer, sources_dict)
 
     await cl.Message(content=answer_with_sources, elements=source_elements).send()

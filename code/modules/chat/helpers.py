@@ -9,7 +9,7 @@ def get_sources(res, answer):
 
     for idx, source in enumerate(res["source_documents"]):
         source_metadata = source.metadata
-        url = source_metadata["source"]
+        url = source_metadata.get("source", "N/A")
         score = source_metadata.get("score", "N/A")
         page = source_metadata.get("page", 1)
 
@@ -75,7 +75,7 @@ def get_sources(res, answer):
             )
         )
 
-    return full_answer, source_elements
+    return full_answer, source_elements, source_dict
 
 
 def get_prompt(config):

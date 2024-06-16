@@ -77,5 +77,5 @@ Question: {question}
 
 # Model Paths
 
-LLAMA_PATH = "storage/models/tinyllama-1.1b-chat-v1.0.Q5_K_M.gguf"
+LLAMA_PATH = "../storage/models/tinyllama-1.1b-chat-v1.0.Q5_K_M.gguf"
 MISTRAL_PATH = "storage/models/mistral-7b-v0.1.Q4_K_M.gguf"
