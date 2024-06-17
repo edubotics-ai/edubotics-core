@@ -223,8 +223,8 @@ class ChunkProcessor:
         file_metadata = {}
 
         for doc in documents:
-            if len(doc.page_content) <= 400:
-                continue
+            # if len(doc.page_content) <= 400: # better approach to filter out non-informative documents
+            #     continue
 
             page_num = doc.metadata.get("page", 0)
             file_data[page_num] = doc.page_content
