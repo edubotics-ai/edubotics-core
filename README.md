@@ -1,36 +1,61 @@
----
-title: Dl4ds Tutor
-emoji: 🏃
-colorFrom: green
-colorTo: red
-sdk: docker
-pinned: false
-hf_oauth: true
----
+# DL4DS Tutor 🏃
 
-DL4DS Tutor
-===========
+Check out the configuration reference at [Hugging Face Spaces Config Reference](https://huggingface.co/docs/hub/spaces-config-reference).
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+You can find an implementation of the Tutor at [DL4DS Tutor on Hugging Face](https://dl4ds-dl4ds-tutor.hf.space/), which is hosted on Hugging Face [here](https://huggingface.co/spaces/dl4ds/dl4ds_tutor).
 
-You can find an implementation of the Tutor at https://dl4ds-dl4ds-tutor.hf.space/, which is hosted on Hugging Face [here](https://huggingface.co/spaces/dl4ds/dl4ds_tutor)
+## Running Locally
 
-To run locally, 
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/DL4DS/dl4ds_tutor
+   ```
 
-Clone the repository from: https://github.com/DL4DS/dl4ds_tutor    
+2. **Put your data under the `storage/data` directory**
+   - Add URLs in the `urls.txt` file.
+   - Add other PDF files in the `storage/data` directory.
 
-Put your data under the `storage/data` directory. Note: You can add urls in the urls.txt file, and other pdf files in the `storage/data` directory.    
+3. **Create the Vector Database**
+   ```bash
+   cd code
+   python -m modules.vectorstore.store_manager
+   ```
+   - Note: You need to run the above command when you add new data to the `storage/data` directory, or if the `storage/data/urls.txt` file is updated.
+   - Alternatively, you can set `["vectorstore"]["embedd_files"]` to `True` in the `code/modules/config/config.yaml` file, which will embed files from the storage directory every time you run the below chainlit command.
 
-To create the Vector Database, run the following command:   
-```cd code```    
-```python -m modules.vectorstore.store_manager```    
-(Note: You would need to run the above when you add new data to the `storage/data` directory, or if the ``storage/data/urls.txt`` file is updated. Or you can set ``["vectorstore"]["embedd_files"]`` to True in the `code/modules/config/config.yaml` file, which would embed files from the storage directory everytime you run the below chainlit command.)
-
-To run the chainlit app, run the following command:   
-```chainlit run main.py```
+4. **Run the Chainlit App**
+   ```bash
+   chainlit run main.py
+   ```
 
 See the [docs](https://github.com/DL4DS/dl4ds_tutor/tree/main/docs) for more information.
 
-## Contributing
+## File Structure
 
-Please create an issue if you have any suggestions or improvements, and start working on it by creating a branch and by making a pull request to the main branch.
+```plaintext
+code/
+ ├── modules
+ │   ├── chat                # Contains the chatbot implementation
+ │   ├── chat_processor      # Contains the implementation to process and log the conversations
+ │   ├── config              # Contains the configuration files
+ │   ├── dataloader          # Contains the implementation to load the data from the storage directory
+ │   ├── retriever           # Contains the implementation to create the retriever
+ │   └── vectorstore         # Contains the implementation to create the vector database
+ ├── public
+ │   ├── logo_dark.png       # Dark theme logo
+ │   ├── logo_light.png      # Light theme logo
+ │   └── test.css            # Custom CSS file
+ └── main.py
+
+ 
+docs/                        # Contains the documentation to the codebase and methods used
+
+storage/
+ ├── data                    # Store files and URLs here
+ ├── logs                    # Logs directory, includes logs on vector DB creation, tutor logs, and chunks logged in JSON files
+ └── models                  # Local LLMs are loaded from here
+
+vectorstores/                # Stores the created vector databases
+
+.env                         # This needs to be created, store the API keys here
+```
