@@ -345,7 +345,7 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
-    with open("../code/config.yml", "r") as f:
+    with open("../code/modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
 
     data_loader = DataLoader(config, logger=logger)
@@ -355,3 +355,6 @@ if __name__ == "__main__":
             ["https://dl4ds.github.io/sp2024/"],
         )
     )
+
+    print(document_names)
+    print(len(document_chunks))

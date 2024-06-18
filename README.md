@@ -15,7 +15,13 @@ You can find an implementation of the Tutor at [DL4DS Tutor on Hugging Face](htt
    - Add URLs in the `urls.txt` file.
    - Add other PDF files in the `storage/data` directory.
 
-3. **Create the Vector Database**
+3. **To test Data Loading (Optional)**
+   ```bash
+   cd code
+   python -m modules.dataloader.data_loader
+   ```
+
+4. **Create the Vector Database**
    ```bash
    cd code
    python -m modules.vectorstore.store_manager
@@ -23,7 +29,7 @@ You can find an implementation of the Tutor at [DL4DS Tutor on Hugging Face](htt
    - Note: You need to run the above command when you add new data to the `storage/data` directory, or if the `storage/data/urls.txt` file is updated.
    - Alternatively, you can set `["vectorstore"]["embedd_files"]` to `True` in the `code/modules/config/config.yaml` file, which will embed files from the storage directory every time you run the below chainlit command.
 
-4. **Run the Chainlit App**
+5. **Run the Chainlit App**
    ```bash
    chainlit run main.py
    ```

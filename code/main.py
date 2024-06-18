@@ -10,27 +10,20 @@ import yaml
 import logging
 from dotenv import load_dotenv
 
-import os
-import sys
-
-# Add the 'code' directory to the Python path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir)
-
 from modules.chat.llm_tutor import LLMTutor
 from modules.config.constants import *
 from modules.chat.helpers import get_sources
 from modules.chat_processor.chat_processor import ChatProcessor
 
 global logger
+# Initialize logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-logger.propagate = False
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
 # Console Handler
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 

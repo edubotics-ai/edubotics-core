@@ -16,37 +16,36 @@ class VectorStoreManager:
         self.document_names = None
 
         # Set up logging to both console and a file
-        if logger is None:
-            self.logger = logging.getLogger(__name__)
-            self.logger.setLevel(logging.INFO)
-            self.logger.propagate = False
+        self.logger = logger or self._setup_logging()
+        self.webpage_crawler = WebpageCrawler()
+        self.vector_db = VectorStore(self.config)
+
+        self.logger.info("VectorDB instance instantiated")
+
+    def _setup_logging(self):
+        logger = logging.getLogger(__name__)
+        if not logger.hasHandlers():
+            logger.setLevel(logging.INFO)
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
             # Console Handler
             console_handler = logging.StreamHandler()
             console_handler.setLevel(logging.INFO)
-            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
             console_handler.setFormatter(formatter)
-            self.logger.addHandler(console_handler)
+            logger.addHandler(console_handler)
 
             # Ensure log directory exists
             log_directory = self.config["log_dir"]
-            if not os.path.exists(log_directory):
-                os.makedirs(log_directory)
+            os.makedirs(log_directory, exist_ok=True)
 
             # File Handler
-            log_file_path = f"{log_directory}/vector_db.log"  # Change this to your desired log file path
+            log_file_path = os.path.join(log_directory, "vector_db.log")
             file_handler = logging.FileHandler(log_file_path, mode="w")
             file_handler.setLevel(logging.INFO)
             file_handler.setFormatter(formatter)
-            self.logger.addHandler(file_handler)
-        else:
-            self.logger = logger
+            logger.addHandler(file_handler)
 
-        self.webpage_crawler = WebpageCrawler()
-
-        self.vector_db = VectorStore(self.config)
-
-        self.logger.info("VectorDB instance instantiated")
+        return logger
 
     def load_files(self):
 

@@ -10,7 +10,7 @@ from modules.chat.helpers import get_prompt
 from modules.chat.chat_model_loader import ChatModelLoader
 from modules.vectorstore.store_manager import VectorStoreManager
 
-from modules.retriever import Retriever
+from modules.retriever.retriever import Retriever
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
