@@ -65,3 +65,6 @@ vectorstores/                # Stores the created vector databases
 
 .env                         # This needs to be created, store the API keys here
 ```
+- `code/modules/vectorstore/vectorstore.py`: Instantiates the `VectorStore` class to create the vector database.
+- `code/modules/vectorstore/store_manager.py`: Instantiates the `VectorStoreManager:` class to manage the vector database, and all associated methods.
+- `code/modules/retriever/retriever.py`: Instantiates the `Retriever` class to create the retriever.
