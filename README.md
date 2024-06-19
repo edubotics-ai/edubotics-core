@@ -68,3 +68,17 @@ vectorstores/                # Stores the created vector databases
 - `code/modules/vectorstore/vectorstore.py`: Instantiates the `VectorStore` class to create the vector database.
 - `code/modules/vectorstore/store_manager.py`: Instantiates the `VectorStoreManager:` class to manage the vector database, and all associated methods.
 - `code/modules/retriever/retriever.py`: Instantiates the `Retriever` class to create the retriever.
+
+
+## Docker 
+
+The HuggingFace Space is built using the `Dockerfile` in the repository. To run it locally, use the `Dockerfile.dev` file.
+
+```bash
+docker build --tag dev  -f Dockerfile.dev .
+docker run -it --rm -p 8051:8051 dev
+```
+
+## Contributing
+
+Please create an issue if you have any suggestions or improvements, and start working on it by creating a branch and by making a pull request to the main branch.
