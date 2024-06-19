@@ -167,3 +167,5 @@ cython_debug/
 */.chainlit/translations/*
 storage/logs/*
 vectorstores/*
+
+*/.files/*

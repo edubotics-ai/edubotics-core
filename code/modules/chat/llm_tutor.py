@@ -62,13 +62,16 @@ class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
             #     question=question, chat_history=chat_history_str, callbacks=callbacks
             # )
             system = (
-                "You are an AI Tutor helping a student. Your task is to rephrase the student's question to provide more context from their chat history (only if relevant), ensuring the rephrased question still reflects the student's point of view. "
-                "The rephrased question should incorporate relevant details from the chat history to make it clearer and more specific. It should also expand upon the original question to provide more context on only what the student provided."
-                "Always end the rephrased question with the original question in parentheses for reference. "
-                "Do not change the meaning of the question, and keep the tone and perspective as if it were asked by the student. "
-                "Here is the chat history for context: \n{chat_history_str}\n"
-                "Now, rephrase the following question: '{question}'"
+                "You are someone that rephrases statements. Rephrase the student's question to add context from their chat history if relevant, ensuring it remains from the student's point of view. "
+                "Incorporate relevant details from the chat history to make the question clearer and more specific."
+                "Do not change the meaning of the original statement, and maintain the student's tone and perspective. "
+                "If the question is conversational and doesn't require context, do not rephrase it. "
+                "Example: If the student previously asked about backpropagation in the context of deep learning and now asks 'what is it', rephrase to 'What is backprogatation.'. "
+                "Example: Do not rephrase if the user is asking something specific like 'cool, suggest a project with transformers to use as my final project'"
+                "Chat history: \n{chat_history_str}\n"
+                "Rephrase the following question only if necessary: '{question}'"
             )
+
             prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", system),
@@ -91,6 +94,7 @@ class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
             docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
 
         output: Dict[str, Any] = {}
+        output["original_question"] = question
         if self.response_if_no_docs_found is not None and len(docs) == 0:
             output[self.output_key] = self.response_if_no_docs_found
         else:
@@ -107,23 +111,20 @@ class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
                 ]
             )
             final_prompt = (
-                "You are an AI Tutor for the course DS598, taught by Prof. Thomas Gardos. "
-                "Use the following pieces of information to answer the user's question. "
-                "If you don't know the answer, try your best, but don't try to make up an answer. Keep the flow of the conversation going. "
-                "Use the chat history just as a gist to answer the question only if it's relevant; otherwise, ignore it. Do not repeat responses in the history. Use the context as a guide to construct your answer. The context for the answer will be under 'Document context:'. Remember, the conext may include text not directly related to the question."
-                "Make sure to use the source_file field in metadata from each document to provide links to the user to the correct sources. "
-                "The context is ordered by relevance to the question. "
-                "Talk in a friendly and personalized manner, similar to how you would speak to a friend who needs help. Make the conversation engaging and avoid sounding repetitive or robotic.\n\n"
+                "You are an AI Tutor for the course DS598, taught by Prof. Thomas Gardos. Answer the user's question using the provided context. Only use the context if it is relevant. The context is ordered by relevance."
+                "If you don't know the answer, do your best without making things up. Keep the conversation flowing naturally. "
+                "Use chat history and context as guides but avoid repeating past responses. Provide links from the source_file metadata. Use the source context that is most relevent."
+                "Speak in a friendly and engaging manner, like talking to a friend. Avoid sounding repetitive or robotic.\n\n"
                 f"Chat History:\n{chat_history_str}\n\n"
                 f"Context:\n{context}\n\n"
-                f"Student: {new_question}\n"
-                "Anwer the student's question in a friendly, concise, and engaging manner.\n"
+                "Answer the student's question below in a friendly, concise, and engaging manner. Use the context and history only if relevant, otherwise, engage in a free-flowing conversation.\n"
+                f"Student: {question}\n"
                 "AI Tutor:"
             )
 
-            new_inputs["input"] = final_prompt
+            # new_inputs["input"] = final_prompt
             new_inputs["question"] = final_prompt
-            output["final_prompt"] = final_prompt
+            # output["final_prompt"] = final_prompt
 
             answer = await self.combine_docs_chain.arun(
                 input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
@@ -132,8 +133,7 @@ class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
 
         if self.return_source_documents:
             output["source_documents"] = docs
-        if self.return_generated_question:
-            output["generated_question"] = new_question
+        output["rephrased_question"] = new_question
         return output
 
 

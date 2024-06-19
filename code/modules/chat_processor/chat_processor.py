@@ -2,8 +2,9 @@ from modules.chat_processor.literal_ai import LiteralaiChatProcessor
 
 
 class ChatProcessor:
-    def __init__(self, chat_processor_type, tags=None):
-        self.chat_processor_type = chat_processor_type
+    def __init__(self, config, tags=None):
+        self.chat_processor_type = config["chat_logging"]["platform"]
+        self.logging = config["chat_logging"]["log_chat"]
         self.tags = tags
         self._init_processor()
 
@@ -16,10 +17,13 @@ class ChatProcessor:
             )
 
     def _process(self, user_message, assistant_message, source_dict):
-        self.processor.process(user_message, assistant_message, source_dict)
+        if self.logging:
+            return self.processor.process(user_message, assistant_message, source_dict)
+        else:
+            pass
 
     async def rag(self, user_query: str, chain, cb):
-        try:
+        if self.logging:
             return await self.processor.rag(user_query, chain, cb)
-        except:
+        else:
             return await chain.acall(user_query, callbacks=[cb])

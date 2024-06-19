@@ -2,15 +2,32 @@ a[href*='https://github.com/Chainlit/chainlit'] {
     visibility: hidden;
 }
 
-.message-avatar .MuiAvatar-root {
-    background-color: transparent; /* Remove the background color */
-    color: #FFFFFF; /* Change this to your desired text color */
-    border: 0.25px solid #FFFFFF; /* Add a white border for the circle */
-    border-radius: 50%; /* Ensure the avatar remains circular */
-    background-image: url('http://localhost:8051/logo?theme=dark'); /* Path to your logo */
-    background-size: cover; /* Ensure the logo covers the entire avatar */
-    background-position: center; /* Center the logo */
-    background-repeat: no-repeat; /* Prevent the logo from repeating */
-    width: 38px; /* Adjust the width as needed */
-    height: 38px; /* Adjust the height as needed */
+
+/* Target the container of the image and set a custom background image */
+.MuiAvatar-root.MuiAvatar-circular.css-m2icte {
+    background-image: url('/public/avatars/ai-tutor.png'); /* Replace with your custom image URL */
+    background-size: cover; /* Ensure the image covers the entire container */
+    background-position: center; /* Center the image */
+    width: 100px; /* Ensure the dimensions match the original */
+    height: 100px; /* Ensure the dimensions match the original */
+    border-radius: 50%; /* Maintain circular shape */
+}
+
+/* Hide the default image */
+.MuiAvatar-root.MuiAvatar-circular.css-m2icte .MuiAvatar-img.css-1hy9t21 {
+    display: none;
+}
+
+.MuiAvatar-root.MuiAvatar-circular.css-v72an7 {
+    background-image: url('/public/avatars/ai-tutor.png'); /* Replace with your custom image URL */
+    background-size: cover; /* Ensure the image covers the entire container */
+    background-position: center; /* Center the image */
+    width: 40px; /* Ensure the dimensions match the original */
+    height: 40px; /* Ensure the dimensions match the original */
+    border-radius: 50%; /* Maintain circular shape */
+}
+
+/* Hide the default image */
+.MuiAvatar-root.MuiAvatar-circular.css-v72an7 .MuiAvatar-img.css-1hy9t21 {
+    display: none;
 }

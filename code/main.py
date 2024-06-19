@@ -28,6 +28,32 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
+@cl.set_starters
+async def set_starters():
+    return [
+        cl.Starter(
+            label="recording on CNNs?",
+            message="Where can I find the recording for the lecture on Transfromers?",
+            icon="/public/adv-screen-recorder-svgrepo-com.svg",
+        ),
+        cl.Starter(
+            label="where's the slides?",
+            message="When are the lectures? I can't find the schedule.",
+            icon="/public/alarmy-svgrepo-com.svg",
+        ),
+        cl.Starter(
+            label="Due Date?",
+            message="When is the final project due?",
+            icon="/public/calendar-samsung-17-svgrepo-com.svg",
+        ),
+        cl.Starter(
+            label="Explain backprop.",
+            message="I didnt understand the math behind backprop, could you explain it?",
+            icon="/public/acastusphoton-svgrepo-com.svg",
+        ),
+    ]
+
+
 # Adding option to select the chat profile
 @cl.set_chat_profiles
 async def chat_profile():
@@ -101,13 +127,13 @@ async def start():
     llm_tutor = LLMTutor(config, logger=logger)
 
     chain = llm_tutor.qa_bot()
-    msg = cl.Message(content=f"Starting the bot {chat_profile}...")
-    await msg.send()
-    msg.content = opening_message
-    await msg.update()
+    # msg = cl.Message(content=f"Starting the bot {chat_profile}...")
+    # await msg.send()
+    # msg.content = opening_message
+    # await msg.update()
 
     tags = [chat_profile, config["vectorstore"]["db_option"]]
-    chat_processor = ChatProcessor(config["chat_logging"]["platform"], tags=tags)
+    chat_processor = ChatProcessor(config, tags=tags)
     cl.user_session.set("chain", chain)
     cl.user_session.set("counter", 0)
     cl.user_session.set("chat_processor", chat_processor)

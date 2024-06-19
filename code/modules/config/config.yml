@@ -34,7 +34,7 @@ llm_params:
     temperature: 0.7
 
 chat_logging:
-  log_chat: True # bool
+  log_chat: False # bool
   platform: 'literalai'
 
 splitter_options:
