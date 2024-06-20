@@ -1,6 +1,7 @@
 import os
 import bs4
 from urllib.parse import urljoin
+import asyncio
 import requests
 import pysrt
 from langchain_community.document_loaders import (
@@ -11,6 +12,7 @@ from langchain_community.document_loaders import (
     TextLoader,
 )
 import html2text
+import tempfile
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from llama_parse import LlamaParse
 from langchain.schema import Document
@@ -31,7 +33,8 @@ except:
     from constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
 
 logger = logging.getLogger(__name__)
-
+BASE_DIR = os.getcwd()
+STORAGE_DIR = os.path.join(BASE_DIR, "storage", "data")
 
 class PDFReader:
     def __init__(self):
@@ -47,21 +50,86 @@ class PDFReader:
 
 class LlamaParser:
     def __init__(self):
+        self.GPT_API_KEY = OPENAI_API_KEY
+        self.LLAMA_CLOUD_API_KEY = LLAMA_CLOUD_API_KEY
+        self.parse_url = "https://api.cloud.llamaindex.ai/api/parsing/upload"
+        self.headers = {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer llx-vap5Bk2zbYLfqTq2aZDvNHwscvsBPQiSjvLOGkgUa9SS8CWB'
+        }
         self.parser = LlamaParse(
             api_key=LLAMA_CLOUD_API_KEY,
             result_type="markdown",
             verbose=True,
             language="en",
-            gpt4o_mode=True,
-            gpt4o_api_key=OPENAI_API_KEY,
+            gpt4o_mode=False,
+            # gpt4o_api_key=OPENAI_API_KEY,
             parsing_instruction="The provided documents are PDFs of lecture slides of deep learning material. They contain LaTeX equations, images, and text. The goal is to extract the text, images and equations from the slides and convert them to markdown format. The markdown should be clean and easy to read, and any math equation should be converted to LaTeX, between $$. For images, give a description and if you can, a source."
         )
 
     def parse(self, pdf_path):
+        pdf_name = os.path.basename(pdf_path)
+        logger.info(f"Processing PDF: {pdf_name}. Path: {pdf_path}")
+
+        path = os.path.join(STORAGE_DIR, pdf_name)
+        if os.path.exists(path):
+            pdf_path = os.path.join(STORAGE_DIR, path)
+        else:
+            pdf_path = FileReader.download_pdf_from_url(pdf_url=pdf_path)
+
         documents = self.parser.load_data(pdf_path)
         documents = [document.to_langchain_format() for document in documents]
+        print(documents)
+
+        os.remove(pdf_path)
         return documents
 
+    def make_request(self, pdf_url):
+        payload = {
+            "gpt4o_mode": "false",
+            "parsing_instruction": "The provided document is a PDF of lecture slides of deep learning material. They contain LaTeX equations, images, and text. The goal is to extract the text, images and equations from the slides and convert them to markdown format. The markdown should be clean and easy to read, and any math equation should be converted to LaTeX, between $$. For images, give a description and if you can, a source.",
+        }
+
+        files = [
+            ('file', ('file', requests.get(pdf_url).content, 'application/octet-stream'))
+        ]
+
+        response = requests.request(
+            "POST", self.parse_url, headers=self.headers, data=payload, files=files)
+
+        return response.json()['id'], response.json()['status']
+
+    async def get_result(self, job_id):
+        url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}/result/markdown"
+
+        response = requests.request("GET", url, headers=self.headers, data={})
+
+        return response.json()['markdown']
+
+    async def _parse(self, pdf_path):
+        job_id, status = self.make_request(pdf_path)
+        print(f"Job ID: {job_id}", f"Status: {status}")
+
+        while status != "SUCCESS":
+            url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}"
+            response = requests.request("GET", url, headers=self.headers, data={})
+            status = response.json()["status"]
+
+        print(status)
+
+        result = await self.get_result(job_id)
+
+        documents = [
+            Document(
+                page_content=result,
+                metadata={"source": pdf_path}
+            )
+        ]
+
+        return documents
+
+    async def _parse(self, pdf_path):
+        return await self._parse(pdf_path)
 
 class HTMLReader:
     def __init__(self):
@@ -127,7 +195,8 @@ class FileReader:
                 text += page.extract_text()
         return text
 
-    def download_pdf_from_url(self, pdf_url):
+    @staticmethod
+    def download_pdf_from_url(pdf_url):
         response = requests.get(pdf_url)
         if response.status_code == 200:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
@@ -140,6 +209,7 @@ class FileReader:
 
     def read_pdf(self, temp_file_path: str):
         if self.kind == "llama":
+            #documents = asyncio.run(self.pdf_reader.parse(temp_file_path))
             documents = self.pdf_reader.parse(temp_file_path)
         else:
             loader = self.pdf_reader.get_loader(temp_file_path)
