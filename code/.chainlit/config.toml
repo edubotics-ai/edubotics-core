@@ -19,9 +19,6 @@ allow_origins = ["*"]
 # follow_symlink = false
 
 [features]
-# Show the prompt playground
-prompt_playground = true
-
 # Process and display HTML in messages. This can be a security risk (see https://stackoverflow.com/questions/19603097/why-is-it-dangerous-to-render-user-generated-html-or-javascript)
 unsafe_allow_html = false
 
@@ -53,26 +50,20 @@ auto_tag_thread = true
     sample_rate = 44100
 
 [UI]
-# Name of the app and chatbot.
+# Name of the assistant.
 name = "AI Tutor"
 
-# Show the readme while the thread is empty.
-show_readme_as_default = true
-
-# Description of the app and chatbot. This is used for HTML tags.
-# description = "AI Tutor - DS598"
+# Description of the assistant. This is used for HTML tags.
+# description = ""
 
 # Large size content are by default collapsed for a cleaner ui
 default_collapse_content = true
 
-# The default value for the expand messages settings.
-default_expand_messages = false
-
 # Hide the chain of thought details from the user in the UI.
-hide_cot = false
+hide_cot = true
 
 # Link to your github repo. This will add a github button in the UI's header.
-# github = ""
+# github = "https://github.com/DL4DS/dl4ds_tutor"
 
 # Specify a CSS file that can be used to customize the user interface.
 # The CSS file can be served from the public directory or via an external link.
@@ -86,7 +77,7 @@ custom_css = "/public/test.css"
 # custom_font = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
 
 # Specify a custom meta image url.
-# custom_meta_image_url = "https://chainlit-cloud.s3.eu-west-3.amazonaws.com/logo/chainlit_banner.png"
+custom_meta_image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Boston_University_seal.svg/1200px-Boston_University_seal.svg.png"
 
 # Specify a custom build directory for the frontend.
 # This can be used to customize the frontend code.
@@ -94,18 +85,21 @@ custom_css = "/public/test.css"
 # custom_build = "./public/build"
 
 [UI.theme]
+    default = "light"
     #layout = "wide"
     #font_family = "Inter, sans-serif"
 # Override default MUI light theme. (Check theme.ts)
 [UI.theme.light]
-    #background = "#FAFAFA"
-    #paper = "#FFFFFF"
+    background = "#FAFAFA"
+    paper = "#FFFFFF"
 
     [UI.theme.light.primary]
-        #main = "#F80061"
-        #dark = "#980039"
-        #light = "#FFE7EB"
-
+        main = "#b22222"  # Brighter shade of red
+        dark = "#8b0000"  # Darker shade of the brighter red
+        light = "#ff6347"  # Lighter shade of the brighter red
+    [UI.theme.light.text]
+        primary = "#212121"
+        secondary = "#616161"
 # Override default MUI dark theme. (Check theme.ts)
 [UI.theme.dark]
     background = "#1C1C1C" # Slightly lighter dark background color
@@ -118,4 +112,4 @@ custom_css = "/public/test.css"
 
 
 [meta]
-generated_by = "1.1.202"
+generated_by = "1.1.302"

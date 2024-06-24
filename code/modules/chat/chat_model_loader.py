@@ -1,8 +1,7 @@
 from langchain_community.chat_models import ChatOpenAI
-from langchain.llms import CTransformers
-from langchain.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 from transformers import AutoTokenizer, TextStreamer
-from langchain.llms import LlamaCpp
+from langchain_community.llms import LlamaCpp
 import torch
 import transformers
 import os

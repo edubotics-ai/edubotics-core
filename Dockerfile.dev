@@ -10,7 +10,8 @@ RUN pip install --no-cache-dir -r /code/requirements.txt
 
 COPY . /code
 
-RUN ls -R
+# List the contents of the /code directory to verify files are copied correctly
+RUN ls -R /code
 
 # Change permissions to allow writing to the directory
 RUN chmod -R 777 /code
@@ -21,7 +22,10 @@ RUN mkdir /code/logs && chmod 777 /code/logs
 # Create a cache directory within the application's working directory
 RUN mkdir /.cache && chmod -R 777 /.cache
 
+WORKDIR /code/code
+
 # Expose the port the app runs on
 EXPOSE 8051
 
-CMD python code/modules/vector_db.py && chainlit run code/main.py --port 8051
+# Default command to run the application
+CMD ["sh", "-c", "python -m modules.vectorstore.store_manager && chainlit run main.py --host 0.0.0.0 --port 8051"]
