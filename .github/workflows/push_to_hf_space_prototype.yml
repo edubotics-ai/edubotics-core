@@ -1,10 +1,10 @@
 name: Push Prototype to HuggingFace
 
 on:
-  push:
+  pull_request:
     branches:
-    - prototype_deploy
-    
+    - dev_branch
+
 
 jobs:
   build:
@@ -18,4 +18,3 @@ jobs:
         repo_type: space
         space_sdk: static
         hf_token: ${{ secrets.HF_TOKEN }}
-
