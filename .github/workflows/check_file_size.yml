@@ -9,6 +9,9 @@ on:               # or directly `on: [push]` to run the action on every push on 
 jobs:
   sync-to-hub:
     runs-on: ubuntu-latest
+    permissions:
+      # required for ppremk/lfs-warning
+      pull-requests: write
     steps:
       - name: Check large files
         uses: ActionsDesk/lfs-warning@v3.3
