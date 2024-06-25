@@ -6,7 +6,8 @@ class ChatProcessor:
         self.chat_processor_type = config["chat_logging"]["platform"]
         self.logging = config["chat_logging"]["log_chat"]
         self.tags = tags
-        self._init_processor()
+        if self.logging:
+            self._init_processor()
 
     def _init_processor(self):
         if self.chat_processor_type == "literalai":
