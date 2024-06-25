@@ -164,7 +164,7 @@ cython_debug/
 
 .ragatouille/*
 */__pycache__/*
-*/.chainlit/translations/*
+.chainlit/translations/
 storage/logs/*
 vectorstores/*
 
