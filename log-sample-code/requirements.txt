@@ -1,0 +1,2 @@
+literalai==0.0.606
+openai
