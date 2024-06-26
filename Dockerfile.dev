@@ -24,8 +24,8 @@ RUN mkdir /.cache && chmod -R 777 /.cache
 
 WORKDIR /code/code
 
-RUN --mount=type=secret,id=HUGGINGFACEHUB_API_TOKEN,mode=0444,required=true 
-RUN --mount=type=secret,id=OPENAI_API_KEY,mode=0444,required=true 
+# Expose the port the app runs on
+EXPOSE 8051
 
 # Default command to run the application
-CMD ["sh", "-c", "python -m modules.vectorstore.store_manager && chainlit run main.py --host 0.0.0.0 --port 7860"]
+CMD ["sh", "-c", "python -m modules.vectorstore.store_manager && chainlit run main.py --host 0.0.0.0 --port 8051"]

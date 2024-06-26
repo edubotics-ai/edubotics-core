@@ -1,0 +1,33 @@
+a[href*='https://github.com/Chainlit/chainlit'] {
+    visibility: hidden;
+}
+
+
+/* Target the container of the image and set a custom background image */
+.MuiAvatar-root.MuiAvatar-circular.css-m2icte {
+    background-image: url('/public/avatars/ai-tutor.png'); /* Replace with your custom image URL */
+    background-size: cover; /* Ensure the image covers the entire container */
+    background-position: center; /* Center the image */
+    width: 100px; /* Ensure the dimensions match the original */
+    height: 100px; /* Ensure the dimensions match the original */
+    border-radius: 50%; /* Maintain circular shape */
+}
+
+/* Hide the default image */
+.MuiAvatar-root.MuiAvatar-circular.css-m2icte .MuiAvatar-img.css-1hy9t21 {
+    display: none;
+}
+
+.MuiAvatar-root.MuiAvatar-circular.css-v72an7 {
+    background-image: url('/public/avatars/ai-tutor.png'); /* Replace with your custom image URL */
+    background-size: cover; /* Ensure the image covers the entire container */
+    background-position: center; /* Center the image */
+    width: 40px; /* Ensure the dimensions match the original */
+    height: 40px; /* Ensure the dimensions match the original */
+    border-radius: 50%; /* Maintain circular shape */
+}
+
+/* Hide the default image */
+.MuiAvatar-root.MuiAvatar-circular.css-v72an7 .MuiAvatar-img.css-1hy9t21 {
+    display: none;
+}
