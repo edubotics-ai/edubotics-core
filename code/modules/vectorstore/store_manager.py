@@ -143,6 +143,14 @@ class VectorStoreManager:
         self.logger.info("Loaded database")
         return self.loaded_vector_db
 
+    def load_from_HF(self):
+        start_time = time.time()  # Start time for loading database
+        self.vector_db._load_from_HF()
+        end_time = time.time()
+        self.logger.info(
+            f"Time taken to load database from Hugging Face: {end_time - start_time} seconds"
+        )
+
 
 if __name__ == "__main__":
     import yaml
@@ -152,7 +160,10 @@ if __name__ == "__main__":
     print(config)
     print(f"Trying to create database with config: {config}")
     vector_db = VectorStoreManager(config)
-    vector_db.create_database()
+    if config["vectorstore"]["load_from_HF"] and "HF_path" in config["vectorstore"]:
+        vector_db.load_from_HF()
+    else:
+        vector_db.create_database()
     print("Created database")
 
     print(f"Trying to load the database")
