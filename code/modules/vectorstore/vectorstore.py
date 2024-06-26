@@ -57,7 +57,9 @@ class VectorStore:
         # Download the snapshot from Hugging Face Hub
         # Note: Download goes to the cache directory
         snapshot_path = snapshot_download(
-            repo_id=self.config["vectorstore"]["HF_path"], repo_type="dataset"
+            repo_id=self.config["vectorstore"]["HF_path"],
+            repo_type="dataset",
+            force_download=True,
         )
 
         # Move the downloaded files to the desired directory
