@@ -86,3 +86,6 @@ class VectorStore:
 
     def _get_vectorstore(self):
         return self.vectorstore
+
+    def __len__(self):
+        return self.vectorstore.__len__()
