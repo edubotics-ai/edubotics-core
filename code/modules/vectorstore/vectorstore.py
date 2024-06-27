@@ -2,6 +2,9 @@ from modules.vectorstore.faiss import FaissVectorStore
 from modules.vectorstore.chroma import ChromaVectorStore
 from modules.vectorstore.colbert import ColbertVectorStore
 from modules.vectorstore.raptor import RAPTORVectoreStore
+from huggingface_hub import snapshot_download
+import os
+import shutil
 
 
 class VectorStore:
@@ -49,6 +52,34 @@ class VectorStore:
             return self.vectorstore.load_database()
         else:
             return self.vectorstore.load_database(embedding_model)
+
+    def _load_from_HF(self):
+        # Download the snapshot from Hugging Face Hub
+        # Note: Download goes to the cache directory
+        snapshot_path = snapshot_download(
+            repo_id=self.config["vectorstore"]["HF_path"],
+            repo_type="dataset",
+            force_download=True,
+        )
+
+        # Move the downloaded files to the desired directory
+        target_path = os.path.join(
+            self.config["vectorstore"]["db_path"],
+            "db_" + self.config["vectorstore"]["db_option"],
+        )
+
+        # Create target path if it doesn't exist
+        os.makedirs(target_path, exist_ok=True)
+
+        # move all files and directories from snapshot_path to target_path
+        # target path is used while loading the database
+        for item in os.listdir(snapshot_path):
+            s = os.path.join(snapshot_path, item)
+            d = os.path.join(target_path, item)
+            if os.path.isdir(s):
+                shutil.copytree(s, d, dirs_exist_ok=True)
+            else:
+                shutil.copy2(s, d)
 
     def _as_retriever(self):
         return self.vectorstore.as_retriever()
