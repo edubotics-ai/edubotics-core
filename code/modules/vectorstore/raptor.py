@@ -16,6 +16,13 @@ from modules.vectorstore.base import VectorStoreBase
 RANDOM_SEED = 42
 
 
+class FAISS(FAISS):
+    """To add length property to FAISS class"""
+
+    def __len__(self):
+        return self.index.ntotal
+
+
 class RAPTORVectoreStore(VectorStoreBase):
     def __init__(self, config, documents=[], text_splitter=None, embedding_model=None):
         self.documents = documents

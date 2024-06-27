@@ -3,7 +3,7 @@ import chainlit as cl
 from langchain_core.prompts import PromptTemplate
 
 
-def get_sources(res, answer):
+def get_sources(res, answer, view_sources=False):
     source_elements = []
     source_dict = {}  # Dictionary to store URL elements
 
@@ -40,40 +40,42 @@ def get_sources(res, answer):
     full_answer = "**Answer:**\n"
     full_answer += answer
 
-    # Then, display the sources
-    full_answer += "\n\n**Sources:**\n"
-    for idx, (url_name, source_data) in enumerate(source_dict.items()):
-        full_answer += f"\nSource {idx + 1} (Score: {source_data['score']}): {source_data['url']}\n"
+    if view_sources:
 
-        name = f"Source {idx + 1} Text\n"
-        full_answer += name
-        source_elements.append(
-            cl.Text(name=name, content=source_data["text"], display="side")
-        )
+        # Then, display the sources
+        full_answer += "\n\n**Sources:**\n"
+        for idx, (url_name, source_data) in enumerate(source_dict.items()):
+            full_answer += f"\nSource {idx + 1} (Score: {source_data['score']}): {source_data['url']}\n"
 
-        # Add a PDF element if the source is a PDF file
-        if source_data["url"].lower().endswith(".pdf"):
-            name = f"Source {idx + 1} PDF\n"
+            name = f"Source {idx + 1} Text\n"
             full_answer += name
-            pdf_url = f"{source_data['url']}#page={source_data['page']+1}"
-            source_elements.append(cl.Pdf(name=name, url=pdf_url, display="side"))
-
-    full_answer += "\n**Metadata:**\n"
-    for idx, (url_name, source_data) in enumerate(source_dict.items()):
-        full_answer += f"\nSource {idx + 1} Metadata:\n"
-        source_elements.append(
-            cl.Text(
-                name=f"Source {idx + 1} Metadata",
-                content=f"Source: {source_data['url']}\n"
-                f"Page: {source_data['page']}\n"
-                f"Type: {source_data['source_type']}\n"
-                f"Date: {source_data['date']}\n"
-                f"TL;DR: {source_data['lecture_tldr']}\n"
-                f"Lecture Recording: {source_data['lecture_recording']}\n"
-                f"Suggested Readings: {source_data['suggested_readings']}\n",
-                display="side",
+            source_elements.append(
+                cl.Text(name=name, content=source_data["text"], display="side")
             )
-        )
+
+            # Add a PDF element if the source is a PDF file
+            if source_data["url"].lower().endswith(".pdf"):
+                name = f"Source {idx + 1} PDF\n"
+                full_answer += name
+                pdf_url = f"{source_data['url']}#page={source_data['page']+1}"
+                source_elements.append(cl.Pdf(name=name, url=pdf_url, display="side"))
+
+        full_answer += "\n**Metadata:**\n"
+        for idx, (url_name, source_data) in enumerate(source_dict.items()):
+            full_answer += f"\nSource {idx + 1} Metadata:\n"
+            source_elements.append(
+                cl.Text(
+                    name=f"Source {idx + 1} Metadata",
+                    content=f"Source: {source_data['url']}\n"
+                    f"Page: {source_data['page']}\n"
+                    f"Type: {source_data['source_type']}\n"
+                    f"Date: {source_data['date']}\n"
+                    f"TL;DR: {source_data['lecture_tldr']}\n"
+                    f"Lecture Recording: {source_data['lecture_recording']}\n"
+                    f"Suggested Readings: {source_data['suggested_readings']}\n",
+                    display="side",
+                )
+            )
 
     return full_answer, source_elements, source_dict
 

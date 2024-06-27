@@ -157,18 +157,18 @@ class LLMTutor:
         return prompt
 
     # Retrieval QA Chain
-    def retrieval_qa_chain(self, llm, prompt, db):
+    def retrieval_qa_chain(self, llm, prompt, db, memory=None):
 
         retriever = Retriever(self.config)._return_retriever(db)
 
         if self.config["llm_params"]["use_history"]:
-            memory = ConversationBufferWindowMemory(
-                k=self.config["llm_params"]["memory_window"],
-                memory_key="chat_history",
-                return_messages=True,
-                output_key="answer",
-                max_token_limit=128,
-            )
+            if memory is None:
+                memory = ConversationBufferWindowMemory(
+                    k=self.config["llm_params"]["memory_window"],
+                    memory_key="chat_history",
+                    return_messages=True,
+                    output_key="answer",
+                )
             qa_chain = CustomConversationalRetrievalChain.from_llm(
                 llm=llm,
                 chain_type="stuff",
@@ -195,11 +195,16 @@ class LLMTutor:
         return llm
 
     # QA Model Function
-    def qa_bot(self):
+    def qa_bot(self, memory=None):
         db = self.vector_db.load_database()
+        # sanity check to see if there are any documents in the database
+        if len(db) == 0:
+            raise ValueError(
+                "No documents in the database. Populate the database first."
+            )
         qa_prompt = self.set_custom_prompt()
         qa = self.retrieval_qa_chain(
-            self.llm, qa_prompt, db
+            self.llm, qa_prompt, db, memory
         )  # TODO:  PROMPT is overwritten in CustomConversationalRetrievalChain
 
         return qa

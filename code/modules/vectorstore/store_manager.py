@@ -138,7 +138,7 @@ class VectorStoreManager:
         self.loaded_vector_db = self.vector_db._load_database(self.embedding_model)
         end_time = time.time()  # End time for loading database
         self.logger.info(
-            f"Time taken to load database: {end_time - start_time} seconds"
+            f"Time taken to load database {self.config['vectorstore']['db_option']} from Hugging Face: {end_time - start_time} seconds"
         )
         self.logger.info("Loaded database")
         return self.loaded_vector_db
@@ -148,8 +148,12 @@ class VectorStoreManager:
         self.vector_db._load_from_HF()
         end_time = time.time()
         self.logger.info(
-            f"Time taken to load database from Hugging Face: {end_time - start_time} seconds"
+            f"Time taken to Download database {self.config['vectorstore']['db_option']} from Hugging Face: {end_time - start_time} seconds"
         )
+        self.logger.info("Downloaded database")
+
+    def __len__(self):
+        return len(self.vector_db)
 
 
 if __name__ == "__main__":
