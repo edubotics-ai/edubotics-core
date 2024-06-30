@@ -26,7 +26,6 @@ To create the Vector Database, run the following command:
 
 ### Setting Up OAuth
 
-The following steps are from [the official Chainlit Authentication guide](https://docs.chainlit.io/authentication/overview).
 
 On Google Cloud console, on the project drop down, choose "New Project"
 Give it a project name, choose organization and select location.
@@ -49,6 +48,9 @@ https://docs.chainlit.io/authentication/oauth
 Set redirect
 
 Run `chainlit create-secret` to generate secret, save it as CHAINLIT_AUTH_SECRET env variable. 
+
+Then, follow the steps for Google OAuth from [the official Chainlit Authentication guide](https://docs.chainlit.io/authentication/overview).
+
 
 ### Evaluation and Observability using Literal AI 
 
