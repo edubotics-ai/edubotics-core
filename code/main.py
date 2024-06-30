@@ -22,6 +22,7 @@ from fastapi import Depends
 from chainlit.oauth_providers import get_oauth_provider
 from langchain.memory import ConversationBufferMemory
 from chainlit.types import ThreadDict
+import chainlit as cl
 
 # app = FastAPI()
 
@@ -184,13 +185,6 @@ async def on_chat_resume(thread: ThreadDict):
 
 
     cl.user_session.set("memory", memory)
-
-import json
-import chainlit as cl
-
-import chainlit as cl
-
-import chainlit as cl
 
 # @cl.on_message
 # async def main(message: cl.Message):

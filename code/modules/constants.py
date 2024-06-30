@@ -6,6 +6,7 @@ load_dotenv()
 # API Keys - Loaded from the .env file
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+CHAINLIT_AUTH_SECRET = os.getenv("CHAINLIT_AUTH_SECRET")
 
 
 # Prompt Templates

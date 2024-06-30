@@ -119,6 +119,7 @@ class VectorDB:
                 + self.config["embedding_options"]["model"],
             ),
             self.embedding_model,
+            allow_dangerous_deserialization=True
         )
         self.logger.info("Loaded database")
         return self.vector_db
