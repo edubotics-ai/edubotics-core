@@ -26,19 +26,19 @@ To create the Vector Database, run the following command:
 
 ### Setting Up OAuth
 
-Go to console.cloud.google.com/apis
+The following steps are from [the official Chainlit Authentication guide](https://docs.chainlit.io/authentication/overview).
 
-Under APIs & Services
+On Google Cloud console, on the project drop down, choose "New Project"
+Give it a project name, choose organization and select location.
 
-On the project drop down, choose "New Project"
-Give it a project name, choose organization and select location
+Go to [console.cloud.google.com/apis](console.cloud.google.com/apis)
 
-On Enabled APIs  & Services
+Under APIs & Services > Enabled APIs & Services
 
-select "Credentials", then on that screen "+Create Credentials"
-Create the OAuth Consent Screen
-Select Internal
-Fill out minial app name, e-emails.
+Select "Credentials", then on that screen "+ Create Credentials"
+1. Create the OAuth Consent Screen
+2. Select Internal
+3. Fill out minial app name, e-emails.
 
 Select scope
 
@@ -48,10 +48,12 @@ Application Type: Web application
 https://docs.chainlit.io/authentication/oauth
 Set redirect
 
-run `chainlit create-secret`
+Run `chainlit create-secret` to generate secret, save it as CHAINLIT_AUTH_SECRET env variable. 
 
-also need `pip install llama-cpp-python`
+### Evaluation and Observability using Literal AI 
 
+Set up your LiteralAI API key as the LITERAL_API_KEY env variable. 
+  
 ### Start Chainlit
 
 To run the chainlit app, run the following command:   
