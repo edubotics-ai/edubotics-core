@@ -94,11 +94,21 @@ def get_prompt(config, prompt_type):
     llm_loader = llm_params["llm_loader"]
     use_history = llm_params["use_history"]
 
+    print("llm_params: ", llm_params)
+    print("ELI5", llm_params["ELI5"])
+
+    print("\n\n")
+
     if prompt_type == "qa":
         if llm_loader == "openai":
-            return (
-                OPENAI_PROMPT_WITH_HISTORY if use_history else OPENAI_PROMPT_NO_HISTORY
-            )
+            if llm_params["ELI5"]:
+                return ELI5_PROMPT_WITH_HISTORY
+            else:
+                return (
+                    OPENAI_PROMPT_WITH_HISTORY
+                    if use_history
+                    else OPENAI_PROMPT_NO_HISTORY
+                )
         elif (
             llm_loader == "local_llm"
             and llm_params.get("local_llm_params") == "tiny-llama"
