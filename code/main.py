@@ -45,6 +45,11 @@ class Chatbot:
         """From the session `llm_settings`, create new LLMConfig and LLM objects,
         save them in session state."""
 
+        old_config = self.config.copy()  # create a copy of the previous config
+        new_config = (
+            self.config.copy()
+        )  # create the new config as a copy of the previous config
+
         llm_settings = cl.user_session.get("llm_settings", {})
         chat_profile = llm_settings.get("chat_model")
         retriever_method = llm_settings.get("retriever_method")
@@ -54,16 +59,18 @@ class Chatbot:
 
         chain = cl.user_session.get("chain")
         memory = chain.memory
-        self.config["vectorstore"][
+        new_config["vectorstore"][
             "db_option"
         ] = retriever_method  # update the retriever method in the config
-        memory.k = memory_window  # set the memory window
+        new_config["llm_params"][
+            "memory_window"
+        ] = memory_window  # update the memory window in the config
 
-        self.llm_tutor = LLMTutor(self.config)
+        self.llm_tutor.update_llm(new_config)
         self.chain = self.llm_tutor.qa_bot(memory=memory)
 
         tags = [chat_profile, self.config["vectorstore"]["db_option"]]
-        self.chat_processor = ChatProcessor(self.config, tags=tags)
+        self.chat_processor = ChatProcessor(self.llm_tutor, tags=tags)
 
         cl.user_session.set("chain", self.chain)
         cl.user_session.set("llm_tutor", self.llm_tutor)
@@ -103,6 +110,11 @@ class Chatbot:
                 cl.input_widget.Switch(
                     id="view_sources", label="View Sources", initial=False
                 ),
+                # cl.input_widget.TextInput(
+                #     id="vectorstore",
+                #     label="temp",
+                #     initial="None",
+                # ),
             ]
         ).send()  # type: ignore
 
@@ -156,14 +168,14 @@ class Chatbot:
 
     async def chat_profile(self):
         return [
-            # cl.ChatProfile(
-            #     name="gpt-3.5-turbo-1106",
-            #     markdown_description="Use OpenAI API for **gpt-3.5-turbo-1106**.",
-            # ),
-            # cl.ChatProfile(
-            #     name="gpt-4",
-            #     markdown_description="Use OpenAI API for **gpt-4**.",
-            # ),
+            cl.ChatProfile(
+                name="gpt-3.5-turbo-1106",
+                markdown_description="Use OpenAI API for **gpt-3.5-turbo-1106**.",
+            ),
+            cl.ChatProfile(
+                name="gpt-4",
+                markdown_description="Use OpenAI API for **gpt-4**.",
+            ),
             cl.ChatProfile(
                 name="Llama",
                 markdown_description="Use the local LLM: **Tiny Llama**.",
@@ -181,37 +193,44 @@ class Chatbot:
         if chat_profile:
             self._configure_llm(chat_profile)
 
-        self.llm_tutor = LLMTutor(self.config)
+        self.llm_tutor = LLMTutor(
+            self.config, user={"user_id": "abc123", "session_id": "789"}
+        )
         self.chain = self.llm_tutor.qa_bot()
         tags = [chat_profile, self.config["vectorstore"]["db_option"]]
-        self.chat_processor = ChatProcessor(self.config, tags=tags)
+        self.chat_processor = ChatProcessor(self.llm_tutor, tags=tags)
 
         cl.user_session.set("llm_tutor", self.llm_tutor)
         cl.user_session.set("chain", self.chain)
-        cl.user_session.set("counter", 0)
+        cl.user_session.set("counter", 20)
         cl.user_session.set("chat_processor", self.chat_processor)
 
     async def on_chat_end(self):
         await cl.Message(content="Sorry, I have to go now. Goodbye!").send()
 
     async def main(self, message):
-        user = cl.user_session.get("user")
         chain = cl.user_session.get("chain")
         counter = cl.user_session.get("counter")
-        llm_settings = cl.user_session.get("llm_settings")
+        llm_settings = cl.user_session.get("llm_settings", {})
+        view_sources = llm_settings.get("view_sources", False)
+
+        print("HERE")
+        print(llm_settings)
+        print(view_sources)
+        print("\n\n")
 
         counter += 1
         cl.user_session.set("counter", counter)
 
-        cb = cl.AsyncLangchainCallbackHandler()  # TODO: fix streaming here
-        cb.answer_reached = True
-
         processor = cl.user_session.get("chat_processor")
-        res = await processor.rag(message.content, chain, cb)
+        res = await processor.rag(message.content, chain)
+
+        print(res)
+
         answer = res.get("answer", res.get("result"))
 
         answer_with_sources, source_elements, sources_dict = get_sources(
-            res, answer, view_sources=llm_settings.get("view_sources")
+            res, answer, view_sources=view_sources
         )
         processor._process(message.content, answer, sources_dict)
 

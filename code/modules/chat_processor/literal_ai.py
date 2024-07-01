@@ -27,11 +27,11 @@ class LiteralaiChatProcessor(ChatProcessorBase):
                 name="AI_Tutor",
             )
 
-    async def rag(self, user_query: str, chain, cb):
+    async def rag(self, user_query: dict, config: dict, chain):
         with self.literal_client.step(
             type="retrieval", name="RAG", thread_id=self.thread_id
         ) as step:
-            step.input = {"question": user_query}
-            res = await chain.acall(user_query, callbacks=[cb])
+            step.input = {"question": user_query["input"]}
+            res = await chain.invoke(user_query, config)
             step.output = res
         return res
