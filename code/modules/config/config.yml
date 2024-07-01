@@ -28,6 +28,7 @@ vectorstore:
 llm_params: 
   use_history: True # bool
   memory_window: 3 # int
+  ELI5: False # bool
   llm_loader: 'openai' # str [local_llm, openai]
   openai_params:
     model: 'gpt-3.5-turbo-1106' # str [gpt-3.5-turbo-1106, gpt-4]

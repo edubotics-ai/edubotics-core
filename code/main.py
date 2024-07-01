@@ -34,12 +34,6 @@ class Chatbot:
             config = yaml.safe_load(f)
         return config
 
-    async def ask_helper(func, **kwargs):
-        res = await func(**kwargs).send()
-        while not res:
-            res = await func(**kwargs).send()
-        return res
-
     @no_type_check
     async def setup_llm(self) -> None:
         """From the session `llm_settings`, create new LLMConfig and LLM objects,
@@ -54,6 +48,7 @@ class Chatbot:
         chat_profile = llm_settings.get("chat_model")
         retriever_method = llm_settings.get("retriever_method")
         memory_window = llm_settings.get("memory_window")
+        ELI5 = llm_settings.get("ELI5")
 
         self._configure_llm(chat_profile)
 
@@ -65,8 +60,12 @@ class Chatbot:
         new_config["llm_params"][
             "memory_window"
         ] = memory_window  # update the memory window in the config
+        new_config["llm_params"]["ELI5"] = ELI5
 
-        self.llm_tutor.update_llm(new_config)
+        # self.llm_tutor.update_llm(new_config) # TODO: Fi this!!!
+        self.llm_tutor = LLMTutor(
+            self.config, user={"user_id": "abc123", "session_id": "789"}
+        )
         self.chain = self.llm_tutor.qa_bot(memory=memory)
 
         tags = [chat_profile, self.config["vectorstore"]["db_option"]]
@@ -109,6 +108,9 @@ class Chatbot:
                 ),
                 cl.input_widget.Switch(
                     id="view_sources", label="View Sources", initial=False
+                ),
+                cl.input_widget.Switch(
+                    id="ELI5", label="Explain Like I'm 5 (ELI5)", initial=False
                 ),
                 # cl.input_widget.TextInput(
                 #     id="vectorstore",
@@ -189,15 +191,15 @@ class Chatbot:
     async def start(self):
         await self.make_llm_settings_widgets(self.config)
 
-        chat_profile = cl.user_session.get("chat_profile")
-        if chat_profile:
-            self._configure_llm(chat_profile)
+        # chat_profile = cl.user_session.get("chat_profile")
+        # if chat_profile:
+        #     self._configure_llm(chat_profile)
 
         self.llm_tutor = LLMTutor(
             self.config, user={"user_id": "abc123", "session_id": "789"}
         )
         self.chain = self.llm_tutor.qa_bot()
-        tags = [chat_profile, self.config["vectorstore"]["db_option"]]
+        tags = [self.config["vectorstore"]["db_option"]]
         self.chat_processor = ChatProcessor(self.llm_tutor, tags=tags)
 
         cl.user_session.set("llm_tutor", self.llm_tutor)
@@ -213,11 +215,6 @@ class Chatbot:
         counter = cl.user_session.get("counter")
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
-
-        print("HERE")
-        print(llm_settings)
-        print(view_sources)
-        print("\n\n")
 
         counter += 1
         cl.user_session.set("counter", counter)
@@ -255,7 +252,7 @@ chatbot = Chatbot()
 
 # Register functions to Chainlit events
 cl.set_starters(chatbot.set_starters)
-cl.set_chat_profiles(chatbot.chat_profile)
+# cl.set_chat_profiles(chatbot.chat_profile)
 cl.author_rename(chatbot.rename)
 cl.on_chat_start(chatbot.start)
 cl.on_chat_end(chatbot.on_chat_end)

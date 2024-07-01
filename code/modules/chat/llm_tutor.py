@@ -20,6 +20,10 @@ class LLMTutor:
         self.user = user
         self.logger = logger
         self.vector_db = VectorStoreManager(config, logger=self.logger)
+        self.qa_prompt = get_prompt(config, "qa")  # Initialize qa_prompt
+        self.rephrase_prompt = get_prompt(
+            config, "rephrase"
+        )  # Initialize rephrase_prompt
         if self.config["vectorstore"]["embedd_files"]:
             self.vector_db.create_database()
             self.vector_db.save_database()
@@ -44,6 +48,11 @@ class LLMTutor:
             if self.config["vectorstore"]["embedd_files"]:
                 self.vector_db.create_database()
                 self.vector_db.save_database()
+
+        if "ELI5" in changes:
+            self.qa_prompt = get_prompt(
+                self.config, "qa"
+            )  # Update qa_prompt if ELI5 changes
 
     def get_config_changes(self, old_config, new_config):
         """
@@ -79,14 +88,14 @@ class LLMTutor:
         retriever = Retriever(self.config)._return_retriever(db)
 
         if self.config["llm_params"]["use_history"]:
-            qa_chain = CustomConversationalRetrievalChain(
+            self.qa_chain = CustomConversationalRetrievalChain(
                 llm=llm,
                 memory=memory,
                 retriever=retriever,
                 qa_prompt=qa_prompt,
                 rephrase_prompt=rephrase_prompt,
             )
-        return qa_chain
+        return self.qa_chain
 
     def load_llm(self):
         """
@@ -115,6 +124,10 @@ class LLMTutor:
             qa_prompt = get_prompt(self.config, "qa")
         if rephrase_prompt is None:
             rephrase_prompt = get_prompt(self.config, "rephrase")
+
+        print("using qa_prompt: ", qa_prompt)
+        print("\n\n\n")
+        # exit()
         db = self.vector_db.load_database()
         # sanity check to see if there are any documents in the database
         if len(db) == 0:
