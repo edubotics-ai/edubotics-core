@@ -11,12 +11,13 @@ vectorstore:
   expand_urls: True # bool
   db_option : 'FAISS' # str [FAISS, Chroma, RAGatouille, RAPTOR]
   db_path : '../vectorstores' # str
+  db_path : 'vectorstores' # str
   model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
   search_top_k : 3 # int
   score_threshold : 0.2 # float
 
   faiss_params: # Not used as of now
-    index_path: '../vectorstores/faiss.index' # str
+    index_path: 'vectorstores/faiss.index' # str
     index_type: 'Flat' # str [Flat, HNSW, IVF]
     index_dimension: 384 # int
     index_nlist: 100 # int

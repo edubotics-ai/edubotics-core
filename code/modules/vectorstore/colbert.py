@@ -89,6 +89,7 @@ class ColbertVectorStore(VectorStoreBase):
 
     def load_database(self):
         path = os.path.join(
+            os.getcwd(),
             self.config["vectorstore"]["db_path"],
             "db_" + self.config["vectorstore"]["db_option"],
         )
