@@ -2,7 +2,8 @@ from modules.chat.helpers import get_prompt
 from modules.chat.chat_model_loader import ChatModelLoader
 from modules.vectorstore.store_manager import VectorStoreManager
 from modules.retriever.retriever import Retriever
-from modules.chat.langchain.langchain_rag import CustomConversationalRetrievalChain
+from modules.chat.langchain.langchain_rag import Langchain_RAG
+from modules.chat.langgraph.langgraph_rag import Langgraph_RAG
 
 
 class LLMTutor:
@@ -19,7 +20,7 @@ class LLMTutor:
         self.llm = self.load_llm()
         self.user = user
         self.logger = logger
-        self.vector_db = VectorStoreManager(config, logger=self.logger)
+        self.vector_db = VectorStoreManager(config, logger=self.logger).load_database()
         self.qa_prompt = get_prompt(config, "qa")  # Initialize qa_prompt
         self.rephrase_prompt = get_prompt(
             config, "rephrase"
@@ -28,28 +29,31 @@ class LLMTutor:
             self.vector_db.create_database()
             self.vector_db.save_database()
 
-    def update_llm(self, new_config):
+    def update_llm(self, old_config, new_config):
         """
         Update the LLM and VectorStoreManager based on new configuration.
 
         Args:
             new_config (dict): New configuration dictionary.
         """
-        changes = self.get_config_changes(self.config, new_config)
-        self.config = new_config
+        changes = self.get_config_changes(old_config, new_config)
 
-        if "chat_model" in changes:
+        print("\n\n\n")
+        print("Changes: ", changes)
+        print("\n\n\n")
+
+        if "llm_params.llm_loader" in changes:
             self.llm = self.load_llm()  # Reinitialize LLM if chat_model changes
 
-        if "vectorstore" in changes:
+        if "vectorstore.db_option" in changes:
             self.vector_db = VectorStoreManager(
                 self.config, logger=self.logger
-            )  # Reinitialize VectorStoreManager if vectorstore changes
+            ).load_database()  # Reinitialize VectorStoreManager if vectorstore changes
             if self.config["vectorstore"]["embedd_files"]:
                 self.vector_db.create_database()
                 self.vector_db.save_database()
 
-        if "ELI5" in changes:
+        if "llm_params.llm_style" in changes:
             self.qa_prompt = get_prompt(
                 self.config, "qa"
             )  # Update qa_prompt if ELI5 changes
@@ -66,9 +70,21 @@ class LLMTutor:
             dict: Dictionary containing the changes.
         """
         changes = {}
-        for key in new_config:
-            if old_config.get(key) != new_config[key]:
-                changes[key] = (old_config.get(key), new_config[key])
+
+        def compare_dicts(old, new, parent_key=""):
+            for key in new:
+                full_key = f"{parent_key}.{key}" if parent_key else key
+                if isinstance(new[key], dict) and isinstance(old.get(key), dict):
+                    compare_dicts(old.get(key, {}), new[key], full_key)
+                elif old.get(key) != new[key]:
+                    changes[full_key] = (old.get(key), new[key])
+            # Include keys that are in old but not in new
+            for key in old:
+                if key not in new:
+                    full_key = f"{parent_key}.{key}" if parent_key else key
+                    changes[full_key] = (old[key], None)
+
+        compare_dicts(old_config, new_config)
         return changes
 
     def retrieval_qa_chain(self, llm, qa_prompt, rephrase_prompt, db, memory=None):
@@ -87,13 +103,25 @@ class LLMTutor:
         """
         retriever = Retriever(self.config)._return_retriever(db)
 
-        if self.config["llm_params"]["use_history"]:
-            self.qa_chain = CustomConversationalRetrievalChain(
+        if self.config["llm_params"]["llm_arch"] == "langchain":
+            self.qa_chain = Langchain_RAG(
                 llm=llm,
                 memory=memory,
                 retriever=retriever,
                 qa_prompt=qa_prompt,
                 rephrase_prompt=rephrase_prompt,
+            )
+        elif self.config["llm_params"]["llm_arch"] == "langgraph_agentic":
+            self.qa_chain = Langgraph_RAG(
+                llm=llm,
+                memory=memory,
+                retriever=retriever,
+                qa_prompt=qa_prompt,
+                rephrase_prompt=rephrase_prompt,
+            )
+        else:
+            raise ValueError(
+                f"Invalid LLM Architecture: {self.config['llm_params']['llm_arch']}"
             )
         return self.qa_chain
 
@@ -108,7 +136,7 @@ class LLMTutor:
         llm = chat_model_loader.load_chat_model()
         return llm
 
-    def qa_bot(self, memory=None, qa_prompt=None, rephrase_prompt=None):
+    def qa_bot(self, memory=None):
         """
         Create a QA bot instance.
 
@@ -120,34 +148,14 @@ class LLMTutor:
         Returns:
             Chain: The QA bot chain instance.
         """
-        if qa_prompt is None:
-            qa_prompt = get_prompt(self.config, "qa")
-        if rephrase_prompt is None:
-            rephrase_prompt = get_prompt(self.config, "rephrase")
-
-        print("using qa_prompt: ", qa_prompt)
-        print("\n\n\n")
-        # exit()
-        db = self.vector_db.load_database()
         # sanity check to see if there are any documents in the database
-        if len(db) == 0:
+        if len(self.vector_db) == 0:
             raise ValueError(
                 "No documents in the database. Populate the database first."
             )
-        qa = self.retrieval_qa_chain(self.llm, qa_prompt, rephrase_prompt, db, memory)
+
+        qa = self.retrieval_qa_chain(
+            self.llm, self.qa_prompt, self.rephrase_prompt, self.vector_db, memory
+        )
 
         return qa
-
-    def final_result(query):
-        """
-        Get the final result for a given query.
-
-        Args:
-            query (str): The query string.
-
-        Returns:
-            str: The response string.
-        """
-        qa_result = qa_bot()
-        response = qa_result({"query": query})
-        return response

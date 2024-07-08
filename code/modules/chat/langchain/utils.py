@@ -62,38 +62,6 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
         return messages
 
 
-def _get_chat_history(chat_history: List[CHAT_TURN_TYPE], n: int = None) -> str:
-    """
-    Convert chat history to a formatted string.
-
-    Args:
-        chat_history (List[CHAT_TURN_TYPE]): The chat history.
-
-    Returns:
-        str: The formatted chat history.
-    """
-    _ROLE_MAP = {"human": "Student: ", "ai": "AI Tutor: "}
-    buffer = ""
-    if n is not None:
-        # Calculate the number of turns to take (2 turns per pair)
-        turns_to_take = n * 2
-        chat_history = chat_history[-turns_to_take:]
-    for dialogue_turn in chat_history:
-        if isinstance(dialogue_turn, BaseMessage):
-            role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
-            buffer += f"\n{role_prefix}{dialogue_turn.content}"
-        elif isinstance(dialogue_turn, tuple):
-            human = "Student: " + dialogue_turn[0]
-            ai = "AI Tutor: " + dialogue_turn[1]
-            buffer += "\n" + "\n".join([human, ai])
-        else:
-            raise ValueError(
-                f"Unsupported chat history format: {type(dialogue_turn)}."
-                f" Full chat history: {chat_history} "
-            )
-    return buffer
-
-
 class InMemoryHistory(BaseChatMessageHistory, BaseModel):
     """In-memory implementation of chat message history."""
 
