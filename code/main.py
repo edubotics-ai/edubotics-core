@@ -9,6 +9,10 @@ from modules.config.constants import LLAMA_PATH
 from modules.chat.helpers import get_sources
 import copy
 from typing import Optional
+from dotenv import load_dotenv
+
+load_dotenv()
+print(os.environ.get("OAUTH_GOOGLE_CLIENT_ID"))
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System 🖥️"
@@ -92,13 +96,13 @@ class Chatbot:
                     id="chat_model",
                     label="Model Name (Default GPT-3)",
                     values=["local_llm", "gpt-3.5-turbo-1106", "gpt-4"],
-                    initial_index=1,
+                    initial_index=["local_llm", "gpt-3.5-turbo-1106", "gpt-4"].index(config["llm_params"]["llm_loader"]),
                 ),
                 cl.input_widget.Select(
                     id="retriever_method",
                     label="Retriever (Default FAISS)",
                     values=["FAISS", "Chroma", "RAGatouille", "RAPTOR"],
-                    initial_index=0,
+                    initial_index=["FAISS", "Chroma", "RAGatouille", "RAPTOR"].index(config["vectorstore"]["db_option"])
                 ),
                 cl.input_widget.Slider(
                     id="memory_window",
@@ -252,15 +256,17 @@ class Chatbot:
 
         await cl.Message(content=answer_with_sources, elements=source_elements).send()
 
-    def auth_callback(self, username: str, password: str) -> Optional[cl.User]:
-        return cl.User(
-            identifier=username,
-            metadata={"role": "admin", "provider": "credentials"},
-        )
+    def oauth_callback(
+            provider_id: str,
+            token: str,
+            raw_user_data: Dict[str, str],
+            default_user: cl.User,
+    ) -> Optional[cl.User]:
+        return default_user
 
 
 chatbot = Chatbot()
-cl.password_auth_callback(chatbot.auth_callback)
+cl.oauth_callback(chatbot.oauth_callback)
 cl.set_starters(chatbot.set_starters)
 cl.author_rename(chatbot.rename)
 cl.on_chat_start(chatbot.start)
