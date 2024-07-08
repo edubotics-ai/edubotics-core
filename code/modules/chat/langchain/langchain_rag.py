@@ -1,12 +1,14 @@
 from langchain_core.prompts import ChatPromptTemplate
 
 from modules.chat.langchain.utils import *
+from langchain.memory import ChatMessageHistory
+from modules.chat.base import BaseRAG
 
 
-class CustomConversationalRetrievalChain:
+class Langchain_RAG(BaseRAG):
     def __init__(self, llm, memory, retriever, qa_prompt: str, rephrase_prompt: str):
         """
-        Initialize the CustomConversationalRetrievalChain class.
+        Initialize the Langchain_RAG class.
 
         Args:
             llm (LanguageModelLike): The language model instance.
@@ -16,7 +18,7 @@ class CustomConversationalRetrievalChain:
             rephrase_prompt (str): The rephrase prompt string.
         """
         self.llm = llm
-        self.memory = memory
+        self.memory = self.add_history_from_list(memory)
         self.retriever = retriever
         self.qa_prompt = qa_prompt
         self.rephrase_prompt = rephrase_prompt
@@ -30,12 +32,8 @@ class CustomConversationalRetrievalChain:
             "without the chat history. Do NOT answer the question, just "
             "reformulate it if needed and otherwise return it as is."
         )
-        self.contextualize_q_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", contextualize_q_system_prompt),
-                MessagesPlaceholder("chat_history"),
-                ("human", "{input}"),
-            ]
+        self.contextualize_q_prompt = ChatPromptTemplate.from_template(
+            contextualize_q_system_prompt
         )
 
         # History-aware retriever
@@ -53,13 +51,7 @@ class CustomConversationalRetrievalChain:
             "\n\n"
             "{context}"
         )
-        self.qa_prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", qa_system_prompt),
-                MessagesPlaceholder("chat_history"),
-                ("human", "{input}"),
-            ]
-        )
+        self.qa_prompt_template = ChatPromptTemplate.from_template(qa_system_prompt)
 
         # Question-answer chain
         self.question_answer_chain = create_stuff_documents_chain(
@@ -121,6 +113,9 @@ class CustomConversationalRetrievalChain:
         """
         if (user_id, conversation_id) not in self.store:
             self.store[(user_id, conversation_id)] = InMemoryHistory()
+            self.store[(user_id, conversation_id)].add_messages(
+                self.memory.messages
+            )  # add previous messages to the store. Note: the store is in-memory.
         return self.store[(user_id, conversation_id)]
 
     def invoke(self, user_query, config):
@@ -133,5 +128,22 @@ class CustomConversationalRetrievalChain:
         Returns:
             dict: The output variables.
         """
-        print(user_query, config)
-        return self.rag_chain.invoke(user_query, config)
+        res = self.rag_chain.invoke(user_query, config)
+        res["rephrase_prompt"] = self.rephrase_prompt
+        res["qa_prompt"] = self.qa_prompt
+        return res
+
+    def add_history_from_list(self, history_list):
+        """
+        Add messages from a list to the chat history.
+
+        Args:
+            messages (list): The list of messages to add.
+        """
+        history = ChatMessageHistory()
+
+        for idx, message_pairs in enumerate(history_list):
+            history.add_user_message(message_pairs[0])
+            history.add_ai_message(message_pairs[1])
+
+        return history

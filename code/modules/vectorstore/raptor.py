@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 import umap
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from sklearn.mixture import GaussianMixture
 from langchain_community.chat_models import ChatOpenAI

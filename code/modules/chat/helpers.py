@@ -1,7 +1,5 @@
-from modules.config.constants import *
+from modules.config.prompts import prompts
 import chainlit as cl
-from langchain_core.prompts import PromptTemplate
-from langchain_core.prompts import ChatPromptTemplate
 
 
 def get_sources(res, answer, view_sources=False):
@@ -93,38 +91,18 @@ def get_prompt(config, prompt_type):
     llm_params = config["llm_params"]
     llm_loader = llm_params["llm_loader"]
     use_history = llm_params["use_history"]
-
-    print("llm_params: ", llm_params)
-    print("ELI5", llm_params["ELI5"])
-
-    print("\n\n")
+    llm_style = llm_params["llm_style"].lower()
 
     if prompt_type == "qa":
-        if llm_loader == "openai":
-            if llm_params["ELI5"]:
-                return ELI5_PROMPT_WITH_HISTORY
+        if llm_loader == "local_llm":
+            if use_history:
+                return prompts["tiny_llama"]["prompt_with_history"]
             else:
-                return (
-                    OPENAI_PROMPT_WITH_HISTORY
-                    if use_history
-                    else OPENAI_PROMPT_NO_HISTORY
-                )
-        elif (
-            llm_loader == "local_llm"
-            and llm_params.get("local_llm_params") == "tiny-llama"
-        ):
-            return (
-                TINYLLAMA_PROMPT_TEMPLATE_WITH_HISTORY
-                if use_history
-                else TINYLLAMA_PROMPT_TEMPLATE_NO_HISTORY
-            )
+                return prompts["tiny_llama"]["prompt_no_history"]
+        else:
+            if use_history:
+                return prompts["openai"]["prompt_with_history"][llm_style]
+            else:
+                return prompts["openai"]["prompt_no_history"]
     elif prompt_type == "rephrase":
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", OPENAI_REPHRASE_PROMPT),
-                ("human", "{question}, {chat_history}"),
-            ]
-        )
-        return OPENAI_REPHRASE_PROMPT
-
-    return None
+        return prompts["openai"]["rephrase_prompt"]

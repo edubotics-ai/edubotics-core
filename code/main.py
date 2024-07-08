@@ -1,18 +1,14 @@
 import json
-import textwrap
-from typing import Any, Callable, Dict, List, Literal, Optional, no_type_check
-import chainlit as cl
-from chainlit import run_sync
-from chainlit.config import config
 import yaml
 import os
-
+from typing import Any, Dict, no_type_check
+import chainlit as cl
 from modules.chat.llm_tutor import LLMTutor
 from modules.chat_processor.chat_processor import ChatProcessor
 from modules.config.constants import LLAMA_PATH
 from modules.chat.helpers import get_sources
-
-from chainlit.input_widget import Select, Switch, Slider
+import copy
+from typing import Optional
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System 🖥️"
@@ -24,73 +20,79 @@ ERROR = "Error 🚫"
 
 class Chatbot:
     def __init__(self):
-        self.llm_tutor = None
-        self.chain = None
-        self.chat_processor = None
+        """
+        Initialize the Chatbot class.
+        """
         self.config = self._load_config()
 
     def _load_config(self):
+        """
+        Load the configuration from a YAML file.
+        """
         with open("modules/config/config.yml", "r") as f:
-            config = yaml.safe_load(f)
-        return config
+            return yaml.safe_load(f)
 
     @no_type_check
-    async def setup_llm(self) -> None:
-        """From the session `llm_settings`, create new LLMConfig and LLM objects,
-        save them in session state."""
-
-        old_config = self.config.copy()  # create a copy of the previous config
-        new_config = (
-            self.config.copy()
-        )  # create the new config as a copy of the previous config
-
+    async def setup_llm(self):
+        """
+        Set up the LLM with the provided settings. Update the configuration and initialize the LLM tutor.
+        """
         llm_settings = cl.user_session.get("llm_settings", {})
-        chat_profile = llm_settings.get("chat_model")
-        retriever_method = llm_settings.get("retriever_method")
-        memory_window = llm_settings.get("memory_window")
-        ELI5 = llm_settings.get("ELI5")
-
-        self._configure_llm(chat_profile)
+        chat_profile, retriever_method, memory_window, llm_style = (
+            llm_settings.get("chat_model"),
+            llm_settings.get("retriever_method"),
+            llm_settings.get("memory_window"),
+            llm_settings.get("llm_style"),
+        )
 
         chain = cl.user_session.get("chain")
-        memory = chain.memory
-        new_config["vectorstore"][
-            "db_option"
-        ] = retriever_method  # update the retriever method in the config
-        new_config["llm_params"][
-            "memory_window"
-        ] = memory_window  # update the memory window in the config
-        new_config["llm_params"]["ELI5"] = ELI5
+        memory = chain.memory if chain else []
 
-        # self.llm_tutor.update_llm(new_config) # TODO: Fi this!!!
-        self.llm_tutor = LLMTutor(
-            self.config, user={"user_id": "abc123", "session_id": "789"}
-        )
+        old_config = copy.deepcopy(self.config)
+        self.config["vectorstore"]["db_option"] = retriever_method
+        self.config["llm_params"]["memory_window"] = memory_window
+        self.config["llm_params"]["llm_style"] = llm_style
+        self.config["llm_params"]["llm_loader"] = chat_profile
+
+        self.llm_tutor.update_llm(
+            old_config, self.config
+        )  # update only attributes that are changed
         self.chain = self.llm_tutor.qa_bot(memory=memory)
 
         tags = [chat_profile, self.config["vectorstore"]["db_option"]]
-        self.chat_processor = ChatProcessor(self.llm_tutor, tags=tags)
+        self.chat_processor.config = self.config
 
         cl.user_session.set("chain", self.chain)
         cl.user_session.set("llm_tutor", self.llm_tutor)
         cl.user_session.set("chat_processor", self.chat_processor)
 
     @no_type_check
-    async def update_llm(self, new_settings: Dict[str, Any]) -> None:
-        """Update LLMConfig and LLM from settings, and save in session state."""
+    async def update_llm(self, new_settings: Dict[str, Any]):
+        """
+        Update the LLM settings and reinitialize the LLM with the new settings.
+
+        Args:
+            new_settings (Dict[str, Any]): The new settings to update.
+        """
         cl.user_session.set("llm_settings", new_settings)
         await self.inform_llm_settings()
         await self.setup_llm()
 
     async def make_llm_settings_widgets(self, config=None):
+        """
+        Create and send the widgets for LLM settings configuration.
+
+        Args:
+            config: The configuration to use for setting up the widgets.
+        """
         config = config or self.config
         await cl.ChatSettings(
             [
                 cl.input_widget.Select(
                     id="chat_model",
                     label="Model Name (Default GPT-3)",
-                    values=["llama", "gpt-3.5-turbo-1106", "gpt-4"],
-                    initial_index=0,
+                    values=["local_llm", "gpt-3.5-turbo-1106", "gpt-4"],
+                    initial_index=1,
                 ),
                 cl.input_widget.Select(
                     id="retriever_method",
@@ -109,28 +111,33 @@ class Chatbot:
                 cl.input_widget.Switch(
                     id="view_sources", label="View Sources", initial=False
                 ),
-                cl.input_widget.Switch(
-                    id="ELI5", label="Explain Like I'm 5 (ELI5)", initial=False
+                cl.input_widget.Select(
+                    id="llm_style",
+                    label="Type of Conversation (Default Normal)",
+                    values=["Normal", "ELI5", "Socratic"],
+                    initial_index=0,
                 ),
-                # cl.input_widget.TextInput(
-                #     id="vectorstore",
-                #     label="temp",
-                #     initial="None",
-                # ),
             ]
-        ).send()  # type: ignore
+        ).send()
 
     @no_type_check
-    async def inform_llm_settings(self) -> None:
+    async def inform_llm_settings(self):
+        """
+        Inform the user about the updated LLM settings and display them as a message.
+        """
         llm_settings: Dict[str, Any] = cl.user_session.get("llm_settings", {})
         llm_tutor = cl.user_session.get("llm_tutor")
-        settings_dict = dict(
-            model=llm_settings.get("chat_model"),
-            retriever=llm_settings.get("retriever_method"),
-            memory_window=llm_settings.get("memory_window"),
-            num_docs_in_db=len(llm_tutor.vector_db),
-            view_sources=llm_settings.get("view_sources"),
-        )
+        settings_dict = {
+            "model": llm_settings.get("chat_model"),
+            "retriever": llm_settings.get("retriever_method"),
+            "memory_window": llm_settings.get("memory_window"),
+            "num_docs_in_db": (
+                len(llm_tutor.vector_db)
+                if llm_tutor and hasattr(llm_tutor, "vector_db")
+                else 0
+            ),
+            "view_sources": llm_settings.get("view_sources"),
+        }
         await cl.Message(
             author=SYSTEM,
             content="LLM settings have been updated. You can continue with your Query!",
@@ -140,11 +147,14 @@ class Chatbot:
                     display="side",
                     content=json.dumps(settings_dict, indent=4),
                     language="json",
-                )
+                ),
             ],
         ).send()
 
     async def set_starters(self):
+        """
+        Set starter messages for the chatbot.
+        """
         return [
             cl.Starter(
                 label="recording on CNNs?",
@@ -168,64 +178,73 @@ class Chatbot:
             ),
         ]
 
-    async def chat_profile(self):
-        return [
-            cl.ChatProfile(
-                name="gpt-3.5-turbo-1106",
-                markdown_description="Use OpenAI API for **gpt-3.5-turbo-1106**.",
-            ),
-            cl.ChatProfile(
-                name="gpt-4",
-                markdown_description="Use OpenAI API for **gpt-4**.",
-            ),
-            cl.ChatProfile(
-                name="Llama",
-                markdown_description="Use the local LLM: **Tiny Llama**.",
-            ),
-        ]
-
     def rename(self, orig_author: str):
+        """
+        Rename the original author to a more user-friendly name.
+
+        Args:
+            orig_author (str): The original author's name.
+
+        Returns:
+            str: The renamed author.
+        """
         rename_dict = {"Chatbot": "AI Tutor"}
         return rename_dict.get(orig_author, orig_author)
 
     async def start(self):
+        """
+        Start the chatbot, initialize settings widgets,
+        and display and load previous conversation if chat logging is enabled.
+        """
+        await cl.Message(content="Welcome back! Setting up your session...").send()
+
         await self.make_llm_settings_widgets(self.config)
-
-        # chat_profile = cl.user_session.get("chat_profile")
-        # if chat_profile:
-        #     self._configure_llm(chat_profile)
-
-        self.llm_tutor = LLMTutor(
-            self.config, user={"user_id": "abc123", "session_id": "789"}
-        )
-        self.chain = self.llm_tutor.qa_bot()
-        tags = [self.config["vectorstore"]["db_option"]]
-        self.chat_processor = ChatProcessor(self.llm_tutor, tags=tags)
-
+        user = cl.user_session.get("user")
+        self.user = {
+            "user_id": user.identifier,
+            "session_id": "1234",
+        }
+        cl.user_session.set("user", self.user)
+        self.chat_processor = ChatProcessor(self.config, self.user)
+        self.llm_tutor = LLMTutor(self.config, user=self.user)
+        if self.config["chat_logging"]["log_chat"]:
+            # get previous conversation of the user
+            memory = self.chat_processor.processor.prev_conv
+            if len(self.chat_processor.processor.prev_conv) > 0:
+                for idx, conv in enumerate(self.chat_processor.processor.prev_conv):
+                    await cl.Message(
+                        author="User", content=conv[0], type="user_message"
+                    ).send()
+                    await cl.Message(author="AI Tutor", content=conv[1]).send()
+        else:
+            memory = []
+        self.chain = self.llm_tutor.qa_bot(memory=memory)
         cl.user_session.set("llm_tutor", self.llm_tutor)
         cl.user_session.set("chain", self.chain)
-        cl.user_session.set("counter", 20)
         cl.user_session.set("chat_processor", self.chat_processor)
 
     async def on_chat_end(self):
+        """
+        Handle the end of the chat session by sending a goodbye message.
+        # TODO: Not used as of now - useful when the implementation for the conversation limiting is implemented
+        """
         await cl.Message(content="Sorry, I have to go now. Goodbye!").send()
 
     async def main(self, message):
+        """
+        Process and Display the Conversation.
+
+        Args:
+            message: The incoming chat message.
+        """
         chain = cl.user_session.get("chain")
-        counter = cl.user_session.get("counter")
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
-
-        counter += 1
-        cl.user_session.set("counter", counter)
 
         processor = cl.user_session.get("chat_processor")
         res = await processor.rag(message.content, chain)
 
-        print(res)
-
         answer = res.get("answer", res.get("result"))
-
         answer_with_sources, source_elements, sources_dict = get_sources(
             res, answer, view_sources=view_sources
         )
@@ -233,26 +252,16 @@ class Chatbot:
 
         await cl.Message(content=answer_with_sources, elements=source_elements).send()
 
-    def _configure_llm(self, chat_profile):
-        chat_profile = chat_profile.lower()
-        if chat_profile in ["gpt-3.5-turbo-1106", "gpt-4"]:
-            self.config["llm_params"]["llm_loader"] = "openai"
-            self.config["llm_params"]["openai_params"]["model"] = chat_profile
-        elif chat_profile == "llama":
-            self.config["llm_params"]["llm_loader"] = "local_llm"
-            self.config["llm_params"]["local_llm_params"]["model"] = LLAMA_PATH
-            self.config["llm_params"]["local_llm_params"]["model_type"] = "llama"
-        elif chat_profile == "mistral":
-            self.config["llm_params"]["llm_loader"] = "local_llm"
-            self.config["llm_params"]["local_llm_params"]["model"] = MISTRAL_PATH
-            self.config["llm_params"]["local_llm_params"]["model_type"] = "mistral"
+    def auth_callback(self, username: str, password: str) -> Optional[cl.User]:
+        return cl.User(
+            identifier=username,
+            metadata={"role": "admin", "provider": "credentials"},
+        )
 
 
 chatbot = Chatbot()
-
-# Register functions to Chainlit events
+cl.password_auth_callback(chatbot.auth_callback)
 cl.set_starters(chatbot.set_starters)
-# cl.set_chat_profiles(chatbot.chat_profile)
 cl.author_rename(chatbot.rename)
 cl.on_chat_start(chatbot.start)
 cl.on_chat_end(chatbot.on_chat_end)
