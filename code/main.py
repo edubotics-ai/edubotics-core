@@ -114,6 +114,9 @@ class Chatbot:
                 cl.input_widget.Switch(
                     id="view_sources", label="View Sources", initial=False
                 ),
+                cl.input_widget.Switch(
+                    id="stream_response", label="Stream response", initial=True
+                ),
                 cl.input_widget.Select(
                     id="llm_style",
                     label="Type of Conversation (Default Normal)",
@@ -233,6 +236,28 @@ class Chatbot:
         """
         await cl.Message(content="Sorry, I have to go now. Goodbye!").send()
 
+    async def stream_response(self, response):
+        """
+        Stream the response from the LLM.
+
+        Args:
+            response: The response from the LLM.
+        """
+        msg = cl.Message(content="")
+        await msg.send()
+
+        output = {}
+        for chunk in response:
+            if 'answer' in chunk:
+                await msg.stream_token(chunk['answer'])
+
+            for key in chunk:
+                if key not in output:
+                    output[key] = chunk[key]
+                else:
+                    output[key] += chunk[key]
+        return output
+
     async def main(self, message):
         """
         Process and Display the Conversation.
@@ -243,29 +268,20 @@ class Chatbot:
         chain = cl.user_session.get("chain")
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
+        stream = (llm_settings.get("stream_response", True)) or (not self.config["llm_params"]["stream"])
+        print("Streaming", stream)
 
         processor = cl.user_session.get("chat_processor")
-        res = await processor.rag(message.content, chain)
+        res = await processor.rag(message.content, chain, stream)
 
-        # TODO: STREAM MESSAGE
-        msg = cl.Message(content="")
-        await msg.send()
+        if stream:
+            res = await self.stream_response(res)
 
-        output = {}
-        for chunk in res:
-            if 'answer' in chunk:
-                await msg.stream_token(chunk['answer'])
-
-            for key in chunk:
-                if key not in output:
-                    output[key] = chunk[key]
-                else:
-                    output[key] += chunk[key]
-
-        answer = output.get("answer", output.get("result"))
+        print(res)
+        answer = res.get("answer", res.get("result"))
 
         answer_with_sources, source_elements, sources_dict = get_sources(
-            output, answer, view_sources=view_sources
+            res, answer, stream=stream, view_sources=view_sources
         )
         processor._process(message.content, answer, sources_dict)
 
