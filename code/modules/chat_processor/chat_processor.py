@@ -33,7 +33,7 @@ class ChatProcessor:
         else:
             pass
 
-    async def rag(self, user_query: str, chain):
+    async def rag(self, user_query: str, chain, stream):
         user_query_dict = {"input": user_query}
         # Define the base configuration
         config = {
@@ -50,4 +50,6 @@ class ChatProcessor:
                 user_query=user_query_dict, config=config, chain=chain
             )
         else:
-            return chain.stream(user_query=user_query_dict, config=config)
+            if stream:
+                return chain.stream(user_query=user_query_dict, config=config)
+            return chain.invoke(user_query=user_query_dict, config=config)

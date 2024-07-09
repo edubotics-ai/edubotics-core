@@ -2,7 +2,7 @@ from modules.config.prompts import prompts
 import chainlit as cl
 
 
-def get_sources(res, answer, view_sources=False):
+def get_sources(res, answer, stream=True, view_sources=False):
     source_elements = []
     source_dict = {}  # Dictionary to store URL elements
 
@@ -35,10 +35,11 @@ def get_sources(res, answer, view_sources=False):
         else:
             source_dict[url_name]["text"] += f"\n\n{source.page_content}"
 
-    # First, display the answer
-    #full_answer = "**Answer:**\n"
-    #full_answer += answer
-    full_answer = ""  # Not to include the answer again
+    full_answer = ""  # Not to include the answer again if streaming
+
+    if not stream:  # First, display the answer if not streaming
+        full_answer = "**Answer:**\n"
+        full_answer += answer
 
     if view_sources:
 
