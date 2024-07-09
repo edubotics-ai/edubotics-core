@@ -12,7 +12,6 @@ from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv()
-print(os.environ.get("OAUTH_GOOGLE_CLIENT_ID"))
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System 🖥️"
@@ -248,25 +247,38 @@ class Chatbot:
         processor = cl.user_session.get("chat_processor")
         res = await processor.rag(message.content, chain)
 
-        answer = res.get("answer", res.get("result"))
+        # TODO: STREAM MESSAGE
+        msg = cl.Message(content="")
+        await msg.send()
+
+        output = {}
+        for chunk in res:
+            if 'answer' in chunk:
+                await msg.stream_token(chunk['answer'])
+
+            for key in chunk:
+                if key not in output:
+                    output[key] = chunk[key]
+                else:
+                    output[key] += chunk[key]
+
+        answer = output.get("answer", output.get("result"))
+
         answer_with_sources, source_elements, sources_dict = get_sources(
-            res, answer, view_sources=view_sources
+            output, answer, view_sources=view_sources
         )
         processor._process(message.content, answer, sources_dict)
 
         await cl.Message(content=answer_with_sources, elements=source_elements).send()
 
-    def oauth_callback(
-            provider_id: str,
-            token: str,
-            raw_user_data: Dict[str, str],
-            default_user: cl.User,
-    ) -> Optional[cl.User]:
-        return default_user
-
+    def auth_callback(self, username: str, password: str) -> Optional[cl.User]:
+            return cl.User(
+                identifier=username,
+                metadata={"role": "admin", "provider": "credentials"},
+            )
 
 chatbot = Chatbot()
-cl.oauth_callback(chatbot.oauth_callback)
+cl.password_auth_callback(chatbot.auth_callback)
 cl.set_starters(chatbot.set_starters)
 cl.author_rename(chatbot.rename)
 cl.on_chat_start(chatbot.start)

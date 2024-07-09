@@ -133,6 +133,10 @@ class Langchain_RAG(BaseRAG):
         res["qa_prompt"] = self.qa_prompt
         return res
 
+    def stream(self, user_query, config):
+        res = self.rag_chain.stream(user_query, config)
+        return res
+
     def add_history_from_list(self, history_list):
         """
         Add messages from a list to the chat history.
