@@ -50,4 +50,4 @@ class ChatProcessor:
                 user_query=user_query_dict, config=config, chain=chain
             )
         else:
-            return chain.invoke(user_query=user_query_dict, config=config)
+            return chain.stream(user_query=user_query_dict, config=config)

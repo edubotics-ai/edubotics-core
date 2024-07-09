@@ -36,8 +36,9 @@ def get_sources(res, answer, view_sources=False):
             source_dict[url_name]["text"] += f"\n\n{source.page_content}"
 
     # First, display the answer
-    full_answer = "**Answer:**\n"
-    full_answer += answer
+    #full_answer = "**Answer:**\n"
+    #full_answer += answer
+    full_answer = ""  # Not to include the answer again
 
     if view_sources:
 
