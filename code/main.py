@@ -269,7 +269,6 @@ class Chatbot:
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
         stream = (llm_settings.get("stream_response", True)) or (not self.config["llm_params"]["stream"])
-        print("Streaming", stream)
 
         processor = cl.user_session.get("chat_processor")
         res = await processor.rag(message.content, chain, stream)
@@ -277,7 +276,6 @@ class Chatbot:
         if stream:
             res = await self.stream_response(res)
 
-        print(res)
         answer = res.get("answer", res.get("result"))
 
         answer_with_sources, source_elements, sources_dict = get_sources(
