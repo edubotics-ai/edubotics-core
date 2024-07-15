@@ -9,9 +9,6 @@ from modules.config.constants import LLAMA_PATH
 from modules.chat.helpers import get_sources
 import copy
 from typing import Optional
-from dotenv import load_dotenv
-
-load_dotenv()
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System 🖥️"
@@ -285,14 +282,16 @@ class Chatbot:
 
         await cl.Message(content=answer_with_sources, elements=source_elements).send()
 
-    def auth_callback(self, username: str, password: str) -> Optional[cl.User]:
-            return cl.User(
-                identifier=username,
-                metadata={"role": "admin", "provider": "credentials"},
-            )
+    @cl.oauth_callback
+    def auth_callback(
+            provider_id: str,
+            token: str,
+            raw_user_data: Dict[str, str],
+            default_user: cl.User,
+    ) -> Optional[cl.User]:
+        return default_user
 
 chatbot = Chatbot()
-cl.password_auth_callback(chatbot.auth_callback)
 cl.set_starters(chatbot.set_starters)
 cl.author_rename(chatbot.rename)
 cl.on_chat_start(chatbot.start)
