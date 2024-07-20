@@ -20,9 +20,23 @@ from langchain_community.llms import OpenAI
 from langchain import PromptTemplate
 import json
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urljoin
+import html2text
+import bs4
+import tempfile
+import PyPDF2
 
-from modules.dataloader.helpers import get_metadata
+try:
+    from modules.dataloader.helpers import get_metadata
+    from modules.config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
 
+
+except:
+    from dataloader.helpers import get_metadata
+    from config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
+
+logger = logging.getLogger(__name__)
+BASE_DIR = os.getcwd()
 
 class PDFReader:
     def __init__(self):
@@ -35,11 +49,134 @@ class PDFReader:
     def get_documents(self, loader):
         return loader.load()
 
+class LlamaParser:
+    def __init__(self):
+        self.GPT_API_KEY = OPENAI_API_KEY
+        self.LLAMA_CLOUD_API_KEY = LLAMA_CLOUD_API_KEY
+        print(f"LLAMA_CLOUD_API_KEY: {LLAMA_CLOUD_API_KEY}")
+        self.parse_url = "https://api.cloud.llamaindex.ai/api/parsing/upload"
+        self.headers = {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer llx-vap5Bk2zbYLfqTq2aZDvNHwscvsBPQiSjvLOGkgUa9SS8CWB'
+        }
+        self.parser = LlamaParse(
+            api_key=LLAMA_CLOUD_API_KEY,
+            result_type="markdown",
+            verbose=True,
+            language="en",
+            gpt4o_mode=False,
+            # gpt4o_api_key=OPENAI_API_KEY,
+            parsing_instruction="The provided documents are PDFs of lecture slides of deep learning material. They contain LaTeX equations, images, and text. The goal is to extract the text, images and equations from the slides and convert them to markdown format. The markdown should be clean and easy to read, and any math equation should be converted to LaTeX, between $$. For images, give a description and if you can, a source."
+        )
+
+    def parse(self, pdf_path):
+        pdf_name = os.path.basename(pdf_path)
+
+        documents = self.parser.load_data(pdf_path)
+        documents = [document.to_langchain_format() for document in documents]
+
+        os.remove(pdf_path) # cleanup, just in case
+        return documents
+
+    def make_request(self, pdf_url):
+        payload = {
+            "gpt4o_mode": "false",
+            "parsing_instruction": "The provided document is a PDF of lecture slides of deep learning material. They contain LaTeX equations, images, and text. The goal is to extract the text, images and equations from the slides and convert them to markdown format. The markdown should be clean and easy to read, and any math equation should be converted to LaTeX, between $$. For images, give a description and if you can, a source.",
+        }
+
+        files = [
+            ('file', ('file', requests.get(pdf_url).content, 'application/octet-stream'))
+        ]
+
+        response = requests.request(
+            "POST", self.parse_url, headers=self.headers, data=payload, files=files)
+
+        return response.json()['id'], response.json()['status']
+
+    async def get_result(self, job_id):
+        url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}/result/markdown"
+
+        response = requests.request("GET", url, headers=self.headers, data={})
+
+        return response.json()['markdown']
+
+    async def _parse(self, pdf_path):
+        job_id, status = self.make_request(pdf_path)
+        # print(f"Job ID: {job_id}", f"Status: {status}")
+
+        while status != "SUCCESS":
+            url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}"
+            response = requests.request("GET", url, headers=self.headers, data={})
+            status = response.json()["status"]
+
+        result = await self.get_result(job_id)
+
+        documents = [
+            Document(
+                page_content=result,
+                metadata={"source": pdf_path}
+            )
+        ]
+
+        return documents
+
+    async def _parse(self, pdf_path):
+        return await self._parse(pdf_path)
+
+class HTMLReader:
+    def __init__(self):
+        pass
+
+    def read_url(self, url):
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            logger.warning(f"Failed to download HTML from URL: {url}")
+            return None
+
+    def check_links(self, base_url, html_content):
+        soup = bs4.BeautifulSoup(html_content, "html.parser")
+        for link in soup.find_all("a"):
+            href = link.get("href")
+
+            if not href or href.startswith("#"):
+                continue
+            elif not href.startswith("https"):
+                href = href.replace("http", "https")
+
+            absolute_url = urljoin(base_url, href)
+            link['href'] = absolute_url
+
+            resp = requests.head(absolute_url)
+            if resp.status_code != 200:
+                logger.warning(f"Link {absolute_url} is broken")
+                logger.warning(f"Status code: {resp.status_code}")
+
+        return str(soup)
+
+    def html_to_md(self, url, html_content):
+        html_processed = self.check_links(url, html_content)
+        markdown_content = html2text.html2text(html_processed)
+        return markdown_content
+
+    def read_html(self, url):
+        html_content = self.read_url(url)
+        if html_content:
+            return self.html_to_md(url, html_content)
+        else:
+            return None
 
 class FileReader:
-    def __init__(self, logger):
-        self.pdf_reader = PDFReader()
+    def __init__(self, logger, kind):
         self.logger = logger
+        self.kind = kind
+        if kind == "llama":
+            self.pdf_reader = LlamaParser()
+        else:
+            self.pdf_reader = PDFReader()
+        self.web_reader = HTMLReader()
+
 
     def extract_text_from_pdf(self, pdf_path):
         text = ""
@@ -51,7 +188,9 @@ class FileReader:
                 text += page.extract_text()
         return text
 
-    def download_pdf_from_url(self, pdf_url):
+    @staticmethod
+    def download_pdf_from_url(pdf_url):
+        print("Downloading PDF from URL: ", pdf_url)
         response = requests.get(pdf_url)
         if response.status_code == 200:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
@@ -63,8 +202,11 @@ class FileReader:
             return None
 
     def read_pdf(self, temp_file_path: str):
-        loader = self.pdf_reader.get_loader(temp_file_path)
-        documents = self.pdf_reader.get_documents(loader)
+        if self.kind == "llama":
+            documents = self.pdf_reader.parse(temp_file_path) # asyncio.run(self.pdf_reader.parse(temp_file_path)) if using async
+        else:
+            loader = self.pdf_reader.get_loader(temp_file_path)
+            documents = self.pdf_reader.get_documents(loader)
         return documents
 
     def read_txt(self, temp_file_path: str):
@@ -179,7 +321,6 @@ class ChunkProcessor:
             "https://dl4ds.github.io/sp2024/lectures/",
             "https://dl4ds.github.io/sp2024/schedule/",
         )  # For any additional metadata
-
         with ThreadPoolExecutor() as executor:
             executor.map(
                 self.process_file,
@@ -250,11 +391,18 @@ class ChunkProcessor:
 
     def process_file(self, file_path, file_index, file_reader, addl_metadata):
         file_name = os.path.basename(file_path)
+        storage_dir = os.path.join(os.getcwd(), self.config["vectorstore"]["data_path"])
+        local_path = os.path.join(storage_dir, file_name)
+
+        if not os.path.exists(local_path):
+            local_path = FileReader.download_pdf_from_url(pdf_url=file_path)
+
         if file_name in self.document_data:
+            print(f"File {file_name} already processed")
             return
 
         file_type = file_name.split(".")[-1].lower()
-        self.logger.info(f"Reading file {file_index + 1}: {file_path}")
+        self.logger.info(f"Reading file {file_index + 1}: {local_path}")
 
         read_methods = {
             "pdf": file_reader.read_pdf,
@@ -268,9 +416,9 @@ class ChunkProcessor:
             return
 
         try:
-            documents = read_methods[file_type](file_path)
+            documents = read_methods[file_type](local_path)
             self.process_documents(
-                documents, file_path, file_type, "file", addl_metadata
+                documents, local_path, file_type, "file", addl_metadata
             )
         except Exception as e:
             self.logger.error(f"Error processing file {file_name}: {str(e)}")
@@ -330,7 +478,7 @@ class ChunkProcessor:
 
 class DataLoader:
     def __init__(self, config, logger=None):
-        self.file_reader = FileReader(logger=logger)
+        self.file_reader = FileReader(logger=logger, kind=config["llm_params"]["pdf_reader"])
         self.chunk_processor = ChunkProcessor(config, logger=logger)
 
     def get_chunks(self, uploaded_files, weblinks):
@@ -348,10 +496,15 @@ if __name__ == "__main__":
     with open("../code/modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
 
+    STORAGE_DIR = os.path.join(BASE_DIR, config['vectorstore']["data_path"])
+    uploaded_files = [
+        os.path.join(STORAGE_DIR, file) for file in os.listdir(STORAGE_DIR) if file != "urls.txt"
+    ]
+
     data_loader = DataLoader(config, logger=logger)
     document_chunks, document_names, documents, document_metadata = (
         data_loader.get_chunks(
-            [],
+            uploaded_files,
             ["https://dl4ds.github.io/sp2024/"],
         )
     )
