@@ -53,11 +53,10 @@ class LlamaParser:
     def __init__(self):
         self.GPT_API_KEY = OPENAI_API_KEY
         self.LLAMA_CLOUD_API_KEY = LLAMA_CLOUD_API_KEY
-        print(f"LLAMA_CLOUD_API_KEY: {LLAMA_CLOUD_API_KEY}")
         self.parse_url = "https://api.cloud.llamaindex.ai/api/parsing/upload"
         self.headers = {
             'Accept': 'application/json',
-            'Authorization': 'Bearer llx-vap5Bk2zbYLfqTq2aZDvNHwscvsBPQiSjvLOGkgUa9SS8CWB'
+            'Authorization': f'Bearer {LLAMA_CLOUD_API_KEY}'
         }
         self.parser = LlamaParse(
             api_key=LLAMA_CLOUD_API_KEY,
@@ -189,7 +188,6 @@ class FileReader:
 
     @staticmethod
     def download_pdf_from_url(pdf_url):
-        print("Downloading PDF from URL: ", pdf_url)
         response = requests.get(pdf_url)
         if response.status_code == 200:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
