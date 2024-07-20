@@ -102,7 +102,6 @@ class LlamaParser:
 
     async def _parse(self, pdf_path):
         job_id, status = self.make_request(pdf_path)
-        # print(f"Job ID: {job_id}", f"Status: {status}")
 
         while status != "SUCCESS":
             url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}"
@@ -398,7 +397,6 @@ class ChunkProcessor:
             local_path = FileReader.download_pdf_from_url(pdf_url=file_path)
 
         if file_name in self.document_data:
-            print(f"File {file_name} already processed")
             return
 
         file_type = file_name.split(".")[-1].lower()
