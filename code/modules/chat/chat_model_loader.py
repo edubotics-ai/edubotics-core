@@ -16,7 +16,11 @@ class ChatModelLoader:
         self.huggingface_token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
 
     def load_chat_model(self):
-        if self.config["llm_params"]["llm_loader"] in ["gpt-3.5-turbo-1106", "gpt-4"]:
+        if self.config["llm_params"]["llm_loader"] in [
+            "gpt-3.5-turbo-1106",
+            "gpt-4",
+            "gpt-4o-mini",
+        ]:
             llm = ChatOpenAI(model_name=self.config["llm_params"]["llm_loader"])
         elif self.config["llm_params"]["llm_loader"] == "local_llm":
             n_batch = 512  # Should be between 1 and n_ctx, consider the amount of VRAM in your GPU.

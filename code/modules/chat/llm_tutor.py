@@ -3,7 +3,6 @@ from modules.chat.chat_model_loader import ChatModelLoader
 from modules.vectorstore.store_manager import VectorStoreManager
 from modules.retriever.retriever import Retriever
 from modules.chat.langchain.langchain_rag import Langchain_RAG
-from modules.chat.langgraph.langgraph_rag import Langgraph_RAG
 
 
 class LLMTutor:
@@ -105,14 +104,6 @@ class LLMTutor:
 
         if self.config["llm_params"]["llm_arch"] == "langchain":
             self.qa_chain = Langchain_RAG(
-                llm=llm,
-                memory=memory,
-                retriever=retriever,
-                qa_prompt=qa_prompt,
-                rephrase_prompt=rephrase_prompt,
-            )
-        elif self.config["llm_params"]["llm_arch"] == "langgraph_agentic":
-            self.qa_chain = Langgraph_RAG(
                 llm=llm,
                 memory=memory,
                 retriever=retriever,
