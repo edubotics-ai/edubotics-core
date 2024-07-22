@@ -3,6 +3,7 @@ from modules.vectorstore.helpers import *
 from modules.dataloader.webpage_crawler import WebpageCrawler
 from modules.dataloader.data_loader import DataLoader
 from modules.dataloader.helpers import *
+from modules.config.constants import RETRIEVER_HF_PATHS
 from modules.vectorstore.embedding_model_loader import EmbeddingModelLoader
 import logging
 import os
@@ -135,7 +136,13 @@ class VectorStoreManager:
             self.embedding_model = self.create_embedding_model()
         else:
             self.embedding_model = None
-        self.loaded_vector_db = self.vector_db._load_database(self.embedding_model)
+        try:
+            self.loaded_vector_db = self.vector_db._load_database(self.embedding_model)
+        except Exception as e:
+            raise ValueError(f"Error loading database, check if it exists. if not run python -m modules.vectorstore.store_manager / Resteart the HF Space: {e}")
+            # print(f"Creating database")
+            # self.create_database()
+            # self.loaded_vector_db = self.vector_db._load_database(self.embedding_model)
         end_time = time.time()  # End time for loading database
         self.logger.info(
             f"Time taken to load database {self.config['vectorstore']['db_option']} from Hugging Face: {end_time - start_time} seconds"
@@ -143,9 +150,9 @@ class VectorStoreManager:
         self.logger.info("Loaded database")
         return self.loaded_vector_db
 
-    def load_from_HF(self):
+    def load_from_HF(self, HF_PATH):
         start_time = time.time()  # Start time for loading database
-        self.vector_db._load_from_HF()
+        self.vector_db._load_from_HF(HF_PATH)
         end_time = time.time()
         self.logger.info(
             f"Time taken to Download database {self.config['vectorstore']['db_option']} from Hugging Face: {end_time - start_time} seconds"
@@ -164,8 +171,14 @@ if __name__ == "__main__":
     print(config)
     print(f"Trying to create database with config: {config}")
     vector_db = VectorStoreManager(config)
-    if config["vectorstore"]["load_from_HF"] and "HF_path" in config["vectorstore"]:
-        vector_db.load_from_HF()
+    if config["vectorstore"]["load_from_HF"]:
+        if config["vectorstore"]["db_option"] in RETRIEVER_HF_PATHS:
+            vector_db.load_from_HF(HF_PATH = RETRIEVER_HF_PATHS[config["vectorstore"]["db_option"]])
+        else:
+            # print(f"HF_PATH not available for {config['vectorstore']['db_option']}")
+            # print("Creating database")
+            # vector_db.create_database()
+            raise ValueError(f"HF_PATH not available for {config['vectorstore']['db_option']}")
     else:
         vector_db.create_database()
     print("Created database")

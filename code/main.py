@@ -1,14 +1,22 @@
+import chainlit.data as cl_data
+
+from modules.config.constants import (
+    LLAMA_PATH,
+    LITERAL_API_KEY_LOGGING,
+    LITERAL_API_URL,
+)
+from modules.chat_processor.literal_ai import CustomLiteralDataLayer
+
 import json
 import yaml
 import os
 from typing import Any, Dict, no_type_check
 import chainlit as cl
 from modules.chat.llm_tutor import LLMTutor
-from modules.chat_processor.chat_processor import ChatProcessor
-from modules.config.constants import LLAMA_PATH
 from modules.chat.helpers import get_sources
 import copy
 from typing import Optional
+from chainlit.types import ThreadDict
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System 🖥️"
@@ -18,12 +26,18 @@ YOU = "You 😃"
 ERROR = "Error 🚫"
 
 
+cl_data._data_layer = CustomLiteralDataLayer(
+    api_key=LITERAL_API_KEY_LOGGING, server=LITERAL_API_URL
+)
+
+
 class Chatbot:
     def __init__(self):
         """
         Initialize the Chatbot class.
         """
         self.config = self._load_config()
+        self.literal_client = cl_data._data_layer.client
 
     def _load_config(self):
         """
@@ -60,11 +74,9 @@ class Chatbot:
         self.chain = self.llm_tutor.qa_bot(memory=memory)
 
         tags = [chat_profile, self.config["vectorstore"]["db_option"]]
-        self.chat_processor.config = self.config
 
         cl.user_session.set("chain", self.chain)
         cl.user_session.set("llm_tutor", self.llm_tutor)
-        cl.user_session.set("chat_processor", self.chat_processor)
 
     @no_type_check
     async def update_llm(self, new_settings: Dict[str, Any]):
@@ -91,14 +103,21 @@ class Chatbot:
                 cl.input_widget.Select(
                     id="chat_model",
                     label="Model Name (Default GPT-3)",
-                    values=["local_llm", "gpt-3.5-turbo-1106", "gpt-4"],
-                    initial_index=["local_llm", "gpt-3.5-turbo-1106", "gpt-4"].index(config["llm_params"]["llm_loader"]),
+                    values=["local_llm", "gpt-3.5-turbo-1106", "gpt-4", "gpt-4o-mini"],
+                    initial_index=[
+                        "local_llm",
+                        "gpt-3.5-turbo-1106",
+                        "gpt-4",
+                        "gpt-4o-mini",
+                    ].index(config["llm_params"]["llm_loader"]),
                 ),
                 cl.input_widget.Select(
                     id="retriever_method",
                     label="Retriever (Default FAISS)",
                     values=["FAISS", "Chroma", "RAGatouille", "RAPTOR"],
-                    initial_index=["FAISS", "Chroma", "RAGatouille", "RAPTOR"].index(config["vectorstore"]["db_option"])
+                    initial_index=["FAISS", "Chroma", "RAGatouille", "RAPTOR"].index(
+                        config["vectorstore"]["db_option"]
+                    ),
                 ),
                 cl.input_widget.Slider(
                     id="memory_window",
@@ -112,7 +131,7 @@ class Chatbot:
                     id="view_sources", label="View Sources", initial=False
                 ),
                 cl.input_widget.Switch(
-                    id="stream_response", label="Stream response", initial=True
+                    id="stream_response", label="Stream response", initial=False
                 ),
                 cl.input_widget.Select(
                     id="llm_style",
@@ -158,28 +177,37 @@ class Chatbot:
         """
         Set starter messages for the chatbot.
         """
-        return [
-            cl.Starter(
-                label="recording on CNNs?",
-                message="Where can I find the recording for the lecture on Transformers?",
-                icon="/public/adv-screen-recorder-svgrepo-com.svg",
-            ),
-            cl.Starter(
-                label="where's the slides?",
-                message="When are the lectures? I can't find the schedule.",
-                icon="/public/alarmy-svgrepo-com.svg",
-            ),
-            cl.Starter(
-                label="Due Date?",
-                message="When is the final project due?",
-                icon="/public/calendar-samsung-17-svgrepo-com.svg",
-            ),
-            cl.Starter(
-                label="Explain backprop.",
-                message="I didn't understand the math behind backprop, could you explain it?",
-                icon="/public/acastusphoton-svgrepo-com.svg",
-            ),
-        ]
+        # Return Starters only if the chat is new
+
+        try:
+            thread = cl_data._data_layer.get_thread(
+                cl.context.session.thread_id
+            )  # see if the thread has any steps
+            if thread.steps or len(thread.steps) > 0:
+                return None
+        except:
+            return [
+                cl.Starter(
+                    label="recording on CNNs?",
+                    message="Where can I find the recording for the lecture on Transformers?",
+                    icon="/public/adv-screen-recorder-svgrepo-com.svg",
+                ),
+                cl.Starter(
+                    label="where's the slides?",
+                    message="When are the lectures? I can't find the schedule.",
+                    icon="/public/alarmy-svgrepo-com.svg",
+                ),
+                cl.Starter(
+                    label="Due Date?",
+                    message="When is the final project due?",
+                    icon="/public/calendar-samsung-17-svgrepo-com.svg",
+                ),
+                cl.Starter(
+                    label="Explain backprop.",
+                    message="I didn't understand the math behind backprop, could you explain it?",
+                    icon="/public/acastusphoton-svgrepo-com.svg",
+                ),
+            ]
 
     def rename(self, orig_author: str):
         """
@@ -194,44 +222,25 @@ class Chatbot:
         rename_dict = {"Chatbot": "AI Tutor"}
         return rename_dict.get(orig_author, orig_author)
 
-    async def start(self):
+    async def start(self, thread=None, memory=[]):
         """
         Start the chatbot, initialize settings widgets,
         and display and load previous conversation if chat logging is enabled.
         """
-        await cl.Message(content="Welcome back! Setting up your session...").send()
 
         await self.make_llm_settings_widgets(self.config)
         user = cl.user_session.get("user")
         self.user = {
             "user_id": user.identifier,
-            "session_id": "1234",
+            "session_id": cl.context.session.thread_id,
         }
+        print(self.user)
+
         cl.user_session.set("user", self.user)
-        self.chat_processor = ChatProcessor(self.config, self.user)
         self.llm_tutor = LLMTutor(self.config, user=self.user)
-        if self.config["chat_logging"]["log_chat"]:
-            # get previous conversation of the user
-            memory = self.chat_processor.processor.prev_conv
-            if len(self.chat_processor.processor.prev_conv) > 0:
-                for idx, conv in enumerate(self.chat_processor.processor.prev_conv):
-                    await cl.Message(
-                        author="User", content=conv[0], type="user_message"
-                    ).send()
-                    await cl.Message(author="AI Tutor", content=conv[1]).send()
-        else:
-            memory = []
         self.chain = self.llm_tutor.qa_bot(memory=memory)
         cl.user_session.set("llm_tutor", self.llm_tutor)
         cl.user_session.set("chain", self.chain)
-        cl.user_session.set("chat_processor", self.chat_processor)
-
-    async def on_chat_end(self):
-        """
-        Handle the end of the chat session by sending a goodbye message.
-        # TODO: Not used as of now - useful when the implementation for the conversation limiting is implemented
-        """
-        await cl.Message(content="Sorry, I have to go now. Goodbye!").send()
 
     async def stream_response(self, response):
         """
@@ -245,8 +254,8 @@ class Chatbot:
 
         output = {}
         for chunk in response:
-            if 'answer' in chunk:
-                await msg.stream_token(chunk['answer'])
+            if "answer" in chunk:
+                await msg.stream_token(chunk["answer"])
 
             for key in chunk:
                 if key not in output:
@@ -262,39 +271,88 @@ class Chatbot:
         Args:
             message: The incoming chat message.
         """
+
         chain = cl.user_session.get("chain")
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
-        stream = (llm_settings.get("stream_response", True)) or (not self.config["llm_params"]["stream"])
-
-        processor = cl.user_session.get("chat_processor")
-        res = await processor.rag(message.content, chain, stream)
+        stream = (llm_settings.get("stream_response", True)) or (
+            not self.config["llm_params"]["stream"]
+        )
+        user_query_dict = {"input": message.content}
+        # Define the base configuration
+        chain_config = {
+            "configurable": {
+                "user_id": self.user["user_id"],
+                "conversation_id": self.user["session_id"],
+                "memory_window": self.config["llm_params"]["memory_window"],
+            }
+        }
 
         if stream:
+            res = chain.stream(user_query=user_query_dict, config=chain_config)
             res = await self.stream_response(res)
+        else:
+            res = chain.invoke(user_query=user_query_dict, config=chain_config)
 
         answer = res.get("answer", res.get("result"))
+
+        with cl_data._data_layer.client.step(
+            type="retrieval",
+            name="RAG",
+            thread_id=cl.context.session.thread_id,
+            # tags=self.tags,
+        ) as step:
+            step.input = {"question": user_query_dict["input"]}
+            step.output = {
+                "chat_history": res.get("chat_history"),
+                "context": res.get("context"),
+                "answer": answer,
+                "rephrase_prompt": res.get("rephrase_prompt"),
+                "qa_prompt": res.get("qa_prompt"),
+            }
+            step.metadata = self.config
 
         answer_with_sources, source_elements, sources_dict = get_sources(
             res, answer, stream=stream, view_sources=view_sources
         )
-        processor._process(message.content, answer, sources_dict)
 
         await cl.Message(content=answer_with_sources, elements=source_elements).send()
 
+    async def on_chat_resume(self, thread: ThreadDict):
+        steps = thread["steps"]
+        conversation_pairs = []
+
+        user_message = None
+        k = self.config["llm_params"]["memory_window"]
+        count = 0
+
+        for step in steps:
+            if step["type"] == "user_message":
+                user_message = step["output"]
+            elif step["type"] == "assistant_message" and user_message is not None:
+                assistant_message = step["output"]
+                conversation_pairs.append((user_message, assistant_message))
+                user_message = None
+                count += 1
+                if count >= k:
+                    break
+
+        await self.start(thread, memory=conversation_pairs)
+
     @cl.oauth_callback
     def auth_callback(
-            provider_id: str,
-            token: str,
-            raw_user_data: Dict[str, str],
-            default_user: cl.User,
+        provider_id: str,
+        token: str,
+        raw_user_data: Dict[str, str],
+        default_user: cl.User,
     ) -> Optional[cl.User]:
         return default_user
+
 
 chatbot = Chatbot()
 cl.set_starters(chatbot.set_starters)
 cl.author_rename(chatbot.rename)
 cl.on_chat_start(chatbot.start)
-cl.on_chat_end(chatbot.on_chat_end)
+cl.on_chat_resume(chatbot.on_chat_resume)
 cl.on_message(chatbot.main)
 cl.on_settings_update(chatbot.update_llm)
