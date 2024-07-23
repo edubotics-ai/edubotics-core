@@ -288,11 +288,13 @@ class Chatbot:
             }
         }
 
+        stream = False
+
         if stream:
             res = chain.stream(user_query=user_query_dict, config=chain_config)
             res = await self.stream_response(res)
         else:
-            res = chain.invoke(user_query=user_query_dict, config=chain_config)
+            res = await chain.invoke(user_query=user_query_dict, config=chain_config)
 
         answer = res.get("answer", res.get("result"))
 

@@ -2,7 +2,7 @@ from modules.chat.helpers import get_prompt
 from modules.chat.chat_model_loader import ChatModelLoader
 from modules.vectorstore.store_manager import VectorStoreManager
 from modules.retriever.retriever import Retriever
-from modules.chat.langchain.langchain_rag import Langchain_RAG
+from modules.chat.langchain.langchain_rag import Langchain_RAG_V1, Langchain_RAG_V2
 
 
 class LLMTutor:
@@ -103,12 +103,13 @@ class LLMTutor:
         retriever = Retriever(self.config)._return_retriever(db)
 
         if self.config["llm_params"]["llm_arch"] == "langchain":
-            self.qa_chain = Langchain_RAG(
+            self.qa_chain = Langchain_RAG_V2(
                 llm=llm,
                 memory=memory,
                 retriever=retriever,
                 qa_prompt=qa_prompt,
                 rephrase_prompt=rephrase_prompt,
+                config=self.config,
             )
         else:
             raise ValueError(

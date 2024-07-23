@@ -3,10 +3,84 @@ from langchain_core.prompts import ChatPromptTemplate
 from modules.chat.langchain.utils import *
 from langchain.memory import ChatMessageHistory
 from modules.chat.base import BaseRAG
+from langchain_core.prompts import PromptTemplate
+from langchain.memory import (
+    ConversationBufferWindowMemory,
+    ConversationSummaryBufferMemory,
+)
 
 
-class Langchain_RAG(BaseRAG):
-    def __init__(self, llm, memory, retriever, qa_prompt: str, rephrase_prompt: str):
+class Langchain_RAG_V1(BaseRAG):
+
+    def __init__(
+        self, llm, memory, retriever, qa_prompt: str, rephrase_prompt: str, config: dict
+    ):
+        """
+        Initialize the Langchain_RAG class.
+
+        Args:
+            llm (LanguageModelLike): The language model instance.
+            memory (BaseChatMessageHistory): The chat message history instance.
+            retriever (BaseRetriever): The retriever instance.
+            qa_prompt (str): The QA prompt string.
+            rephrase_prompt (str): The rephrase prompt string.
+        """
+        self.llm = llm
+        self.config = config
+        # self.memory = self.add_history_from_list(memory)
+        self.memory = ConversationBufferWindowMemory(
+            k=self.config["llm_params"]["memory_window"],
+            memory_key="chat_history",
+            return_messages=True,
+            output_key="answer",
+            max_token_limit=128,
+        )
+        self.retriever = retriever
+        self.qa_prompt = qa_prompt
+        self.rephrase_prompt = rephrase_prompt
+        self.store = {}
+
+        self.qa_prompt = PromptTemplate(
+            template=self.qa_prompt,
+            input_variables=["context", "chat_history", "input"],
+        )
+
+        self.rag_chain = CustomConversationalRetrievalChain.from_llm(
+            llm=llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True,
+            memory=self.memory,
+            combine_docs_chain_kwargs={"prompt": self.qa_prompt},
+            response_if_no_docs_found="No context found",
+        )
+
+    def add_history_from_list(self, history_list):
+        """
+        TODO: Add messages from a list to the chat history.
+        """
+        history = []
+
+        return history
+
+    async def invoke(self, user_query, config):
+        """
+        Invoke the chain.
+
+        Args:
+            kwargs: The input variables.
+
+        Returns:
+            dict: The output variables.
+        """
+        res = await self.rag_chain.acall(user_query["input"])
+        return res
+
+
+class Langchain_RAG_V2(BaseRAG):
+    def __init__(
+        self, llm, memory, retriever, qa_prompt: str, rephrase_prompt: str, config: dict
+    ):
         """
         Initialize the Langchain_RAG class.
 
@@ -118,7 +192,7 @@ class Langchain_RAG(BaseRAG):
             )  # add previous messages to the store. Note: the store is in-memory.
         return self.store[(user_id, conversation_id)]
 
-    def invoke(self, user_query, config):
+    async def invoke(self, user_query, config):
         """
         Invoke the chain.
 
@@ -128,7 +202,7 @@ class Langchain_RAG(BaseRAG):
         Returns:
             dict: The output variables.
         """
-        res = self.rag_chain.invoke(user_query, config)
+        res = await self.rag_chain.ainvoke(user_query, config)
         res["rephrase_prompt"] = self.rephrase_prompt
         res["qa_prompt"] = self.qa_prompt
         return res
