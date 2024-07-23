@@ -36,6 +36,27 @@ from langchain_core.messages import BaseMessage
 
 
 class CustomRunnableWithHistory(RunnableWithMessageHistory):
+
+    def _get_chat_history(self, chat_history: List[CHAT_TURN_TYPE]) -> str:
+        _ROLE_MAP = {"human": "Student: ", "ai": "AI Tutor: "}
+        buffer = ""
+        for dialogue_turn in chat_history:
+            if isinstance(dialogue_turn, BaseMessage):
+                role_prefix = _ROLE_MAP.get(
+                    dialogue_turn.type, f"{dialogue_turn.type}: "
+                )
+                buffer += f"\n{role_prefix}{dialogue_turn.content}"
+            elif isinstance(dialogue_turn, tuple):
+                human = "Student: " + dialogue_turn[0]
+                ai = "AI Tutor: " + dialogue_turn[1]
+                buffer += "\n" + "\n".join([human, ai])
+            else:
+                raise ValueError(
+                    f"Unsupported chat history format: {type(dialogue_turn)}."
+                    f" Full chat history: {chat_history} "
+                )
+        return buffer
+
     def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:
         """
         Get the last k conversations from the message history.
@@ -59,6 +80,9 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
             messages = []
         else:
             messages = messages[-2 * config["configurable"]["memory_window"] :]
+
+        messages = self._get_chat_history(messages)
+
         return messages
 
 
