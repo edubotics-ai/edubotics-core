@@ -35,6 +35,133 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import BaseMessage
 
 
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatOpenAI
+
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain
+from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
+
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
+import inspect
+from langchain.chains.conversational_retrieval.base import _get_chat_history
+from langchain_core.messages import BaseMessage
+
+
+class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
+
+    def _get_chat_history(self, chat_history: List[CHAT_TURN_TYPE]) -> str:
+        _ROLE_MAP = {"human": "Student: ", "ai": "AI Tutor: "}
+        buffer = ""
+        for dialogue_turn in chat_history:
+            if isinstance(dialogue_turn, BaseMessage):
+                role_prefix = _ROLE_MAP.get(
+                    dialogue_turn.type, f"{dialogue_turn.type}: "
+                )
+                buffer += f"\n{role_prefix}{dialogue_turn.content}"
+            elif isinstance(dialogue_turn, tuple):
+                human = "Student: " + dialogue_turn[0]
+                ai = "AI Tutor: " + dialogue_turn[1]
+                buffer += "\n" + "\n".join([human, ai])
+            else:
+                raise ValueError(
+                    f"Unsupported chat history format: {type(dialogue_turn)}."
+                    f" Full chat history: {chat_history} "
+                )
+        return buffer
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        question = inputs["question"]
+        get_chat_history = self._get_chat_history
+        chat_history_str = get_chat_history(inputs["chat_history"])
+        if chat_history_str:
+            # callbacks = _run_manager.get_child()
+            # new_question = await self.question_generator.arun(
+            #     question=question, chat_history=chat_history_str, callbacks=callbacks
+            # )
+            system = (
+                "You are someone that rephrases statements. Rephrase the student's question to add context from their chat history if relevant, ensuring it remains from the student's point of view. "
+                "Incorporate relevant details from the chat history to make the question clearer and more specific."
+                "Do not change the meaning of the original statement, and maintain the student's tone and perspective. "
+                "If the question is conversational and doesn't require context, do not rephrase it. "
+                "Example: If the student previously asked about backpropagation in the context of deep learning and now asks 'what is it', rephrase to 'What is backprogatation.'. "
+                "Example: Do not rephrase if the user is asking something specific like 'cool, suggest a project with transformers to use as my final project'"
+                "Chat history: \n{chat_history_str}\n"
+                "Rephrase the following question only if necessary: '{input}'"
+            )
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", system),
+                    ("human", "{input}, {chat_history_str}"),
+                ]
+            )
+            llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+            step_back = prompt | llm | StrOutputParser()
+            new_question = step_back.invoke(
+                {"input": question, "chat_history_str": chat_history_str}
+            )
+        else:
+            new_question = question
+        accepts_run_manager = (
+            "run_manager" in inspect.signature(self._aget_docs).parameters
+        )
+        if accepts_run_manager:
+            docs = await self._aget_docs(new_question, inputs, run_manager=_run_manager)
+        else:
+            docs = await self._aget_docs(new_question, inputs)  # type: ignore[call-arg]
+
+        output: Dict[str, Any] = {}
+        output["original_question"] = question
+        if self.response_if_no_docs_found is not None and len(docs) == 0:
+            output[self.output_key] = self.response_if_no_docs_found
+        else:
+            new_inputs = inputs.copy()
+            if self.rephrase_question:
+                new_inputs["question"] = new_question
+            new_inputs["chat_history"] = chat_history_str
+
+            # Prepare the final prompt with metadata
+            context = "\n\n".join(
+                [
+                    f"Context {idx+1}: \n(Document content: {doc.page_content}\nMetadata: (source_file: {doc.metadata['source'] if 'source' in doc.metadata else 'unknown'}))"
+                    for idx, doc in enumerate(docs)
+                ]
+            )
+            final_prompt = (
+                "You are an AI Tutor for the course DS598, taught by Prof. Thomas Gardos. Answer the user's question using the provided context. Only use the context if it is relevant. The context is ordered by relevance."
+                "If you don't know the answer, do your best without making things up. Keep the conversation flowing naturally. "
+                "Use chat history and context as guides but avoid repeating past responses. Provide links from the source_file metadata. Use the source context that is most relevent."
+                "Speak in a friendly and engaging manner, like talking to a friend. Avoid sounding repetitive or robotic.\n\n"
+                f"Chat History:\n{chat_history_str}\n\n"
+                f"Context:\n{context}\n\n"
+                "Answer the student's question below in a friendly, concise, and engaging manner. Use the context and history only if relevant, otherwise, engage in a free-flowing conversation.\n"
+                f"Student: {input}\n"
+                "AI Tutor:"
+            )
+
+            new_inputs["input"] = final_prompt
+            # new_inputs["question"] = final_prompt
+            # output["final_prompt"] = final_prompt
+
+            answer = await self.combine_docs_chain.arun(
+                input_documents=docs, callbacks=_run_manager.get_child(), **new_inputs
+            )
+            output[self.output_key] = answer
+
+        if self.return_source_documents:
+            output["source_documents"] = docs
+        output["rephrased_question"] = new_question
+        output["context"] = output["source_documents"]
+        return output
+
+
 class CustomRunnableWithHistory(RunnableWithMessageHistory):
 
     def _get_chat_history(self, chat_history: List[CHAT_TURN_TYPE]) -> str:
@@ -69,6 +196,10 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
             List[BaseMessage]: The last k conversations.
         """
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+
+        print("\n\n\n")
+        print("Hist: ", hist)
+        print("\n\n\n")
         messages = hist.messages.copy()
 
         if not self.history_messages_key:
@@ -83,6 +214,9 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
 
         messages = self._get_chat_history(messages)
 
+        print("\n\n\n")
+        print("Messages: ", messages)
+        print("\n\n\n")
         return messages
 
 
@@ -102,22 +236,6 @@ class InMemoryHistory(BaseChatMessageHistory, BaseModel):
     def __len__(self) -> int:
         """Return the number of messages."""
         return len(self.messages)
-
-    def get_last_n_conversations(self, n: int) -> "InMemoryHistory":
-        """Return a new InMemoryHistory object with the last n conversations from the message history.
-
-        Args:
-            n (int): The number of last conversations to return. If 0, return an empty history.
-
-        Returns:
-            InMemoryHistory: A new InMemoryHistory object containing the last n conversations.
-        """
-        if n == 0:
-            return InMemoryHistory()
-        # Each conversation consists of a pair of messages (human + AI)
-        num_messages = n * 2
-        last_messages = self.messages[-num_messages:]
-        return InMemoryHistory(messages=last_messages)
 
 
 def create_history_aware_retriever(
