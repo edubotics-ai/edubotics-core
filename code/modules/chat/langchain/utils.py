@@ -184,7 +184,9 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
                 )
         return buffer
 
-    def _enter_history(self, input: Any, config: RunnableConfig) -> List[BaseMessage]:
+    async def _aenter_history(
+        self, input: Any, config: RunnableConfig
+    ) -> List[BaseMessage]:
         """
         Get the last k conversations from the message history.
 
@@ -200,11 +202,14 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
         print("\n\n\n")
         print("Hist: ", hist)
         print("\n\n\n")
-        messages = hist.messages.copy()
+        messages = (await hist.aget_messages()).copy()
 
         if not self.history_messages_key:
             # return all messages
-            messages += self._get_input_messages(input)
+            input_val = (
+                input if not self.input_messages_key else input[self.input_messages_key]
+            )
+            messages += self._get_input_messages(input_val)
 
         # return last k conversations
         if config["configurable"]["memory_window"] == 0:  # if k is 0, return empty list
