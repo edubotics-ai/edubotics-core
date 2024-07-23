@@ -6,6 +6,7 @@ load_dotenv()
 # API Keys - Loaded from the .env file
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+LLAMA_CLOUD_API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
 LITERAL_API_KEY = os.getenv("LITERAL_API_KEY")
 
@@ -14,7 +15,8 @@ opening_message = f"Hey, What Can I Help You With?\n\nYou can me ask me question
 # Prompt Templates
 
 openai_prompt_template = """Use the following pieces of information to answer the user's question.
-If you don't know the answer, just say that you don't know.
+You are an intelligent chatbot designed to help students with questions regarding the course. Render math equations in LaTeX format between $$ signs, and explain the parameters and variables in the equations.
+If you don't know the answer, just say that you don't know. 
 
 Context: {context}
 Question: {question}
@@ -24,7 +26,10 @@ Helpful answer:
 """
 
 openai_prompt_template_with_history = """Use the following pieces of information to answer the user's question.
+You are an intelligent chatbot designed to help students with questions regarding the course. Render math equations in LaTeX format between $$ signs.
+
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
+
 Use the history to answer the question if you can.
 Chat History:
 {chat_history}
@@ -37,7 +42,7 @@ Helpful answer:
 
 tinyllama_prompt_template = """
 <|im_start|>system
-Assistant is an intelligent chatbot designed to help students with questions regarding the course. Only answer questions using the context below and if you're not sure of an answer, you can say "I don't know". Always give a breif and concise answer to the question. Use the history to answer the question if you can.
+Assistant is an intelligent chatbot designed to help students with questions regarding the course. Only answer questions using the context below and if you're not sure of an answer, you can say "I don't know". Always give a brief and concise answer to the question. When asked for formulas, give a brief description of the formula and output math equations in LaTeX format between $ signs.
 
 Context:
 {context}
@@ -56,7 +61,7 @@ Question: {question}
 
 tinyllama_prompt_template_with_history = """
 <|im_start|>system
-Assistant is an intelligent chatbot designed to help students with questions regarding the course. Only answer questions using the context below and if you're not sure of an answer, you can say "I don't know". Always give a breif and concise answer to the question.
+Assistant is an intelligent chatbot designed to help students with questions regarding the course. Only answer questions using the context below and if you're not sure of an answer, you can say "I don't know". Always give a brief and concise answer to the question. Output math equations in LaTeX format between $ signs. Use the history to answer the question if you can.
 
 Chat History:
 {chat_history}
