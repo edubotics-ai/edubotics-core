@@ -32,7 +32,6 @@ class ChatModelLoader:
         elif self.config["llm_params"]["llm_loader"] == "local_llm":
             n_batch = 512  # Should be between 1 and n_ctx, consider the amount of VRAM in your GPU.
             model_path = self._verify_model_cache(self.config["llm_params"]["local_llm_params"]["model"])
-            print(model_path)
             llm = LlamaCpp(
                 model_path=model_path,
                 n_batch=n_batch,
