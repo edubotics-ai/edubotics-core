@@ -173,4 +173,6 @@ async def main(message):
     answer_with_sources, source_elements, sources_dict = get_sources(res, answer)
     processor._process(message.content, answer, sources_dict)
 
+    answer_with_sources = answer_with_sources.replace("$$", "$")
+
     await cl.Message(content=answer_with_sources, elements=source_elements).send()

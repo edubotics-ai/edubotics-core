@@ -7,7 +7,7 @@ vectorstore:
   data_path: '../storage/data' # str
   url_file_path: '../storage/data/urls.txt' # str
   expand_urls: True # bool
-  db_option : 'FAISS' # str [FAISS, Chroma, RAGatouille, RAPTOR]
+  db_option : 'RAGatouille' # str [FAISS, Chroma, RAGatouille, RAPTOR]
   db_path : '../vectorstores' # str
   model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
   search_top_k : 3 # int
@@ -32,7 +32,7 @@ llm_params:
   local_llm_params:
     model: 'tiny-llama'
     temperature: 0.7
-  pdf_reader: 'llama' # str [llama, pymupdf]
+  pdf_reader: 'llama' # str [llama, pymupdf, gpt]
 
 chat_logging:
   log_chat: False # bool
