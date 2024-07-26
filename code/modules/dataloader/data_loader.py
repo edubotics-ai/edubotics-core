@@ -25,101 +25,19 @@ import html2text
 import bs4
 import tempfile
 import PyPDF2
+from modules.dataloader.pdf_readers.base import PDFReader
+from modules.dataloader.pdf_readers.llama import LlamaParser
 
 try:
-    from modules.dataloader.helpers import get_metadata
+    from modules.dataloader.helpers import get_metadata, download_pdf_from_url
     from modules.config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
-
-
 except:
-    from dataloader.helpers import get_metadata
+    from dataloader.helpers import get_metadata, download_pdf_from_url
     from config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
 
 logger = logging.getLogger(__name__)
 BASE_DIR = os.getcwd()
 
-class PDFReader:
-    def __init__(self):
-        pass
-
-    def get_loader(self, pdf_path):
-        loader = PyMuPDFLoader(pdf_path)
-        return loader
-
-    def get_documents(self, loader):
-        return loader.load()
-
-class LlamaParser:
-    def __init__(self):
-        self.GPT_API_KEY = OPENAI_API_KEY
-        self.LLAMA_CLOUD_API_KEY = LLAMA_CLOUD_API_KEY
-        self.parse_url = "https://api.cloud.llamaindex.ai/api/parsing/upload"
-        self.headers = {
-            'Accept': 'application/json',
-            'Authorization': f'Bearer {LLAMA_CLOUD_API_KEY}'
-        }
-        self.parser = LlamaParse(
-            api_key=LLAMA_CLOUD_API_KEY,
-            result_type="markdown",
-            verbose=True,
-            language="en",
-            gpt4o_mode=False,
-            # gpt4o_api_key=OPENAI_API_KEY,
-            parsing_instruction="The provided documents are PDFs of lecture slides of deep learning material. They contain LaTeX equations, images, and text. The goal is to extract the text, images and equations from the slides and convert them to markdown format. The markdown should be clean and easy to read, and any math equation should be converted to LaTeX, between $$. For images, give a description and if you can, a source."
-        )
-
-    def parse(self, pdf_path):
-        pdf_name = os.path.basename(pdf_path)
-
-        documents = self.parser.load_data(pdf_path)
-        documents = [document.to_langchain_format() for document in documents]
-
-        os.remove(pdf_path) # cleanup, just in case
-        return documents
-
-    def make_request(self, pdf_url):
-        payload = {
-            "gpt4o_mode": "false",
-            "parsing_instruction": "The provided document is a PDF of lecture slides of deep learning material. They contain LaTeX equations, images, and text. The goal is to extract the text, images and equations from the slides and convert them to markdown format. The markdown should be clean and easy to read, and any math equation should be converted to LaTeX, between $$. For images, give a description and if you can, a source.",
-        }
-
-        files = [
-            ('file', ('file', requests.get(pdf_url).content, 'application/octet-stream'))
-        ]
-
-        response = requests.request(
-            "POST", self.parse_url, headers=self.headers, data=payload, files=files)
-
-        return response.json()['id'], response.json()['status']
-
-    async def get_result(self, job_id):
-        url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}/result/markdown"
-
-        response = requests.request("GET", url, headers=self.headers, data={})
-
-        return response.json()['markdown']
-
-    async def _parse(self, pdf_path):
-        job_id, status = self.make_request(pdf_path)
-
-        while status != "SUCCESS":
-            url = f"https://api.cloud.llamaindex.ai/api/parsing/job/{job_id}"
-            response = requests.request("GET", url, headers=self.headers, data={})
-            status = response.json()["status"]
-
-        result = await self.get_result(job_id)
-
-        documents = [
-            Document(
-                page_content=result,
-                metadata={"source": pdf_path}
-            )
-        ]
-
-        return documents
-
-    async def _parse(self, pdf_path):
-        return await self._parse(pdf_path)
 
 class HTMLReader:
     def __init__(self):
@@ -185,18 +103,6 @@ class FileReader:
                 page = reader.pages[page_num]
                 text += page.extract_text()
         return text
-
-    @staticmethod
-    def download_pdf_from_url(pdf_url):
-        response = requests.get(pdf_url)
-        if response.status_code == 200:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-                temp_file.write(response.content)
-                temp_file_path = temp_file.name
-            return temp_file_path
-        else:
-            self.logger.error(f"Failed to download PDF from URL: {pdf_url}")
-            return None
 
     def read_pdf(self, temp_file_path: str):
         if self.kind == "llama":
@@ -383,22 +289,17 @@ class ChunkProcessor:
                 )
                 self.document_chunks_full.extend(document_chunks)
 
+        print(f"Processed {file_path}. File_data: {file_data}")
         self.document_data[file_path] = file_data
         self.document_metadata[file_path] = file_metadata
 
     def process_file(self, file_path, file_index, file_reader, addl_metadata):
         file_name = os.path.basename(file_path)
-        storage_dir = os.path.join(os.getcwd(), self.config["vectorstore"]["data_path"])
-        local_path = os.path.join(storage_dir, file_name)
-
-        if not os.path.exists(local_path):
-            local_path = FileReader.download_pdf_from_url(pdf_url=file_path)
 
         if file_name in self.document_data:
             return
 
-        file_type = file_name.split(".")[-1].lower()
-        self.logger.info(f"Reading file {file_index + 1}: {local_path}")
+        file_type = file_name.split(".")[-1]
 
         read_methods = {
             "pdf": file_reader.read_pdf,
@@ -412,9 +313,10 @@ class ChunkProcessor:
             return
 
         try:
-            documents = read_methods[file_type](local_path)
+            documents = read_methods[file_type](file_path)
+
             self.process_documents(
-                documents, local_path, file_type, "file", addl_metadata
+                documents, file_path, file_type, "file", addl_metadata
             )
         except Exception as e:
             self.logger.error(f"Error processing file {file_name}: {str(e)}")
@@ -500,10 +402,11 @@ if __name__ == "__main__":
     data_loader = DataLoader(config, logger=logger)
     document_chunks, document_names, documents, document_metadata = (
         data_loader.get_chunks(
-            uploaded_files,
-            ["https://dl4ds.github.io/sp2024/"],
+            ["https://dl4ds.github.io/sp2024/static_files/lectures/05_loss_functions_v2.pdf"],
+            [],
         )
     )
 
-    print(document_names)
+    print(document_names[:5])
     print(len(document_chunks))
+

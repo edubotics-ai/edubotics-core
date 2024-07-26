@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-from tqdm import tqdm
-
+from urllib.parse import urlparse
+import tempfile
 
 def get_urls_from_file(file_path: str):
     """
@@ -106,3 +106,23 @@ def get_metadata(lectures_url, schedule_url):
             continue
 
     return lecture_metadata
+
+
+def download_pdf_from_url(pdf_url):
+    """
+    Function to temporarily download a PDF file from a URL and return the local file path.
+
+    Args:
+        pdf_url (str): The URL of the PDF file to download.
+
+    Returns:
+        str: The local file path of the downloaded PDF file.
+    """
+    response = requests.get(pdf_url)
+    if response.status_code == 200:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(response.content)
+            temp_file_path = temp_file.name
+        return temp_file_path
+    else:
+        return None
