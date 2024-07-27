@@ -211,7 +211,7 @@ class Langchain_RAG_V2(BaseRAG):
         res = self.rag_chain.stream(user_query, config)
         return res
 
-    def add_history_from_list(self, history_list):
+    def add_history_from_list(self, conversation_list):
         """
         Add messages from a list to the chat history.
 
@@ -220,8 +220,22 @@ class Langchain_RAG_V2(BaseRAG):
         """
         history = ChatMessageHistory()
 
-        for idx, message_pairs in enumerate(history_list):
-            history.add_user_message(message_pairs[0])
-            history.add_ai_message(message_pairs[1])
+        for idx, message in enumerate(conversation_list):
+            message_type = (
+                message.get("type", None)
+                if isinstance(message, dict)
+                else getattr(message, "type", None)
+            )
+
+            message_content = (
+                message.get("content", None)
+                if isinstance(message, dict)
+                else getattr(message, "content", None)
+            )
+
+            if message_type in ["human", "user_message"]:
+                history.add_user_message(message_content)
+            elif message_type in ["ai", "ai_message"]:
+                history.add_ai_message(message_content)
 
         return history

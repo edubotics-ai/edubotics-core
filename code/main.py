@@ -60,7 +60,47 @@ class Chatbot:
         )
 
         chain = cl.user_session.get("chain")
-        memory = chain.memory if chain else []
+        print(list(chain.store.values()))
+        memory_list = cl.user_session.get(
+            "memory",
+            (
+                list(chain.store.values())[0].messages
+                if len(chain.store.values()) > 0
+                else []
+            ),
+        )
+        conversation_list = []
+        for message in memory_list:
+            # Convert to dictionary if possible
+            message_dict = message.to_dict() if hasattr(message, "to_dict") else message
+
+            # Check if the type attribute is present as a key or attribute
+            message_type = (
+                message_dict.get("type", None)
+                if isinstance(message_dict, dict)
+                else getattr(message, "type", None)
+            )
+
+            # Check if content is present as a key or attribute
+            message_content = (
+                message_dict.get("content", None)
+                if isinstance(message_dict, dict)
+                else getattr(message, "content", None)
+            )
+
+            if message_type in ["ai", "ai_message"]:
+                conversation_list.append(
+                    {"type": "ai_message", "content": message_content}
+                )
+            elif message_type in ["human", "user_message"]:
+                conversation_list.append(
+                    {"type": "user_message", "content": message_content}
+                )
+            else:
+                raise ValueError("Invalid message type")
+        print("\n\n\n")
+        print("history at setup_llm", conversation_list)
+        print("\n\n\n")
 
         old_config = copy.deepcopy(self.config)
         self.config["vectorstore"]["db_option"] = retriever_method
@@ -71,7 +111,7 @@ class Chatbot:
         self.llm_tutor.update_llm(
             old_config, self.config
         )  # update only attributes that are changed
-        self.chain = self.llm_tutor.qa_bot(memory=memory)
+        self.chain = self.llm_tutor.qa_bot(memory=conversation_list)
 
         tags = [chat_profile, self.config["vectorstore"]["db_option"]]
 
@@ -222,7 +262,7 @@ class Chatbot:
         rename_dict = {"Chatbot": "AI Tutor"}
         return rename_dict.get(orig_author, orig_author)
 
-    async def start(self, thread=None, memory=[]):
+    async def start(self):
         """
         Start the chatbot, initialize settings widgets,
         and display and load previous conversation if chat logging is enabled.
@@ -235,6 +275,8 @@ class Chatbot:
             "session_id": cl.context.session.thread_id,
         }
         print(self.user)
+
+        memory = cl.user_session.get("memory", [])
 
         cl.user_session.set("user", self.user)
         self.llm_tutor = LLMTutor(self.config, user=self.user)
@@ -273,6 +315,18 @@ class Chatbot:
         """
 
         chain = cl.user_session.get("chain")
+
+        print("\n\n\n")
+        print(
+            "session history",
+            chain.get_session_history(
+                self.user["user_id"],
+                self.user["session_id"],
+                self.config["llm_params"]["memory_window"],
+            ),
+        )
+        print("\n\n\n")
+
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
         stream = (llm_settings.get("stream_response", True)) or (
@@ -318,28 +372,47 @@ class Chatbot:
             res, answer, stream=stream, view_sources=view_sources
         )
 
-        await cl.Message(content=answer_with_sources, elements=source_elements).send()
+        await cl.Message(
+            content=answer_with_sources, elements=source_elements, author=LLM
+        ).send()
 
     async def on_chat_resume(self, thread: ThreadDict):
         steps = thread["steps"]
-        conversation_pairs = []
+        # conversation_pairs = []
+        conversation_list = []
 
         user_message = None
         k = self.config["llm_params"]["memory_window"]
         count = 0
 
-        for step in steps:
-            if step["type"] == "user_message":
-                user_message = step["output"]
-            elif step["type"] == "assistant_message" and user_message is not None:
-                assistant_message = step["output"]
-                conversation_pairs.append((user_message, assistant_message))
-                user_message = None
-                count += 1
-                if count >= k:
-                    break
+        print(steps)
 
-        await self.start(thread, memory=conversation_pairs)
+        for step in reversed(steps):
+            print(step["type"])
+            if step["name"] not in [SYSTEM]:
+                if step["type"] == "user_message":
+                    conversation_list.append(
+                        {"type": "user_message", "content": step["output"]}
+                    )
+                elif step["type"] == "assistant_message":
+                    if step["name"] == LLM:
+                        conversation_list.append(
+                            {"type": "ai_message", "content": step["output"]}
+                        )
+                else:
+                    raise ValueError("Invalid message type")
+            count += 1
+            if count >= 2 * k:  # 2 * k to account for both user and assistant messages
+                break
+
+        conversation_list = conversation_list[::-1]
+
+        print("\n\n\n")
+        print("history at on_chat_resume", conversation_list)
+        print(len(conversation_list))
+        print("\n\n\n")
+        cl.user_session.set("memory", conversation_list)
+        await self.start()
 
     @cl.oauth_callback
     def auth_callback(

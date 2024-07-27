@@ -6,6 +6,11 @@ def get_sources(res, answer, stream=True, view_sources=False):
     source_elements = []
     source_dict = {}  # Dictionary to store URL elements
 
+    print("\n\n\n")
+    print(res["context"])
+    print(len(res["context"]))
+    print("\n\n\n")
+
     for idx, source in enumerate(res["context"]):
         source_metadata = source.metadata
         url = source_metadata.get("source", "N/A")
@@ -20,6 +25,9 @@ def get_sources(res, answer, stream=True, view_sources=False):
         source_type = source_metadata.get("source_type", "N/A")
 
         url_name = f"{url}_{page}"
+        print("url")
+        print(url_name)
+        print("\n\n\n")
         if url_name not in source_dict:
             source_dict[url_name] = {
                 "text": source.page_content,

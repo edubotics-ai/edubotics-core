@@ -203,6 +203,7 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
         print("Hist: ", hist)
         print("\n\n\n")
         messages = (await hist.aget_messages()).copy()
+        print("messages: ", messages)
 
         if not self.history_messages_key:
             # return all messages
