@@ -3,7 +3,7 @@ log_chunk_dir: '../storage/logs/chunks' # str
 device: 'cpu' # str [cuda, cpu]
 
 vectorstore:
-  load_from_HF: True # bool
+  load_from_HF: False # bool
   embedd_files: False # bool
   data_path: '../storage/data' # str
   url_file_path: '../storage/data/urls.txt' # str
