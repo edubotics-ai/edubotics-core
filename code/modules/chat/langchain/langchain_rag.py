@@ -9,11 +9,21 @@ from langchain.memory import (
     ConversationSummaryBufferMemory,
 )
 
+import chainlit as cl
+from langchain_community.chat_models import ChatOpenAI
+
 
 class Langchain_RAG_V1(BaseRAG):
 
     def __init__(
-        self, llm, memory, retriever, qa_prompt: str, rephrase_prompt: str, config: dict
+        self,
+        llm,
+        memory,
+        retriever,
+        qa_prompt: str,
+        rephrase_prompt: str,
+        config: dict,
+        callbacks=None,
     ):
         """
         Initialize the Langchain_RAG class.
@@ -77,9 +87,29 @@ class Langchain_RAG_V1(BaseRAG):
         return res
 
 
+class QuestionGenerator:
+    """
+    Generate a question from the LLMs response and users input and past conversations.
+    """
+
+    def __init__(self):
+        pass
+
+    def generate_questions(self, query, response, chat_history, context):
+        questions = return_questions(query, response, chat_history, context)
+        return questions
+
+
 class Langchain_RAG_V2(BaseRAG):
     def __init__(
-        self, llm, memory, retriever, qa_prompt: str, rephrase_prompt: str, config: dict
+        self,
+        llm,
+        memory,
+        retriever,
+        qa_prompt: str,
+        rephrase_prompt: str,
+        config: dict,
+        callbacks=None,
     ):
         """
         Initialize the Langchain_RAG class.
@@ -171,6 +201,9 @@ class Langchain_RAG_V2(BaseRAG):
             ],
         )
 
+        if callbacks is not None:
+            self.rag_chain = self.rag_chain.with_config(callbacks=callbacks)
+
     def get_session_history(
         self, user_id: str, conversation_id: str, memory_window: int
     ) -> BaseChatMessageHistory:
@@ -192,7 +225,7 @@ class Langchain_RAG_V2(BaseRAG):
             )  # add previous messages to the store. Note: the store is in-memory.
         return self.store[(user_id, conversation_id)]
 
-    async def invoke(self, user_query, config):
+    async def invoke(self, user_query, config, **kwargs):
         """
         Invoke the chain.
 
@@ -202,7 +235,7 @@ class Langchain_RAG_V2(BaseRAG):
         Returns:
             dict: The output variables.
         """
-        res = await self.rag_chain.ainvoke(user_query, config)
+        res = await self.rag_chain.ainvoke(user_query, config, **kwargs)
         res["rephrase_prompt"] = self.rephrase_prompt
         res["qa_prompt"] = self.qa_prompt
         return res

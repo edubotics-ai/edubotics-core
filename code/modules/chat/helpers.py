@@ -116,3 +116,58 @@ def get_prompt(config, prompt_type):
                 return prompts["openai"]["prompt_no_history"]
     elif prompt_type == "rephrase":
         return prompts["openai"]["rephrase_prompt"]
+
+
+def get_history_chat_resume(steps, k, SYSTEM, LLM):
+    conversation_list = []
+    count = 0
+    for step in reversed(steps):
+        print(step["type"])
+        if step["name"] not in [SYSTEM]:
+            if step["type"] == "user_message":
+                conversation_list.append(
+                    {"type": "user_message", "content": step["output"]}
+                )
+            elif step["type"] == "assistant_message":
+                if step["name"] == LLM:
+                    conversation_list.append(
+                        {"type": "ai_message", "content": step["output"]}
+                    )
+            else:
+                raise ValueError("Invalid message type")
+        count += 1
+        if count >= 2 * k:  # 2 * k to account for both user and assistant messages
+            break
+    conversation_list = conversation_list[::-1]
+    return conversation_list
+
+
+def get_history_setup_llm(memory_list):
+    conversation_list = []
+    for message in memory_list:
+        message_dict = message.to_dict() if hasattr(message, "to_dict") else message
+
+        # Check if the type attribute is present as a key or attribute
+        message_type = (
+            message_dict.get("type", None)
+            if isinstance(message_dict, dict)
+            else getattr(message, "type", None)
+        )
+
+        # Check if content is present as a key or attribute
+        message_content = (
+            message_dict.get("content", None)
+            if isinstance(message_dict, dict)
+            else getattr(message, "content", None)
+        )
+
+        if message_type in ["ai", "ai_message"]:
+            conversation_list.append({"type": "ai_message", "content": message_content})
+        elif message_type in ["human", "user_message"]:
+            conversation_list.append(
+                {"type": "user_message", "content": message_content}
+            )
+        else:
+            raise ValueError("Invalid message type")
+
+    return conversation_list
