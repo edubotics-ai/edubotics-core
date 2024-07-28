@@ -440,10 +440,9 @@ class Chatbot:
         return default_user
 
     async def on_action(self, action: cl.Action):
-        print("Action Callback")
-        print(action)
-        # main(message=action.description)\
-        message = await cl.Message(content=action.description, author=YOU).send()
+        message = await cl.Message(
+            content=action.description, type="user_message"
+        ).send()
         await self.main(message)
 
 
