@@ -311,3 +311,39 @@ def create_retrieval_chain(
     ).with_config(run_name="retrieval_chain")
 
     return retrieval_chain
+
+
+def return_questions(query, response, chat_history_str, context):
+
+    system = (
+        "You are someone that suggests a question based on the student's input and chat history. "
+        "Generate a question that is relevant to the student's input and chat history. "
+        "Incorporate relevant details from the chat history to make the question clearer and more specific. "
+        "Chat history: \n{chat_history_str}\n"
+        "Use the context to generate a question that is relevant to the student's input and chat history: Context: {context}"
+        "Generate 3 short and concise questions from the students voice based on the following input and response: "
+        "The 3 short and concise questions should be sperated by dots. Example: 'What is the capital of France?...What is the population of France?...What is the currency of France?'"
+        "User Query: {query}"
+        "AI Response: {response}"
+        "The 3 short and concise questions seperated by dots (...) are:"
+    )
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system),
+            ("human", "{chat_history_str}, {context}, {query}, {response}"),
+        ]
+    )
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    question_generator = prompt | llm | StrOutputParser()
+    new_questions = question_generator.invoke(
+        {
+            "chat_history_str": chat_history_str,
+            "context": context,
+            "query": query,
+            "response": response,
+        }
+    )
+
+    list_of_questions = new_questions.split("...")
+    return list_of_questions

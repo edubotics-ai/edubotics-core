@@ -2,7 +2,11 @@ from modules.chat.helpers import get_prompt
 from modules.chat.chat_model_loader import ChatModelLoader
 from modules.vectorstore.store_manager import VectorStoreManager
 from modules.retriever.retriever import Retriever
-from modules.chat.langchain.langchain_rag import Langchain_RAG_V1, Langchain_RAG_V2
+from modules.chat.langchain.langchain_rag import (
+    Langchain_RAG_V1,
+    Langchain_RAG_V2,
+    QuestionGenerator,
+)
 
 
 class LLMTutor:
@@ -86,7 +90,9 @@ class LLMTutor:
         compare_dicts(old_config, new_config)
         return changes
 
-    def retrieval_qa_chain(self, llm, qa_prompt, rephrase_prompt, db, memory=None):
+    def retrieval_qa_chain(
+        self, llm, qa_prompt, rephrase_prompt, db, memory=None, callbacks=None
+    ):
         """
         Create a Retrieval QA Chain.
 
@@ -110,7 +116,10 @@ class LLMTutor:
                 qa_prompt=qa_prompt,
                 rephrase_prompt=rephrase_prompt,
                 config=self.config,
+                callbacks=callbacks,
             )
+
+            self.question_generator = QuestionGenerator()
         else:
             raise ValueError(
                 f"Invalid LLM Architecture: {self.config['llm_params']['llm_arch']}"
@@ -128,7 +137,7 @@ class LLMTutor:
         llm = chat_model_loader.load_chat_model()
         return llm
 
-    def qa_bot(self, memory=None):
+    def qa_bot(self, memory=None, callbacks=None):
         """
         Create a QA bot instance.
 
@@ -147,7 +156,12 @@ class LLMTutor:
             )
 
         qa = self.retrieval_qa_chain(
-            self.llm, self.qa_prompt, self.rephrase_prompt, self.vector_db, memory
+            self.llm,
+            self.qa_prompt,
+            self.rephrase_prompt,
+            self.vector_db,
+            memory,
+            callbacks=callbacks,
         )
 
         return qa

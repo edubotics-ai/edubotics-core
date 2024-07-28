@@ -1,5 +1,5 @@
 import chainlit.data as cl_data
-
+import asyncio
 from modules.config.constants import (
     LLAMA_PATH,
     LITERAL_API_KEY_LOGGING,
@@ -13,10 +13,15 @@ import os
 from typing import Any, Dict, no_type_check
 import chainlit as cl
 from modules.chat.llm_tutor import LLMTutor
-from modules.chat.helpers import get_sources
+from modules.chat.helpers import (
+    get_sources,
+    get_history_chat_resume,
+    get_history_setup_llm,
+)
 import copy
 from typing import Optional
 from chainlit.types import ThreadDict
+import time
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System 🖥️"
@@ -25,19 +30,30 @@ AGENT = "Agent <>"
 YOU = "You 😃"
 ERROR = "Error 🚫"
 
+with open("modules/config/config.yml", "r") as f:
+    config = yaml.safe_load(f)
 
-cl_data._data_layer = CustomLiteralDataLayer(
-    api_key=LITERAL_API_KEY_LOGGING, server=LITERAL_API_URL
-)
+
+async def setup_data_layer():
+    """
+    Set up the data layer for chat logging.
+    """
+    if config["chat_logging"]["log_chat"]:
+        data_layer = CustomLiteralDataLayer(
+            api_key=LITERAL_API_KEY_LOGGING, server=LITERAL_API_URL
+        )
+    else:
+        data_layer = None
+
+    return data_layer
 
 
 class Chatbot:
-    def __init__(self):
+    def __init__(self, config):
         """
         Initialize the Chatbot class.
         """
-        self.config = self._load_config()
-        self.literal_client = cl_data._data_layer.client
+        self.config = config
 
     def _load_config(self):
         """
@@ -51,6 +67,8 @@ class Chatbot:
         """
         Set up the LLM with the provided settings. Update the configuration and initialize the LLM tutor.
         """
+        start_time = time.time()
+
         llm_settings = cl.user_session.get("llm_settings", {})
         chat_profile, retriever_method, memory_window, llm_style = (
             llm_settings.get("chat_model"),
@@ -60,7 +78,6 @@ class Chatbot:
         )
 
         chain = cl.user_session.get("chain")
-        print(list(chain.store.values()))
         memory_list = cl.user_session.get(
             "memory",
             (
@@ -69,35 +86,7 @@ class Chatbot:
                 else []
             ),
         )
-        conversation_list = []
-        for message in memory_list:
-            # Convert to dictionary if possible
-            message_dict = message.to_dict() if hasattr(message, "to_dict") else message
-
-            # Check if the type attribute is present as a key or attribute
-            message_type = (
-                message_dict.get("type", None)
-                if isinstance(message_dict, dict)
-                else getattr(message, "type", None)
-            )
-
-            # Check if content is present as a key or attribute
-            message_content = (
-                message_dict.get("content", None)
-                if isinstance(message_dict, dict)
-                else getattr(message, "content", None)
-            )
-
-            if message_type in ["ai", "ai_message"]:
-                conversation_list.append(
-                    {"type": "ai_message", "content": message_content}
-                )
-            elif message_type in ["human", "user_message"]:
-                conversation_list.append(
-                    {"type": "user_message", "content": message_content}
-                )
-            else:
-                raise ValueError("Invalid message type")
+        conversation_list = get_history_setup_llm(memory_list)
         print("\n\n\n")
         print("history at setup_llm", conversation_list)
         print("\n\n\n")
@@ -111,12 +100,17 @@ class Chatbot:
         self.llm_tutor.update_llm(
             old_config, self.config
         )  # update only attributes that are changed
-        self.chain = self.llm_tutor.qa_bot(memory=conversation_list)
+        self.chain = self.llm_tutor.qa_bot(
+            memory=conversation_list,
+            callbacks=[cl.LangchainCallbackHandler()] if cl_data._data_layer else None,
+        )
 
         tags = [chat_profile, self.config["vectorstore"]["db_option"]]
 
         cl.user_session.set("chain", self.chain)
         cl.user_session.set("llm_tutor", self.llm_tutor)
+
+        print("Time taken to setup LLM: ", time.time() - start_time)
 
     @no_type_check
     async def update_llm(self, new_settings: Dict[str, Any]):
@@ -176,7 +170,7 @@ class Chatbot:
                 cl.input_widget.Select(
                     id="llm_style",
                     label="Type of Conversation (Default Normal)",
-                    values=["Normal", "ELI5", "Socratic"],
+                    values=["Normal", "ELI5"],
                     initial_index=0,
                 ),
             ]
@@ -268,6 +262,8 @@ class Chatbot:
         and display and load previous conversation if chat logging is enabled.
         """
 
+        start_time = time.time()
+
         await self.make_llm_settings_widgets(self.config)
         user = cl.user_session.get("user")
         self.user = {
@@ -280,9 +276,19 @@ class Chatbot:
 
         cl.user_session.set("user", self.user)
         self.llm_tutor = LLMTutor(self.config, user=self.user)
-        self.chain = self.llm_tutor.qa_bot(memory=memory)
+
+        print(cl.LangchainCallbackHandler())
+        print(cl_data._data_layer)
+        self.chain = self.llm_tutor.qa_bot(
+            memory=memory,
+            callbacks=[cl.LangchainCallbackHandler()] if cl_data._data_layer else None,
+        )
+        self.question_generator = self.llm_tutor.question_generator
+        print(self.question_generator)
         cl.user_session.set("llm_tutor", self.llm_tutor)
         cl.user_session.set("chain", self.chain)
+
+        print("Time taken to start LLM: ", time.time() - start_time)
 
     async def stream_response(self, response):
         """
@@ -313,6 +319,8 @@ class Chatbot:
         Args:
             message: The incoming chat message.
         """
+
+        start_time = time.time()
 
         chain = cl.user_session.get("chain")
 
@@ -348,64 +356,72 @@ class Chatbot:
             res = chain.stream(user_query=user_query_dict, config=chain_config)
             res = await self.stream_response(res)
         else:
-            res = await chain.invoke(user_query=user_query_dict, config=chain_config)
+            res = await chain.invoke(
+                user_query=user_query_dict,
+                config=chain_config,
+            )
 
         answer = res.get("answer", res.get("result"))
 
-        with cl_data._data_layer.client.step(
-            type="retrieval",
-            name="RAG",
-            thread_id=cl.context.session.thread_id,
-            # tags=self.tags,
-        ) as step:
-            step.input = {"question": user_query_dict["input"]}
-            step.output = {
-                "chat_history": res.get("chat_history"),
-                "context": res.get("context"),
-                "answer": answer,
-                "rephrase_prompt": res.get("rephrase_prompt"),
-                "qa_prompt": res.get("qa_prompt"),
-            }
-            step.metadata = self.config
+        if cl_data._data_layer is not None:
+            with cl_data._data_layer.client.step(
+                type="run",
+                name="step_info",
+                thread_id=cl.context.session.thread_id,
+                # tags=self.tags,
+            ) as step:
+
+                step.input = {"question": user_query_dict["input"]}
+
+                step.output = {
+                    "chat_history": res.get("chat_history"),
+                    "context": res.get("context"),
+                    "answer": answer,
+                    "rephrase_prompt": res.get("rephrase_prompt"),
+                    "qa_prompt": res.get("qa_prompt"),
+                }
+                step.metadata = self.config
 
         answer_with_sources, source_elements, sources_dict = get_sources(
             res, answer, stream=stream, view_sources=view_sources
         )
 
+        print("Time taken to process the message: ", time.time() - start_time)
+
+        list_of_questions = self.question_generator.generate_questions(
+            query=user_query_dict["input"],
+            response=answer,
+            chat_history=res.get("chat_history"),
+            context=res.get("context"),
+        )
+
+        print("\n\n\n")
+        print("Questions: ", list_of_questions)
+        print("\n\n\n")
+
+        actions = []
+        for question in list_of_questions:
+
+            actions.append(
+                cl.Action(
+                    name="follow up question",
+                    value="example_value",
+                    description=question,
+                    label=question,
+                )
+            )
+
         await cl.Message(
-            content=answer_with_sources, elements=source_elements, author=LLM
+            content=answer_with_sources,
+            elements=source_elements,
+            author=LLM,
+            actions=actions,
         ).send()
 
     async def on_chat_resume(self, thread: ThreadDict):
         steps = thread["steps"]
-        # conversation_pairs = []
-        conversation_list = []
-
-        user_message = None
         k = self.config["llm_params"]["memory_window"]
-        count = 0
-
-        print(steps)
-
-        for step in reversed(steps):
-            print(step["type"])
-            if step["name"] not in [SYSTEM]:
-                if step["type"] == "user_message":
-                    conversation_list.append(
-                        {"type": "user_message", "content": step["output"]}
-                    )
-                elif step["type"] == "assistant_message":
-                    if step["name"] == LLM:
-                        conversation_list.append(
-                            {"type": "ai_message", "content": step["output"]}
-                        )
-                else:
-                    raise ValueError("Invalid message type")
-            count += 1
-            if count >= 2 * k:  # 2 * k to account for both user and assistant messages
-                break
-
-        conversation_list = conversation_list[::-1]
+        conversation_list = get_history_chat_resume(steps, k, SYSTEM, LLM)
 
         print("\n\n\n")
         print("history at on_chat_resume", conversation_list)
@@ -423,11 +439,30 @@ class Chatbot:
     ) -> Optional[cl.User]:
         return default_user
 
+    async def on_action(self, action: cl.Action):
+        print("Action Callback")
+        print(action)
+        # main(message=action.description)\
+        message = await cl.Message(content=action.description, author=YOU).send()
+        await self.main(message)
 
-chatbot = Chatbot()
-cl.set_starters(chatbot.set_starters)
-cl.author_rename(chatbot.rename)
-cl.on_chat_start(chatbot.start)
-cl.on_chat_resume(chatbot.on_chat_resume)
-cl.on_message(chatbot.main)
-cl.on_settings_update(chatbot.update_llm)
+
+chatbot = Chatbot(config=config)
+
+
+async def start():
+    print("Setting up data layer...")
+    cl_data._data_layer = await setup_data_layer()
+    print("Data layer set up.")
+    print(cl_data._data_layer)
+    chatbot.literal_client = cl_data._data_layer.client if cl_data._data_layer else None
+    cl.set_starters(chatbot.set_starters)
+    cl.author_rename(chatbot.rename)
+    cl.on_chat_start(chatbot.start)
+    cl.on_chat_resume(chatbot.on_chat_resume)
+    cl.on_message(chatbot.main)
+    cl.on_settings_update(chatbot.update_llm)
+    cl.action_callback("follow up question")(chatbot.on_action)
+
+
+asyncio.run(start())
