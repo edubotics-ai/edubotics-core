@@ -198,13 +198,7 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
             List[BaseMessage]: The last k conversations.
         """
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
-
-        print("\n\n\n")
-        print("Hist: ", hist)
-        print("\n\n\n")
         messages = (await hist.aget_messages()).copy()
-        print("messages: ", messages)
-
         if not self.history_messages_key:
             # return all messages
             input_val = (
@@ -220,9 +214,6 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
 
         messages = self._get_chat_history(messages)
 
-        print("\n\n\n")
-        print("Messages: ", messages)
-        print("\n\n\n")
         return messages
 
 

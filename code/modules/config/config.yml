@@ -3,7 +3,7 @@ log_chunk_dir: '../storage/logs/chunks' # str
 device: 'cpu' # str [cuda, cpu]
 
 vectorstore:
-  load_from_HF: False # bool
+  load_from_HF: True # bool
   embedd_files: False # bool
   data_path: '../storage/data' # str
   url_file_path: '../storage/data/urls.txt' # str
@@ -25,8 +25,9 @@ vectorstore:
     index_name: "new_idx" # str
 
 llm_params: 
-  llm_arch: 'langchain' # [langchain, langgraph_agentic]
+  llm_arch: 'langchain' # [langchain]
   use_history: True # bool
+  generate_follow_up: False # bool
   memory_window: 3 # int
   llm_style: 'Normal' # str [Normal, ELI5]
   llm_loader: 'gpt-4o-mini' # str [local_llm, gpt-3.5-turbo-1106, gpt-4, gpt-4o-mini]
@@ -34,12 +35,12 @@ llm_params:
     temperature: 0.7 # float
   local_llm_params:
     temperature: 0.7 # float
-  stream: True # bool
+  stream: False # bool
 
 chat_logging:
-  log_chat: False # bool
+  log_chat: True # bool
   platform: 'literalai'
-  callbacks: True # bool
+  callbacks: False # bool
 
 splitter_options:
   use_splitter: True # bool

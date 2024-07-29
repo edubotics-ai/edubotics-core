@@ -37,8 +37,8 @@ class CustomLiteralDataLayer(ChainlitDataLayer):
         if step_dict.get("isError"):
             step["error"] = step_dict.get("output")
 
-        print("\n\n\n")
-        print("Step: ", step)
-        print("\n\n\n")
+        # print("\n\n\n")
+        # print("Step: ", step)
+        # print("\n\n\n")
 
         await self.client.api.send_steps([step])

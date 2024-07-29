@@ -41,10 +41,6 @@ class LLMTutor:
         """
         changes = self.get_config_changes(old_config, new_config)
 
-        print("\n\n\n")
-        print("Changes: ", changes)
-        print("\n\n\n")
-
         if "llm_params.llm_loader" in changes:
             self.llm = self.load_llm()  # Reinitialize LLM if chat_model changes
 
