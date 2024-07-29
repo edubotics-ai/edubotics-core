@@ -20,26 +20,79 @@ from langchain_community.llms import OpenAI
 from langchain import PromptTemplate
 import json
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urljoin
+import html2text
+import bs4
+import tempfile
+import PyPDF2
+from modules.dataloader.pdf_readers.base import PDFReader
+from modules.dataloader.pdf_readers.llama import LlamaParser
 
-from modules.dataloader.helpers import get_metadata
+try:
+    from modules.dataloader.helpers import get_metadata, download_pdf_from_url
+    from modules.config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
+except:
+    from dataloader.helpers import get_metadata, download_pdf_from_url
+    from config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
+
+logger = logging.getLogger(__name__)
+BASE_DIR = os.getcwd()
 
 
-class PDFReader:
+class HTMLReader:
     def __init__(self):
         pass
 
-    def get_loader(self, pdf_path):
-        loader = PyMuPDFLoader(pdf_path)
-        return loader
+    def read_url(self, url):
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            logger.warning(f"Failed to download HTML from URL: {url}")
+            return None
 
-    def get_documents(self, loader):
-        return loader.load()
+    def check_links(self, base_url, html_content):
+        soup = bs4.BeautifulSoup(html_content, "html.parser")
+        for link in soup.find_all("a"):
+            href = link.get("href")
 
+            if not href or href.startswith("#"):
+                continue
+            elif not href.startswith("https"):
+                href = href.replace("http", "https")
+
+            absolute_url = urljoin(base_url, href)
+            link['href'] = absolute_url
+
+            resp = requests.head(absolute_url)
+            if resp.status_code != 200:
+                logger.warning(f"Link {absolute_url} is broken")
+                logger.warning(f"Status code: {resp.status_code}")
+
+        return str(soup)
+
+    def html_to_md(self, url, html_content):
+        html_processed = self.check_links(url, html_content)
+        markdown_content = html2text.html2text(html_processed)
+        return markdown_content
+
+    def read_html(self, url):
+        html_content = self.read_url(url)
+        if html_content:
+            return self.html_to_md(url, html_content)
+        else:
+            return None
 
 class FileReader:
-    def __init__(self, logger):
-        self.pdf_reader = PDFReader()
+    def __init__(self, logger, kind):
         self.logger = logger
+        self.kind = kind
+        if kind == "llama":
+            self.pdf_reader = LlamaParser()
+        else:
+            self.pdf_reader = PDFReader()
+        self.web_reader = HTMLReader()
+
 
     def extract_text_from_pdf(self, pdf_path):
         text = ""
@@ -51,20 +104,12 @@ class FileReader:
                 text += page.extract_text()
         return text
 
-    def download_pdf_from_url(self, pdf_url):
-        response = requests.get(pdf_url)
-        if response.status_code == 200:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-                temp_file.write(response.content)
-                temp_file_path = temp_file.name
-            return temp_file_path
-        else:
-            self.logger.error(f"Failed to download PDF from URL: {pdf_url}")
-            return None
-
     def read_pdf(self, temp_file_path: str):
-        loader = self.pdf_reader.get_loader(temp_file_path)
-        documents = self.pdf_reader.get_documents(loader)
+        if self.kind == "llama":
+            documents = self.pdf_reader.parse(temp_file_path) # asyncio.run(self.pdf_reader.parse(temp_file_path)) if using async
+        else:
+            loader = self.pdf_reader.get_loader(temp_file_path)
+            documents = self.pdf_reader.get_documents(loader)
         return documents
 
     def read_txt(self, temp_file_path: str):
@@ -179,7 +224,6 @@ class ChunkProcessor:
             "https://dl4ds.github.io/sp2024/lectures/",
             "https://dl4ds.github.io/sp2024/schedule/",
         )  # For any additional metadata
-
         with ThreadPoolExecutor() as executor:
             executor.map(
                 self.process_file,
@@ -245,16 +289,17 @@ class ChunkProcessor:
                 )
                 self.document_chunks_full.extend(document_chunks)
 
+        print(f"Processed {file_path}. File_data: {file_data}")
         self.document_data[file_path] = file_data
         self.document_metadata[file_path] = file_metadata
 
     def process_file(self, file_path, file_index, file_reader, addl_metadata):
         file_name = os.path.basename(file_path)
+
         if file_name in self.document_data:
             return
 
-        file_type = file_name.split(".")[-1].lower()
-        self.logger.info(f"Reading file {file_index + 1}: {file_path}")
+        file_type = file_name.split(".")[-1]
 
         read_methods = {
             "pdf": file_reader.read_pdf,
@@ -269,6 +314,7 @@ class ChunkProcessor:
 
         try:
             documents = read_methods[file_type](file_path)
+
             self.process_documents(
                 documents, file_path, file_type, "file", addl_metadata
             )
@@ -330,7 +376,7 @@ class ChunkProcessor:
 
 class DataLoader:
     def __init__(self, config, logger=None):
-        self.file_reader = FileReader(logger=logger)
+        self.file_reader = FileReader(logger=logger, kind=config["llm_params"]["pdf_reader"])
         self.chunk_processor = ChunkProcessor(config, logger=logger)
 
     def get_chunks(self, uploaded_files, weblinks):
@@ -348,13 +394,19 @@ if __name__ == "__main__":
     with open("../code/modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
 
+    STORAGE_DIR = os.path.join(BASE_DIR, config['vectorstore']["data_path"])
+    uploaded_files = [
+        os.path.join(STORAGE_DIR, file) for file in os.listdir(STORAGE_DIR) if file != "urls.txt"
+    ]
+
     data_loader = DataLoader(config, logger=logger)
     document_chunks, document_names, documents, document_metadata = (
         data_loader.get_chunks(
+            ["https://dl4ds.github.io/sp2024/static_files/lectures/05_loss_functions_v2.pdf"],
             [],
-            ["https://dl4ds.github.io/sp2024/"],
         )
     )
 
-    print(document_names)
+    print(document_names[:5])
     print(len(document_chunks))
+

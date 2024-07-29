@@ -66,7 +66,6 @@ class WebpageCrawler:
                 )
                 for link in unchecked_links:
                     dict_links[link] = "Checked"
-                    print(f"Checked: {link}")
                 dict_links.update(
                     {
                         link: "Not-checked"
