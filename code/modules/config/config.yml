@@ -1,6 +1,6 @@
 log_dir: '../storage/logs' # str
 log_chunk_dir: '../storage/logs/chunks' # str
-device: 'cuda' # str [cuda, cpu]
+device: 'cpu' # str [cuda, cpu]
 
 vectorstore:
   load_from_HF: True # bool
