@@ -1,6 +1,6 @@
 log_dir: '../storage/logs' # str
 log_chunk_dir: '../storage/logs/chunks' # str
-device: 'cpu' # str [cuda, cpu]
+device: 'cuda' # str [cuda, cpu]
 
 vectorstore:
   embedd_files: False # bool
@@ -32,6 +32,8 @@ llm_params:
   local_llm_params:
     model: 'tiny-llama'
     temperature: 0.7
+    repo_id: 'TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF' # HuggingFace repo id
+    filename: 'tinyllama-1.1b-chat-v1.0.Q5_0.gguf' # Specific name of gguf file in the repo
 
 chat_logging:
   log_chat: False # bool
