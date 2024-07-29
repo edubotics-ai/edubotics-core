@@ -85,31 +85,34 @@ custom_meta_image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/
 # custom_build = "./public/build"
 
 [UI.theme]
-    default = "light"
+    default = "dark"
     #layout = "wide"
     #font_family = "Inter, sans-serif"
 # Override default MUI light theme. (Check theme.ts)
 [UI.theme.light]
-    background = "#FAFAFA"
-    paper = "#FFFFFF"
+    #background = "#FAFAFA"
+    #paper = "#FFFFFF"
 
     [UI.theme.light.primary]
-        main = "#b22222"  # Brighter shade of red
-        dark = "#8b0000"  # Darker shade of the brighter red
-        light = "#ff6347"  # Lighter shade of the brighter red
+        #main = "#F80061"
+        #dark = "#980039"
+        #light = "#FFE7EB"
     [UI.theme.light.text]
-        primary = "#212121"
-        secondary = "#616161"
+        #primary = "#212121"
+        #secondary = "#616161"
+
 # Override default MUI dark theme. (Check theme.ts)
 [UI.theme.dark]
-    background = "#1C1C1C" # Slightly lighter dark background color
-    paper = "#2A2A2A"      # Slightly lighter dark paper color
+    #background = "#FAFAFA"
+    #paper = "#FFFFFF"
 
     [UI.theme.dark.primary]
-        main = "#89CFF0"    # Primary color
-        dark = "#3700B3"    # Dark variant of primary color
-        light = "#CFBCFF"   # Lighter variant of primary color
-
+        #main = "#F80061"
+        #dark = "#980039"
+        #light = "#FFE7EB"
+    [UI.theme.dark.text]
+        #primary = "#EEEEEE"
+        #secondary = "#BDBDBD"
 
 [meta]
-generated_by = "1.1.302"
+generated_by = "1.1.304"

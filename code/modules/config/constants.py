@@ -6,6 +6,7 @@ load_dotenv()
 # API Keys - Loaded from the .env file
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+LLAMA_CLOUD_API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
 LITERAL_API_KEY_LOGGING = os.getenv("LITERAL_API_KEY_LOGGING")
 LITERAL_API_URL = os.getenv("LITERAL_API_URL")
@@ -17,6 +18,6 @@ opening_message = f"Hey, What Can I Help You With?\n\nYou can me ask me question
 
 # Model Paths
 
-LLAMA_PATH = "../storage/models/tinyllama-1.1b-chat-v1.0.Q5_K_M.gguf"
+LLAMA_PATH = "../storage/models/tinyllama"
 
 RETRIEVER_HF_PATHS = {"RAGatouille": "XThomasBU/Colbert_Index"}
