@@ -70,11 +70,12 @@ class Chatbot:
         start_time = time.time()
 
         llm_settings = cl.user_session.get("llm_settings", {})
-        chat_profile, retriever_method, memory_window, llm_style = (
+        chat_profile, retriever_method, memory_window, llm_style, generate_follow_up = (
             llm_settings.get("chat_model"),
             llm_settings.get("retriever_method"),
             llm_settings.get("memory_window"),
             llm_settings.get("llm_style"),
+            llm_settings.get("follow_up_questions"),
         )
 
         chain = cl.user_session.get("chain")
@@ -87,22 +88,24 @@ class Chatbot:
             ),
         )
         conversation_list = get_history_setup_llm(memory_list)
-        print("\n\n\n")
-        print("history at setup_llm", conversation_list)
-        print("\n\n\n")
 
         old_config = copy.deepcopy(self.config)
         self.config["vectorstore"]["db_option"] = retriever_method
         self.config["llm_params"]["memory_window"] = memory_window
         self.config["llm_params"]["llm_style"] = llm_style
         self.config["llm_params"]["llm_loader"] = chat_profile
+        self.config["llm_params"]["generate_follow_up"] = generate_follow_up
 
         self.llm_tutor.update_llm(
             old_config, self.config
-        )  # update only attributes that are changed
+        )  # update only llm attributes that are changed
         self.chain = self.llm_tutor.qa_bot(
             memory=conversation_list,
-            callbacks=[cl.LangchainCallbackHandler()] if cl_data._data_layer else None,
+            callbacks=(
+                [cl.LangchainCallbackHandler()]
+                if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
+                else None
+            ),
         )
 
         tags = [chat_profile, self.config["vectorstore"]["db_option"]]
@@ -165,7 +168,14 @@ class Chatbot:
                     id="view_sources", label="View Sources", initial=False
                 ),
                 cl.input_widget.Switch(
-                    id="stream_response", label="Stream response", initial=False
+                    id="stream_response",
+                    label="Stream response",
+                    initial=config["llm_params"]["stream"],
+                ),
+                cl.input_widget.Switch(
+                    id="follow_up_questions",
+                    label="Generate follow up questions",
+                    initial=False,
                 ),
                 cl.input_widget.Select(
                     id="llm_style",
@@ -193,6 +203,7 @@ class Chatbot:
                 else 0
             ),
             "view_sources": llm_settings.get("view_sources"),
+            "follow_up_questions": llm_settings.get("follow_up_questions"),
         }
         await cl.Message(
             author=SYSTEM,
@@ -270,21 +281,21 @@ class Chatbot:
             "user_id": user.identifier,
             "session_id": cl.context.session.thread_id,
         }
-        print(self.user)
 
         memory = cl.user_session.get("memory", [])
 
         cl.user_session.set("user", self.user)
         self.llm_tutor = LLMTutor(self.config, user=self.user)
 
-        print(cl.LangchainCallbackHandler())
-        print(cl_data._data_layer)
         self.chain = self.llm_tutor.qa_bot(
             memory=memory,
-            callbacks=[cl.LangchainCallbackHandler()] if cl_data._data_layer else None,
+            callbacks=(
+                [cl.LangchainCallbackHandler()]
+                if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
+                else None
+            ),
         )
         self.question_generator = self.llm_tutor.question_generator
-        print(self.question_generator)
         cl.user_session.set("llm_tutor", self.llm_tutor)
         cl.user_session.set("chain", self.chain)
 
@@ -324,22 +335,10 @@ class Chatbot:
 
         chain = cl.user_session.get("chain")
 
-        print("\n\n\n")
-        print(
-            "session history",
-            chain.get_session_history(
-                self.user["user_id"],
-                self.user["session_id"],
-                self.config["llm_params"]["memory_window"],
-            ),
-        )
-        print("\n\n\n")
-
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
-        stream = (llm_settings.get("stream_response", True)) or (
-            not self.config["llm_params"]["stream"]
-        )
+        stream = llm_settings.get("stream_response", False)
+        steam = False  # Fix streaming
         user_query_dict = {"input": message.content}
         # Define the base configuration
         chain_config = {
@@ -349,8 +348,6 @@ class Chatbot:
                 "memory_window": self.config["llm_params"]["memory_window"],
             }
         }
-
-        stream = False
 
         if stream:
             res = chain.stream(user_query=user_query_dict, config=chain_config)
@@ -385,31 +382,33 @@ class Chatbot:
         answer_with_sources, source_elements, sources_dict = get_sources(
             res, answer, stream=stream, view_sources=view_sources
         )
+        answer_with_sources = answer_with_sources.replace("$$", "$")
 
         print("Time taken to process the message: ", time.time() - start_time)
 
-        list_of_questions = self.question_generator.generate_questions(
-            query=user_query_dict["input"],
-            response=answer,
-            chat_history=res.get("chat_history"),
-            context=res.get("context"),
-        )
-
-        print("\n\n\n")
-        print("Questions: ", list_of_questions)
-        print("\n\n\n")
-
         actions = []
-        for question in list_of_questions:
 
-            actions.append(
-                cl.Action(
-                    name="follow up question",
-                    value="example_value",
-                    description=question,
-                    label=question,
-                )
+        if self.config["llm_params"]["generate_follow_up"]:
+            start_time = time.time()
+            list_of_questions = self.question_generator.generate_questions(
+                query=user_query_dict["input"],
+                response=answer,
+                chat_history=res.get("chat_history"),
+                context=res.get("context"),
             )
+
+            for question in list_of_questions:
+
+                actions.append(
+                    cl.Action(
+                        name="follow up question",
+                        value="example_value",
+                        description=question,
+                        label=question,
+                    )
+                )
+
+            print("Time taken to generate questions: ", time.time() - start_time)
 
         await cl.Message(
             content=answer_with_sources,
@@ -422,11 +421,6 @@ class Chatbot:
         steps = thread["steps"]
         k = self.config["llm_params"]["memory_window"]
         conversation_list = get_history_chat_resume(steps, k, SYSTEM, LLM)
-
-        print("\n\n\n")
-        print("history at on_chat_resume", conversation_list)
-        print(len(conversation_list))
-        print("\n\n\n")
         cl.user_session.set("memory", conversation_list)
         await self.start()
 
@@ -439,9 +433,11 @@ class Chatbot:
     ) -> Optional[cl.User]:
         return default_user
 
-    async def on_action(self, action: cl.Action):
+    async def on_follow_up(self, action: cl.Action):
         message = await cl.Message(
-            content=action.description, type="user_message"
+            content=action.description,
+            type="user_message",
+            author=self.user["user_id"],
         ).send()
         await self.main(message)
 
@@ -449,11 +445,8 @@ class Chatbot:
 chatbot = Chatbot(config=config)
 
 
-async def start():
-    print("Setting up data layer...")
+async def start_app():
     cl_data._data_layer = await setup_data_layer()
-    print("Data layer set up.")
-    print(cl_data._data_layer)
     chatbot.literal_client = cl_data._data_layer.client if cl_data._data_layer else None
     cl.set_starters(chatbot.set_starters)
     cl.author_rename(chatbot.rename)
@@ -461,7 +454,7 @@ async def start():
     cl.on_chat_resume(chatbot.on_chat_resume)
     cl.on_message(chatbot.main)
     cl.on_settings_update(chatbot.update_llm)
-    cl.action_callback("follow up question")(chatbot.on_action)
+    cl.action_callback("follow up question")(chatbot.on_follow_up)
 
 
-asyncio.run(start())
+asyncio.run(start_app())
