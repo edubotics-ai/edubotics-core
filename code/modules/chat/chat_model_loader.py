@@ -18,8 +18,8 @@ class ChatModelLoader:
 
     def _verify_model_cache(self, model_cache_path):
         hf_hub_download(
-            repo_id="TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
-            filename="tinyllama-1.1b-chat-v1.0.Q5_0.gguf",
+            repo_id=self.config["llm_params"]["local_llm_params"]["repo_id"],
+            filename=self.config["llm_params"]["local_llm_params"]["filename"],
             cache_dir=model_cache_path
             )
         return str(list(Path(model_cache_path).glob("*/snapshots/*/*.gguf"))[0])
