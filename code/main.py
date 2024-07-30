@@ -17,6 +17,7 @@ from modules.chat.helpers import (
     get_sources,
     get_history_chat_resume,
     get_history_setup_llm,
+    get_last_config,
 )
 import copy
 from typing import Optional
@@ -55,7 +56,7 @@ class Chatbot:
         """
         self.config = config
 
-    def _load_config(self):
+    async def _load_config(self):
         """
         Load the configuration from a YAML file.
         """
@@ -267,13 +268,19 @@ class Chatbot:
         rename_dict = {"Chatbot": "AI Tutor"}
         return rename_dict.get(orig_author, orig_author)
 
-    async def start(self):
+    async def start(self, config=None):
         """
         Start the chatbot, initialize settings widgets,
         and display and load previous conversation if chat logging is enabled.
         """
 
         start_time = time.time()
+
+        self.config = (
+            await self._load_config() if config is None else config
+        )  # Reload the configuration on chat resume
+
+        await self.make_llm_settings_widgets(self.config)  # Reload the settings widgets
 
         await self.make_llm_settings_widgets(self.config)
         user = cl.user_session.get("user")
@@ -360,25 +367,6 @@ class Chatbot:
 
         answer = res.get("answer", res.get("result"))
 
-        if cl_data._data_layer is not None:
-            with cl_data._data_layer.client.step(
-                type="run",
-                name="step_info",
-                thread_id=cl.context.session.thread_id,
-                # tags=self.tags,
-            ) as step:
-
-                step.input = {"question": user_query_dict["input"]}
-
-                step.output = {
-                    "chat_history": res.get("chat_history"),
-                    "context": res.get("context"),
-                    "answer": answer,
-                    "rephrase_prompt": res.get("rephrase_prompt"),
-                    "qa_prompt": res.get("qa_prompt"),
-                }
-                step.metadata = self.config
-
         answer_with_sources, source_elements, sources_dict = get_sources(
             res, answer, stream=stream, view_sources=view_sources
         )
@@ -415,14 +403,21 @@ class Chatbot:
             elements=source_elements,
             author=LLM,
             actions=actions,
+            metadata=self.config,
         ).send()
 
     async def on_chat_resume(self, thread: ThreadDict):
+        thread_config = None
         steps = thread["steps"]
-        k = self.config["llm_params"]["memory_window"]
+        k = self.config["llm_params"][
+            "memory_window"
+        ]  # on resume, alwyas use the default memory window
         conversation_list = get_history_chat_resume(steps, k, SYSTEM, LLM)
+        thread_config = get_last_config(
+            steps
+        )  # TODO: Returns None for now - which causes config to be reloaded with default values
         cl.user_session.set("memory", conversation_list)
-        await self.start()
+        await self.start(config=thread_config)
 
     @cl.oauth_callback
     def auth_callback(
