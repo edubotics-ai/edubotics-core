@@ -105,11 +105,7 @@ class FileReader:
         return text
 
     def read_pdf(self, temp_file_path: str):
-        if self.kind == "llama":
-            documents = self.pdf_reader.parse(temp_file_path) # asyncio.run(self.pdf_reader.parse(temp_file_path)) if using async
-        else:
-            loader = self.pdf_reader.get_loader(temp_file_path)
-            documents = self.pdf_reader.get_documents(loader)
+        documents = self.pdf_reader.parse(temp_file_path)
         return documents
 
     def read_txt(self, temp_file_path: str):
@@ -289,7 +285,6 @@ class ChunkProcessor:
                 )
                 self.document_chunks_full.extend(document_chunks)
 
-        print(f"Processed {file_path}. File_data: {file_data}")
         self.document_data[file_path] = file_data
         self.document_metadata[file_path] = file_metadata
 
