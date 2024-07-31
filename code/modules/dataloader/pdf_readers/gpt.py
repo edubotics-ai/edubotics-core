@@ -2,6 +2,7 @@ import base64
 import os
 import requests
 
+from io import BytesIO
 from openai import OpenAI
 from pdf2image import convert_from_path
 from langchain.schema import Document
@@ -27,11 +28,8 @@ class GPTParser:
 
     def parse(self, pdf_path):
         images = convert_from_path(pdf_path)
-        for i, image in enumerate(images):
-            image.save(f'output/images/page{i}.jpg', 'JPEG')
 
-        encoded_images = [self.encode_image(
-            f'output/images/page{im}.jpg') for im in range(len(images))]
+        encoded_images = [self.encode_image(image) for image in images]
 
         chunks = [encoded_images[i:i + 5] for i in range(0, len(encoded_images), 5)]
 
@@ -42,8 +40,6 @@ class GPTParser:
 
         output = ""
         for chunk_num, chunk in enumerate(chunks):
-            print(f"Processing chunk {chunk_num + 1}/{len(chunks)})")
-
             content = [{"type": "image_url", "image_url": {
                 "url": f"data:image/jpeg;base64,{image}"}} for image in chunk]
 
@@ -63,9 +59,8 @@ class GPTParser:
                 "https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
 
             resp = response.json()
-            print("Response", resp)
 
-            chunk_output = resp['choices'][0]['message']['content']
+            chunk_output = resp['choices'][0]['message']['content'].replace("```", "").replace("markdown", "").replace("````", "")
 
             output += chunk_output + "\n---\n"
 
@@ -79,6 +74,7 @@ class GPTParser:
         ]
         return documents
 
-    def encode_image(self, image_path):
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
+    def encode_image(self, image):
+        buffered = BytesIO()
+        image.save(buffered, format="JPEG")
+        return base64.b64encode(buffered.getvalue()).decode('utf-8')
