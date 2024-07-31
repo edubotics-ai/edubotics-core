@@ -27,6 +27,7 @@ import tempfile
 import PyPDF2
 from modules.dataloader.pdf_readers.base import PDFReader
 from modules.dataloader.pdf_readers.llama import LlamaParser
+from modules.dataloader.pdf_readers.gpt import GPTParser
 
 try:
     from modules.dataloader.helpers import get_metadata, download_pdf_from_url
@@ -89,9 +90,12 @@ class FileReader:
         self.kind = kind
         if kind == "llama":
             self.pdf_reader = LlamaParser()
+        elif kind == "gpt":
+            self.pdf_reader = GPTParser()
         else:
             self.pdf_reader = PDFReader()
         self.web_reader = HTMLReader()
+        self.logger.info(f"Initialized FileReader with {kind} PDF reader and HTML reader")
 
 
     def extract_text_from_pdf(self, pdf_path):
@@ -130,8 +134,7 @@ class FileReader:
         return loader.load()
 
     def read_html(self, url: str):
-        loader = WebBaseLoader(url)
-        return loader.load()
+        return [Document(page_content=self.web_reader.read_html(url))]
 
     def read_tex_from_url(self, tex_url):
         response = requests.get(tex_url)
