@@ -65,6 +65,7 @@ class GPTParser:
             output += chunk_output + "\n---\n"
 
         output = output.split("\n---\n")
+        output = [doc for doc in output if doc.strip() != ""]
 
         documents = [
             Document(
