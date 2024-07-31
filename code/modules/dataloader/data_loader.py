@@ -27,6 +27,7 @@ import tempfile
 import PyPDF2
 from modules.dataloader.pdf_readers.base import PDFReader
 from modules.dataloader.pdf_readers.llama import LlamaParser
+from modules.dataloader.pdf_readers.gpt import GPTParser
 
 try:
     from modules.dataloader.helpers import get_metadata, download_pdf_from_url
@@ -89,9 +90,12 @@ class FileReader:
         self.kind = kind
         if kind == "llama":
             self.pdf_reader = LlamaParser()
+        elif kind == "gpt":
+            self.pdf_reader = GPTParser()
         else:
             self.pdf_reader = PDFReader()
         self.web_reader = HTMLReader()
+        self.logger.info(f"Initialized FileReader with {kind} PDF reader and HTML reader")
 
 
     def extract_text_from_pdf(self, pdf_path):
@@ -105,11 +109,7 @@ class FileReader:
         return text
 
     def read_pdf(self, temp_file_path: str):
-        if self.kind == "llama":
-            documents = self.pdf_reader.parse(temp_file_path) # asyncio.run(self.pdf_reader.parse(temp_file_path)) if using async
-        else:
-            loader = self.pdf_reader.get_loader(temp_file_path)
-            documents = self.pdf_reader.get_documents(loader)
+        documents = self.pdf_reader.parse(temp_file_path)
         return documents
 
     def read_txt(self, temp_file_path: str):
@@ -134,8 +134,7 @@ class FileReader:
         return loader.load()
 
     def read_html(self, url: str):
-        loader = WebBaseLoader(url)
-        return loader.load()
+        return [Document(page_content=self.web_reader.read_html(url))]
 
     def read_tex_from_url(self, tex_url):
         response = requests.get(tex_url)
@@ -289,7 +288,6 @@ class ChunkProcessor:
                 )
                 self.document_chunks_full.extend(document_chunks)
 
-        print(f"Processed {file_path}. File_data: {file_data}")
         self.document_data[file_path] = file_data
         self.document_metadata[file_path] = file_metadata
 
