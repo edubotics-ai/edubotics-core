@@ -63,7 +63,7 @@ class HTMLReader:
                 href = href.replace("http", "https")
 
             absolute_url = urljoin(base_url, href)
-            link['href'] = absolute_url
+            link["href"] = absolute_url
 
             resp = requests.head(absolute_url)
             if resp.status_code != 200:
@@ -84,6 +84,7 @@ class HTMLReader:
         else:
             return None
 
+
 class FileReader:
     def __init__(self, logger, kind):
         self.logger = logger
@@ -95,8 +96,9 @@ class FileReader:
         else:
             self.pdf_reader = PDFReader()
         self.web_reader = HTMLReader()
-        self.logger.info(f"Initialized FileReader with {kind} PDF reader and HTML reader")
-
+        self.logger.info(
+            f"Initialized FileReader with {kind} PDF reader and HTML reader"
+        )
 
     def extract_text_from_pdf(self, pdf_path):
         text = ""
@@ -374,7 +376,9 @@ class ChunkProcessor:
 
 class DataLoader:
     def __init__(self, config, logger=None):
-        self.file_reader = FileReader(logger=logger, kind=config["llm_params"]["pdf_reader"])
+        self.file_reader = FileReader(
+            logger=logger, kind=config["llm_params"]["pdf_reader"]
+        )
         self.chunk_processor = ChunkProcessor(config, logger=logger)
 
     def get_chunks(self, uploaded_files, weblinks):
@@ -392,19 +396,22 @@ if __name__ == "__main__":
     with open("../code/modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
 
-    STORAGE_DIR = os.path.join(BASE_DIR, config['vectorstore']["data_path"])
+    STORAGE_DIR = os.path.join(BASE_DIR, config["vectorstore"]["data_path"])
     uploaded_files = [
-        os.path.join(STORAGE_DIR, file) for file in os.listdir(STORAGE_DIR) if file != "urls.txt"
+        os.path.join(STORAGE_DIR, file)
+        for file in os.listdir(STORAGE_DIR)
+        if file != "urls.txt"
     ]
 
     data_loader = DataLoader(config, logger=logger)
     document_chunks, document_names, documents, document_metadata = (
         data_loader.get_chunks(
-            ["https://dl4ds.github.io/sp2024/static_files/lectures/05_loss_functions_v2.pdf"],
+            [
+                "https://dl4ds.github.io/sp2024/static_files/discussion_slides/00_discussion.pdf"
+            ],
             [],
         )
     )
 
     print(document_names[:5])
     print(len(document_chunks))
-
