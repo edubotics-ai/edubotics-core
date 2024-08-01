@@ -32,7 +32,7 @@ llm_params:
   local_llm_params:
     model: 'tiny-llama'
     temperature: 0.7
-  pdf_reader: 'llama' # str [llama, pymupdf, gpt]
+  pdf_reader: 'gpt' # str [llama, pymupdf, gpt]
 
 chat_logging:
   log_chat: False # bool
@@ -43,6 +43,7 @@ splitter_options:
   split_by_token : True # bool
   remove_leftover_delimiters: True # bool
   remove_chunks: False # bool
+  chunking_mode: 'semantic' # str [fixed, semantic]
   chunk_size : 300 # int
   chunk_overlap : 30 # int
   chunk_separators : ["\n\n", "\n", " ", ""] # list of strings
