@@ -3,6 +3,13 @@ from modules.vectorstore.base import VectorStoreBase
 import os
 
 
+class FAISS(FAISS):
+    """To add length property to FAISS class"""
+
+    def __len__(self):
+        return self.index.ntotal
+
+
 class FaissVectorStore(VectorStoreBase):
     def __init__(self, config):
         self.config = config
@@ -35,3 +42,6 @@ class FaissVectorStore(VectorStoreBase):
 
     def as_retriever(self):
         return self.vectorstore.as_retriever()
+
+    def __len__(self):
+        return len(self.vectorstore)

@@ -277,11 +277,11 @@ class ChunkProcessor:
 
             page_num = doc.metadata.get("page", 0)
             file_data[page_num] = doc.page_content
-            metadata = (
-                addl_metadata.get(file_path, {})
-                if metadata_source == "file"
-                else {"source": file_path, "page": page_num}
-            )
+
+            # Create a new dictionary for metadata in each iteration
+            metadata = addl_metadata.get(file_path, {}).copy()
+            metadata["page"] = page_num
+            metadata["source"] = file_path
             file_metadata[page_num] = metadata
 
             if self.config["vectorstore"]["db_option"] not in ["RAGatouille"]:
