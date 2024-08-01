@@ -1,37 +1,44 @@
-from literalai import LiteralClient
-import os
-from .base import ChatProcessorBase
+from chainlit.data import ChainlitDataLayer, queue_until_user_message
 
 
-class LiteralaiChatProcessor(ChatProcessorBase):
-    def __init__(self, tags=None):
-        self.literal_client = LiteralClient(api_key=os.getenv("LITERAL_API_KEY"))
-        self.literal_client.reset_context()
-        with self.literal_client.thread(name="TEST") as thread:
-            self.thread_id = thread.id
-            self.thread = thread
-            if tags is not None and type(tags) == list:
-                self.thread.tags = tags
-        print(f"Thread ID: {self.thread}")
+# update custom methods here (Ref: https://github.com/Chainlit/chainlit/blob/4b533cd53173bcc24abe4341a7108f0070d60099/backend/chainlit/data/__init__.py)
+class CustomLiteralDataLayer(ChainlitDataLayer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def process(self, user_message, assistant_message, source_dict):
-        with self.literal_client.thread(thread_id=self.thread_id) as thread:
-            self.literal_client.message(
-                content=user_message,
-                type="user_message",
-                name="User",
-            )
-            self.literal_client.message(
-                content=assistant_message,
-                type="assistant_message",
-                name="AI_Tutor",
-            )
+    @queue_until_user_message()
+    async def create_step(self, step_dict: "StepDict"):
+        metadata = dict(
+            step_dict.get("metadata", {}),
+            **{
+                "waitForAnswer": step_dict.get("waitForAnswer"),
+                "language": step_dict.get("language"),
+                "showInput": step_dict.get("showInput"),
+            },
+        )
 
-    async def rag(self, user_query: str, chain, cb):
-        with self.literal_client.step(
-            type="retrieval", name="RAG", thread_id=self.thread_id
-        ) as step:
-            step.input = {"question": user_query}
-            res = await chain.acall(user_query, callbacks=[cb])
-            step.output = res
-        return res
+        step: LiteralStepDict = {
+            "createdAt": step_dict.get("createdAt"),
+            "startTime": step_dict.get("start"),
+            "endTime": step_dict.get("end"),
+            "generation": step_dict.get("generation"),
+            "id": step_dict.get("id"),
+            "parentId": step_dict.get("parentId"),
+            "name": step_dict.get("name"),
+            "threadId": step_dict.get("threadId"),
+            "type": step_dict.get("type"),
+            "tags": step_dict.get("tags"),
+            "metadata": metadata,
+        }
+        if step_dict.get("input"):
+            step["input"] = {"content": step_dict.get("input")}
+        if step_dict.get("output"):
+            step["output"] = {"content": step_dict.get("output")}
+        if step_dict.get("isError"):
+            step["error"] = step_dict.get("output")
+
+        # print("\n\n\n")
+        # print("Step: ", step)
+        # print("\n\n\n")
+
+        await self.client.api.send_steps([step])
