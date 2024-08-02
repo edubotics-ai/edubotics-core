@@ -31,3 +31,13 @@ a[href*='https://github.com/Chainlit/chainlit'] {
 .MuiAvatar-root.MuiAvatar-circular.css-v72an7 .MuiAvatar-img.css-1hy9t21 {
     display: none;
 }
+
+/* Hide the new chat button
+#new-chat-button {
+    display: none;
+} */
+
+/* Hide the open sidebar button
+#open-sidebar-button {
+    display: none;
+} */

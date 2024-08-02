@@ -53,11 +53,11 @@ class VectorStore:
         else:
             return self.vectorstore.load_database(embedding_model)
 
-    def _load_from_HF(self):
+    def _load_from_HF(self, HF_PATH):
         # Download the snapshot from Hugging Face Hub
         # Note: Download goes to the cache directory
         snapshot_path = snapshot_download(
-            repo_id=self.config["vectorstore"]["HF_path"],
+            repo_id=HF_PATH,
             repo_type="dataset",
             force_download=True,
         )
@@ -86,3 +86,6 @@ class VectorStore:
 
     def _get_vectorstore(self):
         return self.vectorstore
+
+    def __len__(self):
+        return self.vectorstore.__len__()

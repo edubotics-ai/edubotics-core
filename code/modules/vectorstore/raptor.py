@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 import umap
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from sklearn.mixture import GaussianMixture
 from langchain_community.chat_models import ChatOpenAI
@@ -14,6 +14,13 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from modules.vectorstore.base import VectorStoreBase
 
 RANDOM_SEED = 42
+
+
+class FAISS(FAISS):
+    """To add length property to FAISS class"""
+
+    def __len__(self):
+        return self.index.ntotal
 
 
 class RAPTORVectoreStore(VectorStoreBase):
