@@ -23,7 +23,7 @@ class GPTParser:
          The goal is to extract the text, images and equations from the slides and convert everything to markdown format. Some of the equations may be complicated.
          The markdown should be clean and easy to read, and any math equation should be converted to LaTeX, between $$. 
          For images, give a description and if you can, a source. Separate each page with '---'.
-         Just respond with the markdown.
+         Just respond with the markdown. Do not include page numbers or any other metadata. Do not try to provide titles. Strictly the content.
          """
 
     def parse(self, pdf_path):

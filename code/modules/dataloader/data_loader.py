@@ -202,10 +202,11 @@ class ChunkProcessor:
     def process_chunks(
         self, documents, file_type="txt", source="", page=0, metadata={}
     ):
-        if file_type == "pdf":
+        # TODO: Clear up this pipeline of re-adding metadata
+        documents = [Document(page_content=documents, source=source, page=page)]
+        if file_type == "pdf" and self.config["splitter_options"]["chunking_mode"] == "fixed":
             document_chunks = documents
         else:
-            documents = [Document(page_content=documents, source=source, page=page)]
             document_chunks = self.splitter.split_documents(documents)
 
         # add the source and page number back to the metadata

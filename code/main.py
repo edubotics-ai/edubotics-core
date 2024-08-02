@@ -66,16 +66,19 @@ class Chatbot:
     async def setup_llm(self):
         """
         Set up the LLM with the provided settings. Update the configuration and initialize the LLM tutor.
+
+        #TODO: Clean this up.
         """
         start_time = time.time()
 
         llm_settings = cl.user_session.get("llm_settings", {})
-        chat_profile, retriever_method, memory_window, llm_style, generate_follow_up = (
+        chat_profile, retriever_method, memory_window, llm_style, generate_follow_up, chunking_mode = (
             llm_settings.get("chat_model"),
             llm_settings.get("retriever_method"),
             llm_settings.get("memory_window"),
             llm_settings.get("llm_style"),
             llm_settings.get("follow_up_questions"),
+            llm_settings.get("chunking_mode"),
         )
 
         chain = cl.user_session.get("chain")
@@ -95,6 +98,7 @@ class Chatbot:
         self.config["llm_params"]["llm_style"] = llm_style
         self.config["llm_params"]["llm_loader"] = chat_profile
         self.config["llm_params"]["generate_follow_up"] = generate_follow_up
+        self.config["splitter_options"]["chunking_mode"] = chunking_mode
 
         self.llm_tutor.update_llm(
             old_config, self.config
@@ -171,6 +175,12 @@ class Chatbot:
                     id="stream_response",
                     label="Stream response",
                     initial=config["llm_params"]["stream"],
+                ),
+                cl.input_widget.Select(
+                    id="chunking_mode",
+                    label="Chunking mode",
+                    values=['fixed', 'semantic'],
+                    initial_index=1,
                 ),
                 cl.input_widget.Switch(
                     id="follow_up_questions",
