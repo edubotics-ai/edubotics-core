@@ -35,6 +35,9 @@ llm_params:
     temperature: 0.7 # float
   local_llm_params:
     temperature: 0.7 # float
+    repo_id: 'TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF' # HuggingFace repo id
+    filename: 'tinyllama-1.1b-chat-v1.0.Q5_0.gguf' # Specific name of gguf file in the repo
+  pdf_reader: 'pymupdf' # str [llama, pymupdf, gpt]
   stream: False # bool
   pdf_reader: 'gpt' # str [llama, pymupdf, gpt]
 

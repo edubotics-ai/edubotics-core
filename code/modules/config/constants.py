@@ -18,6 +18,6 @@ opening_message = f"Hey, What Can I Help You With?\n\nYou can me ask me question
 
 # Model Paths
 
-LLAMA_PATH = "../storage/models/tinyllama-1.1b-chat-v1.0.Q5_K_M.gguf"
+LLAMA_PATH = "../storage/models/tinyllama"
 
 RETRIEVER_HF_PATHS = {"RAGatouille": "XThomasBU/Colbert_Index"}
