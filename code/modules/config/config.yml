@@ -39,6 +39,7 @@ llm_params:
     filename: 'tinyllama-1.1b-chat-v1.0.Q5_0.gguf' # Specific name of gguf file in the repo
   pdf_reader: 'pymupdf' # str [llama, pymupdf, gpt]
   stream: False # bool
+  pdf_reader: 'gpt' # str [llama, pymupdf, gpt]
 
 chat_logging:
   log_chat: True # bool
@@ -50,6 +51,7 @@ splitter_options:
   split_by_token : True # bool
   remove_leftover_delimiters: True # bool
   remove_chunks: False # bool
+  chunking_mode: 'semantic' # str [fixed, semantic]
   chunk_size : 300 # int
   chunk_overlap : 30 # int
   chunk_separators : ["\n\n", "\n", " ", ""] # list of strings

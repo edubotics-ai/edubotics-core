@@ -14,6 +14,8 @@ from llama_parse import LlamaParse
 from langchain.schema import Document
 import logging
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_openai.embeddings import OpenAIEmbeddings
 from ragatouille import RAGPretrainedModel
 from langchain.chains import LLMChain
 from langchain_community.llms import OpenAI
@@ -63,12 +65,11 @@ class HTMLReader:
                 href = href.replace("http", "https")
 
             absolute_url = urljoin(base_url, href)
-            link["href"] = absolute_url
+            link['href'] = absolute_url
 
             resp = requests.head(absolute_url)
             if resp.status_code != 200:
-                logger.warning(f"Link {absolute_url} is broken")
-                logger.warning(f"Status code: {resp.status_code}")
+                logger.warning(f"Link {absolute_url} is broken. Status code: {resp.status_code}")
 
         return str(soup)
 
@@ -84,7 +85,6 @@ class HTMLReader:
         else:
             return None
 
-
 class FileReader:
     def __init__(self, logger, kind):
         self.logger = logger
@@ -96,9 +96,7 @@ class FileReader:
         else:
             self.pdf_reader = PDFReader()
         self.web_reader = HTMLReader()
-        self.logger.info(
-            f"Initialized FileReader with {kind} PDF reader and HTML reader"
-        )
+        self.logger.info(f"Initialized FileReader with {kind} PDF reader and HTML reader")
 
     def extract_text_from_pdf(self, pdf_path):
         text = ""
@@ -156,21 +154,31 @@ class ChunkProcessor:
         self.document_metadata = {}
         self.document_chunks_full = []
 
+        if not config['vectorstore']['embedd_files']:
+            self.load_document_data()
+
         if config["splitter_options"]["use_splitter"]:
-            if config["splitter_options"]["split_by_token"]:
-                self.splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                    chunk_size=config["splitter_options"]["chunk_size"],
-                    chunk_overlap=config["splitter_options"]["chunk_overlap"],
-                    separators=config["splitter_options"]["chunk_separators"],
-                    disallowed_special=(),
-                )
+            if config["splitter_options"]["chunking_mode"] == "fixed":
+                if config["splitter_options"]["split_by_token"]:
+                    self.splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                        chunk_size=config["splitter_options"]["chunk_size"],
+                        chunk_overlap=config["splitter_options"]["chunk_overlap"],
+                        separators=config["splitter_options"]["chunk_separators"],
+                        disallowed_special=(),
+                    )
+                else:
+                    self.splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=config["splitter_options"]["chunk_size"],
+                        chunk_overlap=config["splitter_options"]["chunk_overlap"],
+                        separators=config["splitter_options"]["chunk_separators"],
+                        disallowed_special=(),
+                    )
             else:
-                self.splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=config["splitter_options"]["chunk_size"],
-                    chunk_overlap=config["splitter_options"]["chunk_overlap"],
-                    separators=config["splitter_options"]["chunk_separators"],
-                    disallowed_special=(),
+                self.splitter = SemanticChunker(
+                    OpenAIEmbeddings(),
+                    breakpoint_threshold_type="percentile"
                 )
+
         else:
             self.splitter = None
         self.logger.info("ChunkProcessor instance created")
@@ -193,16 +201,12 @@ class ChunkProcessor:
     def process_chunks(
         self, documents, file_type="txt", source="", page=0, metadata={}
     ):
+        # TODO: Clear up this pipeline of re-adding metadata
         documents = [Document(page_content=documents, source=source, page=page)]
-        if (
-            file_type == "txt"
-            or file_type == "docx"
-            or file_type == "srt"
-            or file_type == "tex"
-        ):
+        if file_type == "pdf" and self.config["splitter_options"]["chunking_mode"] == "fixed":
+            document_chunks = documents
+        else:
             document_chunks = self.splitter.split_documents(documents)
-        elif file_type == "pdf":
-            document_chunks = documents  # Full page for now
 
         # add the source and page number back to the metadata
         for chunk in document_chunks:
@@ -296,9 +300,6 @@ class ChunkProcessor:
     def process_file(self, file_path, file_index, file_reader, addl_metadata):
         file_name = os.path.basename(file_path)
 
-        if file_name in self.document_data:
-            return
-
         file_type = file_name.split(".")[-1]
 
         read_methods = {
@@ -313,7 +314,12 @@ class ChunkProcessor:
             return
 
         try:
-            documents = read_methods[file_type](file_path)
+          
+            if file_path in self.document_data:
+                self.logger.warning(f"File {file_name} already processed")
+                documents = [Document(page_content=content) for content in self.document_data[file_path].values()]
+            else:
+                documents = read_methods[file_type](file_path)
 
             self.process_documents(
                 documents, file_path, file_type, "file", addl_metadata
@@ -372,13 +378,14 @@ class ChunkProcessor:
             f"{self.config['log_chunk_dir']}/metadata/doc_metadata.json", "r"
         ) as json_file:
             self.document_metadata = json.load(json_file)
+        self.logger.info(
+            f"Loaded document content from {self.config['log_chunk_dir']}/docs/doc_content.json. Total documents: {len(self.document_data)}"
+        )
 
 
 class DataLoader:
     def __init__(self, config, logger=None):
-        self.file_reader = FileReader(
-            logger=logger, kind=config["llm_params"]["pdf_reader"]
-        )
+        self.file_reader = FileReader(logger=logger, kind=config["llm_params"]["pdf_reader"])
         self.chunk_processor = ChunkProcessor(config, logger=logger)
 
     def get_chunks(self, uploaded_files, weblinks):
@@ -396,22 +403,19 @@ if __name__ == "__main__":
     with open("../code/modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
 
-    STORAGE_DIR = os.path.join(BASE_DIR, config["vectorstore"]["data_path"])
+    STORAGE_DIR = os.path.join(BASE_DIR, config['vectorstore']["data_path"])
     uploaded_files = [
-        os.path.join(STORAGE_DIR, file)
-        for file in os.listdir(STORAGE_DIR)
-        if file != "urls.txt"
+        os.path.join(STORAGE_DIR, file) for file in os.listdir(STORAGE_DIR) if file != "urls.txt"
     ]
 
     data_loader = DataLoader(config, logger=logger)
     document_chunks, document_names, documents, document_metadata = (
         data_loader.get_chunks(
-            [
-                "https://dl4ds.github.io/sp2024/static_files/discussion_slides/00_discussion.pdf"
-            ],
+            ["https://dl4ds.github.io/sp2024/static_files/lectures/05_loss_functions_v2.pdf"],
             [],
         )
     )
 
     print(document_names[:5])
     print(len(document_chunks))
+
