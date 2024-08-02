@@ -14,32 +14,89 @@ from llama_parse import LlamaParse
 from langchain.schema import Document
 import logging
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_openai.embeddings import OpenAIEmbeddings
 from ragatouille import RAGPretrainedModel
 from langchain.chains import LLMChain
 from langchain_community.llms import OpenAI
 from langchain import PromptTemplate
 import json
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urljoin
+import html2text
+import bs4
+import tempfile
+import PyPDF2
+from modules.dataloader.pdf_readers.base import PDFReader
+from modules.dataloader.pdf_readers.llama import LlamaParser
+from modules.dataloader.pdf_readers.gpt import GPTParser
 
-from modules.dataloader.helpers import get_metadata
+try:
+    from modules.dataloader.helpers import get_metadata, download_pdf_from_url
+    from modules.config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
+except:
+    from dataloader.helpers import get_metadata, download_pdf_from_url
+    from config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
+
+logger = logging.getLogger(__name__)
+BASE_DIR = os.getcwd()
 
 
-class PDFReader:
+class HTMLReader:
     def __init__(self):
         pass
 
-    def get_loader(self, pdf_path):
-        loader = PyMuPDFLoader(pdf_path)
-        return loader
+    def read_url(self, url):
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            logger.warning(f"Failed to download HTML from URL: {url}")
+            return None
 
-    def get_documents(self, loader):
-        return loader.load()
+    def check_links(self, base_url, html_content):
+        soup = bs4.BeautifulSoup(html_content, "html.parser")
+        for link in soup.find_all("a"):
+            href = link.get("href")
 
+            if not href or href.startswith("#"):
+                continue
+            elif not href.startswith("https"):
+                href = href.replace("http", "https")
+
+            absolute_url = urljoin(base_url, href)
+            link['href'] = absolute_url
+
+            resp = requests.head(absolute_url)
+            if resp.status_code != 200:
+                logger.warning(f"Link {absolute_url} is broken. Status code: {resp.status_code}")
+
+        return str(soup)
+
+    def html_to_md(self, url, html_content):
+        html_processed = self.check_links(url, html_content)
+        markdown_content = html2text.html2text(html_processed)
+        return markdown_content
+
+    def read_html(self, url):
+        html_content = self.read_url(url)
+        if html_content:
+            return self.html_to_md(url, html_content)
+        else:
+            return None
 
 class FileReader:
-    def __init__(self, logger):
-        self.pdf_reader = PDFReader()
+    def __init__(self, logger, kind):
         self.logger = logger
+        self.kind = kind
+        if kind == "llama":
+            self.pdf_reader = LlamaParser()
+        elif kind == "gpt":
+            self.pdf_reader = GPTParser()
+        else:
+            self.pdf_reader = PDFReader()
+        self.web_reader = HTMLReader()
+        self.logger.info(f"Initialized FileReader with {kind} PDF reader and HTML reader")
 
     def extract_text_from_pdf(self, pdf_path):
         text = ""
@@ -51,20 +108,8 @@ class FileReader:
                 text += page.extract_text()
         return text
 
-    def download_pdf_from_url(self, pdf_url):
-        response = requests.get(pdf_url)
-        if response.status_code == 200:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-                temp_file.write(response.content)
-                temp_file_path = temp_file.name
-            return temp_file_path
-        else:
-            self.logger.error(f"Failed to download PDF from URL: {pdf_url}")
-            return None
-
     def read_pdf(self, temp_file_path: str):
-        loader = self.pdf_reader.get_loader(temp_file_path)
-        documents = self.pdf_reader.get_documents(loader)
+        documents = self.pdf_reader.parse(temp_file_path)
         return documents
 
     def read_txt(self, temp_file_path: str):
@@ -89,8 +134,7 @@ class FileReader:
         return loader.load()
 
     def read_html(self, url: str):
-        loader = WebBaseLoader(url)
-        return loader.load()
+        return [Document(page_content=self.web_reader.read_html(url))]
 
     def read_tex_from_url(self, tex_url):
         response = requests.get(tex_url)
@@ -110,21 +154,31 @@ class ChunkProcessor:
         self.document_metadata = {}
         self.document_chunks_full = []
 
+        if not config['vectorstore']['embedd_files']:
+            self.load_document_data()
+
         if config["splitter_options"]["use_splitter"]:
-            if config["splitter_options"]["split_by_token"]:
-                self.splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                    chunk_size=config["splitter_options"]["chunk_size"],
-                    chunk_overlap=config["splitter_options"]["chunk_overlap"],
-                    separators=config["splitter_options"]["chunk_separators"],
-                    disallowed_special=(),
-                )
+            if config["splitter_options"]["chunking_mode"] == "fixed":
+                if config["splitter_options"]["split_by_token"]:
+                    self.splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                        chunk_size=config["splitter_options"]["chunk_size"],
+                        chunk_overlap=config["splitter_options"]["chunk_overlap"],
+                        separators=config["splitter_options"]["chunk_separators"],
+                        disallowed_special=(),
+                    )
+                else:
+                    self.splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=config["splitter_options"]["chunk_size"],
+                        chunk_overlap=config["splitter_options"]["chunk_overlap"],
+                        separators=config["splitter_options"]["chunk_separators"],
+                        disallowed_special=(),
+                    )
             else:
-                self.splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=config["splitter_options"]["chunk_size"],
-                    chunk_overlap=config["splitter_options"]["chunk_overlap"],
-                    separators=config["splitter_options"]["chunk_separators"],
-                    disallowed_special=(),
+                self.splitter = SemanticChunker(
+                    OpenAIEmbeddings(),
+                    breakpoint_threshold_type="percentile"
                 )
+
         else:
             self.splitter = None
         self.logger.info("ChunkProcessor instance created")
@@ -147,16 +201,12 @@ class ChunkProcessor:
     def process_chunks(
         self, documents, file_type="txt", source="", page=0, metadata={}
     ):
+        # TODO: Clear up this pipeline of re-adding metadata
         documents = [Document(page_content=documents, source=source, page=page)]
-        if (
-            file_type == "txt"
-            or file_type == "docx"
-            or file_type == "srt"
-            or file_type == "tex"
-        ):
+        if file_type == "pdf" and self.config["splitter_options"]["chunking_mode"] == "fixed":
+            document_chunks = documents
+        else:
             document_chunks = self.splitter.split_documents(documents)
-        elif file_type == "pdf":
-            document_chunks = documents  # Full page for now
 
         # add the source and page number back to the metadata
         for chunk in document_chunks:
@@ -179,7 +229,6 @@ class ChunkProcessor:
             "https://dl4ds.github.io/sp2024/lectures/",
             "https://dl4ds.github.io/sp2024/schedule/",
         )  # For any additional metadata
-
         with ThreadPoolExecutor() as executor:
             executor.map(
                 self.process_file,
@@ -228,11 +277,11 @@ class ChunkProcessor:
 
             page_num = doc.metadata.get("page", 0)
             file_data[page_num] = doc.page_content
-            metadata = (
-                addl_metadata.get(file_path, {})
-                if metadata_source == "file"
-                else {"source": file_path, "page": page_num}
-            )
+
+            # Create a new dictionary for metadata in each iteration
+            metadata = addl_metadata.get(file_path, {}).copy()
+            metadata["page"] = page_num
+            metadata["source"] = file_path
             file_metadata[page_num] = metadata
 
             if self.config["vectorstore"]["db_option"] not in ["RAGatouille"]:
@@ -250,11 +299,8 @@ class ChunkProcessor:
 
     def process_file(self, file_path, file_index, file_reader, addl_metadata):
         file_name = os.path.basename(file_path)
-        if file_name in self.document_data:
-            return
 
-        file_type = file_name.split(".")[-1].lower()
-        self.logger.info(f"Reading file {file_index + 1}: {file_path}")
+        file_type = file_name.split(".")[-1]
 
         read_methods = {
             "pdf": file_reader.read_pdf,
@@ -268,7 +314,13 @@ class ChunkProcessor:
             return
 
         try:
-            documents = read_methods[file_type](file_path)
+          
+            if file_path in self.document_data:
+                self.logger.warning(f"File {file_name} already processed")
+                documents = [Document(page_content=content) for content in self.document_data[file_path].values()]
+            else:
+                documents = read_methods[file_type](file_path)
+
             self.process_documents(
                 documents, file_path, file_type, "file", addl_metadata
             )
@@ -326,11 +378,14 @@ class ChunkProcessor:
             f"{self.config['log_chunk_dir']}/metadata/doc_metadata.json", "r"
         ) as json_file:
             self.document_metadata = json.load(json_file)
+        self.logger.info(
+            f"Loaded document content from {self.config['log_chunk_dir']}/docs/doc_content.json. Total documents: {len(self.document_data)}"
+        )
 
 
 class DataLoader:
     def __init__(self, config, logger=None):
-        self.file_reader = FileReader(logger=logger)
+        self.file_reader = FileReader(logger=logger, kind=config["llm_params"]["pdf_reader"])
         self.chunk_processor = ChunkProcessor(config, logger=logger)
 
     def get_chunks(self, uploaded_files, weblinks):
@@ -348,13 +403,19 @@ if __name__ == "__main__":
     with open("../code/modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
 
+    STORAGE_DIR = os.path.join(BASE_DIR, config['vectorstore']["data_path"])
+    uploaded_files = [
+        os.path.join(STORAGE_DIR, file) for file in os.listdir(STORAGE_DIR) if file != "urls.txt"
+    ]
+
     data_loader = DataLoader(config, logger=logger)
     document_chunks, document_names, documents, document_metadata = (
         data_loader.get_chunks(
+            ["https://dl4ds.github.io/sp2024/static_files/lectures/05_loss_functions_v2.pdf"],
             [],
-            ["https://dl4ds.github.io/sp2024/"],
         )
     )
 
-    print(document_names)
+    print(document_names[:5])
     print(len(document_chunks))
+

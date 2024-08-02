@@ -76,7 +76,7 @@ The HuggingFace Space is built using the `Dockerfile` in the repository. To run 
 
 ```bash
 docker build --tag dev  -f Dockerfile.dev .
-docker run -it --rm -p 8051:8051 dev
+docker run -it --rm -p 8000:8000 dev
 ```
 
 ## Contributing

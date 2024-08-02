@@ -39,3 +39,6 @@ class ChromaVectorStore(VectorStoreBase):
 
     def as_retriever(self):
         return self.vectorstore.as_retriever()
+
+    def __len__(self):
+        return len(self.vectorstore)
