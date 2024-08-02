@@ -162,3 +162,8 @@ def get_history_setup_llm(memory_list):
             raise ValueError("Invalid message type")
 
     return conversation_list
+
+
+def get_last_config(steps):
+    # TODO: Implement this function
+    return None

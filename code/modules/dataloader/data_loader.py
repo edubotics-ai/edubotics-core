@@ -98,7 +98,6 @@ class FileReader:
         self.web_reader = HTMLReader()
         self.logger.info(f"Initialized FileReader with {kind} PDF reader and HTML reader")
 
-
     def extract_text_from_pdf(self, pdf_path):
         text = ""
         with open(pdf_path, "rb") as file:
@@ -315,6 +314,7 @@ class ChunkProcessor:
             return
 
         try:
+          
             if file_path in self.document_data:
                 self.logger.warning(f"File {file_name} already processed")
                 documents = [Document(page_content=content) for content in self.document_data[file_path].values()]
