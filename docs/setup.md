@@ -1,5 +1,7 @@
 # Initial Setup
 
+⚠️ **Create the .env file inside the `code/` directory.**
+
 ## Python Environment
 
 Python Version: 3.11
