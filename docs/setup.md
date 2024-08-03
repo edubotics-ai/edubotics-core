@@ -91,7 +91,7 @@ Set the following in the .env file (if running locally) or in secrets (if runnin
 
 ```bash
 CHAINLIT_AUTH_SECRET=<your_jwt_secret>
-CHAINLIT_URL=<your_chainlit_url> # Example: CHAINLIT_URL=https://localhost:8000
+CHAINLIT_URL=<your_chainlit_url> # Example: CHAINLIT_URL=http://localhost:8000
 ```
 
 ## OpenAI API Key
