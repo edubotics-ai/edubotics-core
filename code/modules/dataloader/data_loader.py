@@ -22,6 +22,7 @@ from modules.dataloader.pdf_readers.base import PDFReader
 from modules.dataloader.pdf_readers.llama import LlamaParser
 from modules.dataloader.pdf_readers.gpt import GPTParser
 from modules.dataloader.helpers import get_metadata
+from modules.config.constants import TIMEOUT
 
 logger = logging.getLogger(__name__)
 BASE_DIR = os.getcwd()
@@ -32,7 +33,7 @@ class HTMLReader:
         pass
 
     def read_url(self, url):
-        response = requests.get(url)
+        response = requests.get(url, timeout=TIMEOUT)
         if response.status_code == 200:
             return response.text
         else:
@@ -52,7 +53,7 @@ class HTMLReader:
             absolute_url = urljoin(base_url, href)
             link["href"] = absolute_url
 
-            resp = requests.head(absolute_url)
+            resp = requests.head(absolute_url, timeout=TIMEOUT)
             if resp.status_code != 200:
                 logger.warning(
                     f"Link {absolute_url} is broken. Status code: {resp.status_code}"
@@ -127,7 +128,7 @@ class FileReader:
         return [Document(page_content=self.web_reader.read_html(url))]
 
     def read_tex_from_url(self, tex_url):
-        response = requests.get(tex_url)
+        response = requests.get(tex_url, timeout=TIMEOUT)
         if response.status_code == 200:
             return [Document(page_content=response.text)]
         else:

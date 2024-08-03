@@ -6,6 +6,7 @@ from io import BytesIO
 from openai import OpenAI
 from pdf2image import convert_from_path
 from langchain.schema import Document
+from modules.config.constants import TIMEOUT
 
 
 class GPTParser:
@@ -59,6 +60,7 @@ class GPTParser:
                 "https://api.openai.com/v1/chat/completions",
                 headers=headers,
                 json=payload,
+                timeout=TIMEOUT,
             )
 
             resp = response.json()

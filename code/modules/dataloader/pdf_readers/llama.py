@@ -2,7 +2,7 @@ import os
 import requests
 from llama_parse import LlamaParse
 from langchain.schema import Document
-from modules.config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY
+from modules.config.constants import OPENAI_API_KEY, LLAMA_CLOUD_API_KEY, TIMEOUT
 from modules.dataloader.helpers import download_pdf_from_url
 
 
@@ -52,7 +52,11 @@ class LlamaParser:
         files = [
             (
                 "file",
-                ("file", requests.get(pdf_url).content, "application/octet-stream"),
+                (
+                    "file",
+                    requests.get(pdf_url, timeout=TIMEOUT).content,
+                    "application/octet-stream",
+                ),
             )
         ]
 

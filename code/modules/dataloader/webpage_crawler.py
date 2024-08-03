@@ -4,6 +4,7 @@ import asyncio
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urldefrag
+from modules.config.constants import TIMEOUT
 
 
 class WebpageCrawler:
@@ -19,7 +20,7 @@ class WebpageCrawler:
 
     def url_exists(self, url: str) -> bool:
         try:
-            response = requests.head(url)
+            response = requests.head(url, timeout=TIMEOUT)
             return response.status_code == 200
         except requests.ConnectionError:
             return False
@@ -89,7 +90,7 @@ class WebpageCrawler:
 
     def is_webpage(self, url: str) -> bool:
         try:
-            response = requests.head(url, allow_redirects=True)
+            response = requests.head(url, allow_redirects=True, timeout=TIMEOUT)
             content_type = response.headers.get("Content-Type", "").lower()
             return "text/html" in content_type
         except requests.RequestException:

@@ -3,6 +3,8 @@ import os
 
 load_dotenv()
 
+TIMEOUT = 60
+
 # API Keys - Loaded from the .env file
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
