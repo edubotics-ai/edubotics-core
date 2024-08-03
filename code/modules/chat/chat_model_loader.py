@@ -1,15 +1,8 @@
 from langchain_openai import ChatOpenAI
-from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
-from transformers import AutoTokenizer, TextStreamer
 from langchain_community.llms import LlamaCpp
-import torch
-import transformers
 import os
 from pathlib import Path
 from huggingface_hub import hf_hub_download
-from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from modules.config.constants import LLAMA_PATH
 
 
 class ChatModelLoader:
@@ -38,7 +31,7 @@ class ChatModelLoader:
                 self.config["llm_params"]["local_llm_params"]["model"]
             )
             llm = LlamaCpp(
-                model_path=LLAMA_PATH,
+                model_path=model_path,
                 n_batch=n_batch,
                 n_ctx=2048,
                 f16_kv=True,

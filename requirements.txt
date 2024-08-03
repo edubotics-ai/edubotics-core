@@ -23,3 +23,6 @@ llama-cpp-python
 pymupdf
 websockets
 langchain-openai
+black
+flake8
+bandit

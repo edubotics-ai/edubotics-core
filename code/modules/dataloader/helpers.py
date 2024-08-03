@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import tempfile
 
+
 def get_urls_from_file(file_path: str):
     """
     Function to get urls from a file

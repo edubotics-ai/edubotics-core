@@ -1,52 +1,28 @@
 from typing import Any, Dict, List, Union, Tuple, Optional
-from langchain_core.messages import (
-    BaseMessage,
-    AIMessage,
-    FunctionMessage,
-    HumanMessage,
-)
-
 from langchain_core.prompts.base import BasePromptTemplate, format_document
-from langchain_core.prompts.chat import MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.retrievers import BaseRetriever, RetrieverOutput
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.runnables import Runnable, RunnableBranch, RunnablePassthrough
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_core.runnables.utils import ConfigurableFieldSpec
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
     DEFAULT_DOCUMENT_SEPARATOR,
     DOCUMENTS_KEY,
-    BaseCombineDocumentsChain,
     _validate_prompt,
 )
-from langchain.chains.llm import LLMChain
-from langchain_core.callbacks import Callbacks
-from langchain_core.documents import Document
-
-
-CHAT_TURN_TYPE = Union[Tuple[str, str], BaseMessage]
-
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.messages import BaseMessage
-
-
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatOpenAI
-
-from langchain.chains import RetrievalQA, ConversationalRetrievalChain
-from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
-
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from langchain.chains import ConversationalRetrievalChain
 from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 import inspect
-from langchain.chains.conversational_retrieval.base import _get_chat_history
 from langchain_core.messages import BaseMessage
+
+CHAT_TURN_TYPE = Union[Tuple[str, str], BaseMessage]
 
 
 class CustomConversationalRetrievalChain(ConversationalRetrievalChain):

@@ -3,7 +3,8 @@ from aiohttp import ClientSession
 import asyncio
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, urljoin, urldefrag
+from urllib.parse import urljoin, urldefrag
+
 
 class WebpageCrawler:
     def __init__(self):

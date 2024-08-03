@@ -1,9 +1,6 @@
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.embeddings import LlamaCppEmbeddings
-
-from modules.config.constants import *
-import os
+from modules.config.constants import OPENAI_API_KEY, HUGGINGFACE_TOKEN
 
 
 class EmbeddingModelLoader:
@@ -28,8 +25,5 @@ class EmbeddingModelLoader:
                     "trust_remote_code": True,
                 },
             )
-            # embedding_model = LlamaCppEmbeddings(
-            #     model_path=os.path.abspath("storage/llama-7b.ggmlv3.q4_0.bin")
-            # )
 
         return embedding_model

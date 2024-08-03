@@ -1,7 +1,6 @@
 import chainlit.data as cl_data
 import asyncio
 from modules.config.constants import (
-    LLAMA_PATH,
     LITERAL_API_KEY_LOGGING,
     LITERAL_API_URL,
 )
@@ -9,7 +8,6 @@ from modules.chat_processor.literal_ai import CustomLiteralDataLayer
 
 import json
 import yaml
-import os
 from typing import Any, Dict, no_type_check
 import chainlit as cl
 from modules.chat.llm_tutor import LLMTutor
@@ -73,7 +71,14 @@ class Chatbot:
         start_time = time.time()
 
         llm_settings = cl.user_session.get("llm_settings", {})
-        chat_profile, retriever_method, memory_window, llm_style, generate_follow_up, chunking_mode = (
+        (
+            chat_profile,
+            retriever_method,
+            memory_window,
+            llm_style,
+            generate_follow_up,
+            chunking_mode,
+        ) = (
             llm_settings.get("chat_model"),
             llm_settings.get("retriever_method"),
             llm_settings.get("memory_window"),
@@ -112,8 +117,6 @@ class Chatbot:
                 else None
             ),
         )
-
-        tags = [chat_profile, self.config["vectorstore"]["db_option"]]
 
         cl.user_session.set("chain", self.chain)
         cl.user_session.set("llm_tutor", self.llm_tutor)
@@ -180,7 +183,7 @@ class Chatbot:
                 cl.input_widget.Select(
                     id="chunking_mode",
                     label="Chunking mode",
-                    values=['fixed', 'semantic'],
+                    values=["fixed", "semantic"],
                     initial_index=1,
                 ),
                 cl.input_widget.Switch(
@@ -241,7 +244,8 @@ class Chatbot:
             )  # see if the thread has any steps
             if thread.steps or len(thread.steps) > 0:
                 return None
-        except:
+        except Exception as e:
+            print(e)
             return [
                 cl.Starter(
                     label="recording on CNNs?",
@@ -294,10 +298,18 @@ class Chatbot:
 
         await self.make_llm_settings_widgets(self.config)
         user = cl.user_session.get("user")
-        self.user = {
-            "user_id": user.identifier,
-            "session_id": cl.context.session.thread_id,
-        }
+
+        try:
+            self.user = {
+                "user_id": user.identifier,
+                "session_id": cl.context.session.thread_id,
+            }
+        except Exception as e:
+            print(e)
+            self.user = {
+                "user_id": "guest",
+                "session_id": cl.context.session.thread_id,
+            }
 
         memory = cl.user_session.get("memory", [])
 
@@ -355,7 +367,7 @@ class Chatbot:
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
         stream = llm_settings.get("stream_response", False)
-        steam = False  # Fix streaming
+        stream = False  # Fix streaming
         user_query_dict = {"input": message.content}
         # Define the base configuration
         chain_config = {

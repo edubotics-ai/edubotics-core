@@ -1,9 +1,7 @@
 from modules.vectorstore.vectorstore import VectorStore
-from modules.vectorstore.helpers import *
+from modules.dataloader.helpers import get_urls_from_file
 from modules.dataloader.webpage_crawler import WebpageCrawler
 from modules.dataloader.data_loader import DataLoader
-from modules.dataloader.helpers import *
-from modules.config.constants import RETRIEVER_HF_PATHS
 from modules.vectorstore.embedding_model_loader import EmbeddingModelLoader
 import logging
 import os
@@ -170,13 +168,21 @@ if __name__ == "__main__":
 
     with open("modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
+    with open("modules/config/user_config.yml", "r") as f:
+        user_config = yaml.safe_load(f)
     print(config)
+    print(user_config)
     print(f"Trying to create database with config: {config}")
     vector_db = VectorStoreManager(config)
     if config["vectorstore"]["load_from_HF"]:
-        if config["vectorstore"]["db_option"] in RETRIEVER_HF_PATHS:
+        if (
+            config["vectorstore"]["db_option"]
+            in user_config["retriever"]["retriever_hf_paths"]
+        ):
             vector_db.load_from_HF(
-                HF_PATH=RETRIEVER_HF_PATHS[config["vectorstore"]["db_option"]]
+                HF_PATH=user_config["retriever"]["retriever_hf_paths"][
+                    config["vectorstore"]["db_option"]
+                ]
             )
         else:
             # print(f"HF_PATH not available for {config['vectorstore']['db_option']}")
@@ -189,7 +195,7 @@ if __name__ == "__main__":
         vector_db.create_database()
     print("Created database")
 
-    print(f"Trying to load the database")
+    print("Trying to load the database")
     vector_db = VectorStoreManager(config)
     vector_db.load_database()
     print("Loaded database")

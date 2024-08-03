@@ -6,6 +6,8 @@ You can find an implementation of the Tutor at [DL4DS Tutor on Hugging Face](htt
 
 ## Running Locally
 
+Please view `docs/setup.md` for more information on setting up the project.
+
 1. **Clone the Repository**
    ```bash
    git clone https://github.com/DL4DS/dl4ds_tutor
@@ -27,7 +29,6 @@ You can find an implementation of the Tutor at [DL4DS Tutor on Hugging Face](htt
    python -m modules.vectorstore.store_manager
    ```
    - Note: You need to run the above command when you add new data to the `storage/data` directory, or if the `storage/data/urls.txt` file is updated.
-   - Alternatively, you can set `["vectorstore"]["embedd_files"]` to `True` in the `code/modules/config/config.yaml` file, which will embed files from the storage directory every time you run the below chainlit command.
 
 5. **Run the Chainlit App**
    ```bash
@@ -82,3 +83,5 @@ docker run -it --rm -p 8000:8000 dev
 ## Contributing
 
 Please create an issue if you have any suggestions or improvements, and start working on it by creating a branch and by making a pull request to the main branch.
+
+Please view `docs/contribute.md` for more information on contributing.
