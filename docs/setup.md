@@ -12,6 +12,10 @@ conda activate ai_tutor
 pip install -r requirements.txt
 ```
 
+## Code Formatting
+
+The codebase is formatted using [black](https://github.com/psf/black), and if making changes to the codebase, ensure that the code is formatted before submitting a pull request. More instructions can be found in `docs/contribute.md`.
+
 ## Google OAuth 2.0 Client ID and Secret
 
 To set up the Google OAuth 2.0 Client ID and Secret, follow these steps:
