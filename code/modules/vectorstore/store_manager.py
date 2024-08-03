@@ -115,7 +115,7 @@ class VectorStoreManager:
         )
         num_documents = len(document_chunks)
         self.logger.info(f"Number of documents in the DB: {num_documents}")
-        metadata_keys = list(document_metadata[0].keys())
+        metadata_keys = list(document_metadata[0].keys()) if document_metadata else []
         self.logger.info(f"Metadata keys: {metadata_keys}")
         self.logger.info("Completed loading data")
         self.initialize_database(

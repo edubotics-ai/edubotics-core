@@ -26,8 +26,8 @@ To set up the Google OAuth 2.0 Client ID and Secret, follow these steps:
 4. Click on "Create Credentials" and select "OAuth 2.0 Client ID".
 5. Configure the OAuth consent screen if you haven't already.
 6. Choose "Web application" as the application type.
-7. Enter a name for your client ID and configure the redirect URIs as needed.
-8. Click "Create" and copy the generated `Client ID` and `Client Secret`.
+7. Configure the redirect URIs as needed.
+8. Copy the generated `Client ID` and `Client Secret`.
 
 Set the following in the .env file (if running locally) or in secrets (if running on Hugging Face Spaces):
 
@@ -47,7 +47,8 @@ To obtain the Literal AI API key:
 Set the following in the .env file (if running locally) or in secrets (if running on Hugging Face Spaces):
 
 ```bash
-LITERAL_API_KEY=<your_api_key>
+LITERAL_API_KEY_LOGGING=<your_api_key>
+LITERAL_API_URL=https://cloud.getliteral.ai
 ```
 
 ## LlamaCloud API Key
@@ -77,6 +78,46 @@ Set the following in the .env file (if running locally) or in secrets (if runnin
 ```bash
 HUGGINGFACE_TOKEN=<your-huggingface-token>
 ```
+
+## Chainlit Authentication Secret
+
+You must provide a JWT secret in the environment to use authentication. Run `chainlit create-secret` to generate one.
+    
+```bash
+chainlit create-secret
+```
+
+Set the following in the .env file (if running locally) or in secrets (if running on Hugging Face Spaces):
+
+```bash
+CHAINLIT_AUTH_SECRET=<your_jwt_secret>
+CHAINLIT_URL=<your_chainlit_url> # Example: CHAINLIT_URL=https://localhost:8000
+```
+
+## OpenAI API Key
+
+Set the following in the .env file (if running locally) or in secrets (if running on Hugging Face Spaces):
+
+```bash
+OPENAI_API_KEY=<your_openai_api_key>
+```
+
+## In a Nutshell
+
+Your .env file (secrets in HuggingFace) should look like this:
+
+```bash
+CHAINLIT_AUTH_SECRET=<your_jwt_secret>
+OPENAI_API_KEY=<your_openai_api_key>
+HUGGINGFACE_TOKEN=<your-huggingface-token>
+LITERAL_API_KEY_LOGGING=<your_api_key>
+LITERAL_API_URL=<https://cloud.getliteral.ai>
+OAUTH_GOOGLE_CLIENT_ID=<your_client_id>
+OAUTH_GOOGLE_CLIENT_SECRET=<your_client_secret>
+LLAMA_CLOUD_API_KEY=<your_api_key>
+CHAINLIT_URL=<your_chainlit_url>
+```
+
 
 # Configuration
 
