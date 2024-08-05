@@ -28,9 +28,9 @@ class LLMTutor:
         self.rephrase_prompt = get_prompt(
             config, "rephrase"
         )  # Initialize rephrase_prompt
-        if self.config["vectorstore"]["embedd_files"]:
-            self.vector_db.create_database()
-            self.vector_db.save_database()
+        #if self.config["vectorstore"]["embedd_files"]:
+            #self.vector_db.create_database()
+            #self.vector_db.save_database()
 
     def update_llm(self, old_config, new_config):
         """
