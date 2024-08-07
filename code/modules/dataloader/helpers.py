@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import tempfile
+from modules.config.constants import TIMEOUT
+
 
 def get_urls_from_file(file_path: str):
     """
@@ -26,11 +28,11 @@ def get_metadata(lectures_url, schedule_url):
     lecture_metadata = {}
 
     # Get the main lectures page content
-    r_lectures = requests.get(lectures_url)
+    r_lectures = requests.get(lectures_url, timeout=TIMEOUT)
     soup_lectures = BeautifulSoup(r_lectures.text, "html.parser")
 
     # Get the main schedule page content
-    r_schedule = requests.get(schedule_url)
+    r_schedule = requests.get(schedule_url, timeout=TIMEOUT)
     soup_schedule = BeautifulSoup(r_schedule.text, "html.parser")
 
     # Find all lecture blocks
@@ -118,7 +120,7 @@ def download_pdf_from_url(pdf_url):
     Returns:
         str: The local file path of the downloaded PDF file.
     """
-    response = requests.get(pdf_url)
+    response = requests.get(pdf_url, timeout=TIMEOUT)
     if response.status_code == 200:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
             temp_file.write(response.content)

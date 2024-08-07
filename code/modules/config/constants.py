@@ -3,6 +3,8 @@ import os
 
 load_dotenv()
 
+TIMEOUT = 60
+
 # API Keys - Loaded from the .env file
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -14,10 +16,11 @@ LITERAL_API_URL = os.getenv("LITERAL_API_URL")
 OAUTH_GOOGLE_CLIENT_ID = os.getenv("OAUTH_GOOGLE_CLIENT_ID")
 OAUTH_GOOGLE_CLIENT_SECRET = os.getenv("OAUTH_GOOGLE_CLIENT_SECRET")
 
-opening_message = f"Hey, What Can I Help You With?\n\nYou can me ask me questions about the course logistics, course content, about the final project, or anything else!"
+opening_message = "Hey, What Can I Help You With?\n\nYou can me ask me questions about the course logistics, course content, about the final project, or anything else!"
+chat_end_message = (
+    "I hope I was able to help you. If you have any more questions, feel free to ask!"
+)
 
 # Model Paths
 
 LLAMA_PATH = "../storage/models/tinyllama"
-
-RETRIEVER_HF_PATHS = {"RAGatouille": "XThomasBU/Colbert_Index"}

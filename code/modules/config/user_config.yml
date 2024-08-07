@@ -1,0 +1,3 @@
+retriever:
+  retriever_hf_paths:
+    RAGatouille: "XThomasBU/Colbert_Index"

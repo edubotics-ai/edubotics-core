@@ -27,3 +27,6 @@ langchain_experimental
 html2text
 PyPDF2
 pdf2image
+black
+flake8
+bandit

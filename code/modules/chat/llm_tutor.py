@@ -3,7 +3,6 @@ from modules.chat.chat_model_loader import ChatModelLoader
 from modules.vectorstore.store_manager import VectorStoreManager
 from modules.retriever.retriever import Retriever
 from modules.chat.langchain.langchain_rag import (
-    Langchain_RAG_V1,
     Langchain_RAG_V2,
     QuestionGenerator,
 )
@@ -28,9 +27,11 @@ class LLMTutor:
         self.rephrase_prompt = get_prompt(
             config, "rephrase"
         )  # Initialize rephrase_prompt
-        if self.config["vectorstore"]["embedd_files"]:
-            self.vector_db.create_database()
-            self.vector_db.save_database()
+
+        # TODO: Removed this functionality for now, don't know if we need it
+        # if self.config["vectorstore"]["embedd_files"]:
+        #     self.vector_db.create_database()
+        #     self.vector_db.save_database()
 
     def update_llm(self, old_config, new_config):
         """
@@ -48,9 +49,11 @@ class LLMTutor:
             self.vector_db = VectorStoreManager(
                 self.config, logger=self.logger
             ).load_database()  # Reinitialize VectorStoreManager if vectorstore changes
-            if self.config["vectorstore"]["embedd_files"]:
-                self.vector_db.create_database()
-                self.vector_db.save_database()
+
+            # TODO: Removed this functionality for now, don't know if we need it
+            # if self.config["vectorstore"]["embedd_files"]:
+            #     self.vector_db.create_database()
+            #     self.vector_db.save_database()
 
         if "llm_params.llm_style" in changes:
             self.qa_prompt = get_prompt(
