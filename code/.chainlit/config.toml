@@ -87,7 +87,7 @@ custom_meta_image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/
 # custom_build = "./public/build"
 
 [UI.theme]
-    default = "dark"
+    default = "light"
     #layout = "wide"
     #font_family = "Inter, sans-serif"
 # Override default MUI light theme. (Check theme.ts)
