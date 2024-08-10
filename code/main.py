@@ -23,11 +23,11 @@ from chainlit.types import ThreadDict
 import time
 
 USER_TIMEOUT = 60_000
-SYSTEM = "System 🖥️"
-LLM = "LLM 🧠"
-AGENT = "Agent <>"
-YOU = "You 😃"
-ERROR = "Error 🚫"
+SYSTEM = "System"
+LLM = "AI Tutor"
+AGENT = "Agent"
+YOU = "User"
+ERROR = "Error"
 
 with open("modules/config/config.yml", "r") as f:
     config = yaml.safe_load(f)
@@ -111,11 +111,6 @@ class Chatbot:
         )  # update only llm attributes that are changed
         self.chain = self.llm_tutor.qa_bot(
             memory=conversation_list,
-            callbacks=(
-                [cl.LangchainCallbackHandler()]
-                if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
-                else None
-            ),
         )
 
         cl.user_session.set("chain", self.chain)
@@ -279,7 +274,7 @@ class Chatbot:
         Returns:
             str: The renamed author.
         """
-        rename_dict = {"Chatbot": "AI Tutor"}
+        rename_dict = {"Chatbot": LLM}
         return rename_dict.get(orig_author, orig_author)
 
     async def start(self, config=None):
@@ -318,11 +313,6 @@ class Chatbot:
 
         self.chain = self.llm_tutor.qa_bot(
             memory=memory,
-            callbacks=(
-                [cl.LangchainCallbackHandler()]
-                if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
-                else None
-            ),
         )
         self.question_generator = self.llm_tutor.question_generator
         cl.user_session.set("llm_tutor", self.llm_tutor)
@@ -375,7 +365,12 @@ class Chatbot:
                 "user_id": self.user["user_id"],
                 "conversation_id": self.user["session_id"],
                 "memory_window": self.config["llm_params"]["memory_window"],
-            }
+            },
+            "callbacks": (
+                [cl.LangchainCallbackHandler()]
+                if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
+                else None
+            ),
         }
 
         if stream:
@@ -456,7 +451,11 @@ class Chatbot:
             type="user_message",
             author=self.user["user_id"],
         ).send()
-        await self.main(message)
+        async with cl.Step(
+            name="on_follow_up", type="run", parent_id=message.id
+        ) as step:
+            await self.main(message)
+            step.output = message.content
 
 
 chatbot = Chatbot(config=config)

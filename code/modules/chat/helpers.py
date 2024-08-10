@@ -110,6 +110,7 @@ def get_prompt(config, prompt_type):
         return prompts["openai"]["rephrase_prompt"]
 
 
+# TODO: Do this better
 def get_history_chat_resume(steps, k, SYSTEM, LLM):
     conversation_list = []
     count = 0
@@ -119,14 +120,17 @@ def get_history_chat_resume(steps, k, SYSTEM, LLM):
                 conversation_list.append(
                     {"type": "user_message", "content": step["output"]}
                 )
+                count += 1
             elif step["type"] == "assistant_message":
                 if step["name"] == LLM:
                     conversation_list.append(
                         {"type": "ai_message", "content": step["output"]}
                     )
+                    count += 1
             else:
-                raise ValueError("Invalid message type")
-        count += 1
+                pass
+                # raise ValueError("Invalid message type")
+        # count += 1
         if count >= 2 * k:  # 2 * k to account for both user and assistant messages
             break
     conversation_list = conversation_list[::-1]
