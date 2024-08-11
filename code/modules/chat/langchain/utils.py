@@ -280,7 +280,8 @@ def create_retrieval_chain(
     return retrieval_chain
 
 
-def return_questions(query, response, chat_history_str, context):
+# TODO: Remove Hard-coded values
+async def return_questions(query, response, chat_history_str, context, config):
 
     system = (
         "You are someone that suggests a question based on the student's input and chat history. "
@@ -303,13 +304,17 @@ def return_questions(query, response, chat_history_str, context):
     )
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     question_generator = prompt | llm | StrOutputParser()
-    new_questions = question_generator.invoke(
+    question_generator = question_generator.with_config(
+        run_name="follow_up_question_generator"
+    )
+    new_questions = await question_generator.ainvoke(
         {
             "chat_history_str": chat_history_str,
             "context": context,
             "query": query,
             "response": response,
-        }
+        },
+        config=config,
     )
 
     list_of_questions = new_questions.split("...")

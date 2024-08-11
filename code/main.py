@@ -395,11 +395,20 @@ class Chatbot:
 
         if self.config["llm_params"]["generate_follow_up"]:
             start_time = time.time()
-            list_of_questions = self.question_generator.generate_questions(
+            config = {
+                "callbacks": (
+                    [cl.LangchainCallbackHandler()]
+                    if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
+                    else None
+                )
+            }
+
+            list_of_questions = await self.question_generator.generate_questions(
                 query=user_query_dict["input"],
                 response=answer,
                 chat_history=res.get("chat_history"),
                 context=res.get("context"),
+                config=config,
             )
 
             for question in list_of_questions:

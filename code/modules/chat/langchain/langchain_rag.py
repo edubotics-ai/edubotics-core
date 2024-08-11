@@ -100,8 +100,8 @@ class QuestionGenerator:
     def __init__(self):
         pass
 
-    def generate_questions(self, query, response, chat_history, context):
-        questions = return_questions(query, response, chat_history, context)
+    def generate_questions(self, query, response, chat_history, context, config):
+        questions = return_questions(query, response, chat_history, context, config)
         return questions
 
 
@@ -204,7 +204,7 @@ class Langchain_RAG_V2(BaseRAG):
                     is_shared=True,
                 ),
             ],
-        )
+        ).with_config(run_name="Langchain_RAG_V2")
 
         if callbacks is not None:
             self.rag_chain = self.rag_chain.with_config(callbacks=callbacks)
