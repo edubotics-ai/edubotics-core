@@ -1,0 +1,13 @@
+# Roadmap
+
+## In the Pipeline
+- **Personalized Memory**
+    - ⏳ Working on it...
+- **Landing Page for the App using FastAPI**
+    - ⏳ Designing and coding...
+- **Agentic LLMs**
+    - ⏳ Researching...
+
+## In the Backlog
+- **Chat Capabilities for the PDF Viewer**
+    - 💤 Waiting to be started...
