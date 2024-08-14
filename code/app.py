@@ -8,13 +8,18 @@ from chainlit.utils import mount_chainlit
 import secrets
 import json
 import base64
-from modules.config.constants import OAUTH_GOOGLE_CLIENT_ID, OAUTH_GOOGLE_CLIENT_SECRET
+from modules.config.constants import (
+    OAUTH_GOOGLE_CLIENT_ID,
+    OAUTH_GOOGLE_CLIENT_SECRET,
+    CHAINLIT_URL,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import os
 
 GOOGLE_CLIENT_ID = OAUTH_GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET = OAUTH_GOOGLE_CLIENT_SECRET
-GOOGLE_REDIRECT_URI = "http://localhost:8000/auth/oauth/google/callback"
+GOOGLE_REDIRECT_URI = f"{CHAINLIT_URL}/auth/oauth/google/callback"
 
 app = FastAPI()
 app.mount("/public", StaticFiles(directory="public"), name="public")
@@ -49,8 +54,8 @@ flow = Flow.from_client_config(
             "redirect_uris": [GOOGLE_REDIRECT_URI],
             "scopes": [
                 "openid",
-                "https://www.googleapis.com/auth/userinfo.email",
-                "https://www.googleapis.com/auth/userinfo.profile",
+                # "https://www.googleapis.com/auth/userinfo.email",
+                # "https://www.googleapis.com/auth/userinfo.profile",
             ],
         }
     },
@@ -173,7 +178,8 @@ async def post_signin(request: Request):
     user_info = get_user_info_from_cookie(request)
     if not user_info:
         user_info = get_user_info(request)
-    if user_info and user_info.get("google_signed_in"):
+    # if user_info and user_info.get("google_signed_in"):
+    if user_info:
         username = user_info["email"]
         role = get_user_role(username)
         jwt_token = request.cookies.get("X-User-Info")
@@ -228,4 +234,4 @@ mount_chainlit(app=app, target="main.py", path=CHAINLIT_PATH)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=7860)
