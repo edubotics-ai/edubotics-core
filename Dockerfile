@@ -35,4 +35,4 @@ RUN --mount=type=secret,id=LITERAL_API_KEY_LOGGING,mode=0444,required=true
 RUN --mount=type=secret,id=CHAINLIT_AUTH_SECRET,mode=0444,required=true 
 
 # Default command to run the application
-CMD ["sh", "-c", "python -m modules.vectorstore.store_manager && chainlit run main.py --host 0.0.0.0 --port 7860"]
+CMD ["sh", "-c", "python -m modules.vectorstore.store_manager && uvicorn app:app --host 0.0.0.0 --port 7860"]
