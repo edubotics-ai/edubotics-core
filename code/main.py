@@ -5,6 +5,7 @@ from modules.config.constants import (
     LITERAL_API_URL,
 )
 from modules.chat_processor.literal_ai import CustomLiteralDataLayer
+
 import json
 import yaml
 from typing import Any, Dict, no_type_check
@@ -20,7 +21,6 @@ import copy
 from typing import Optional
 from chainlit.types import ThreadDict
 import time
-import base64
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System"
@@ -445,41 +445,14 @@ class Chatbot:
         cl.user_session.set("memory", conversation_list)
         await self.start(config=thread_config)
 
-    # @cl.oauth_callback
-    # def auth_callback(
-    #     provider_id: str,
-    #     token: str,
-    #     raw_user_data: Dict[str, str],
-    #     default_user: cl.User,
-    # ) -> Optional[cl.User]:
-    #     return default_user
-
-    @cl.header_auth_callback
-    def header_auth_callback(headers: dict) -> Optional[cl.User]:
-
-        print("\n\n\nI am here\n\n\n")
-        # try: # TODO: Add try-except block after testing
-        # TODO: Implement to get the user information from the headers (not the cookie)
-        cookie = headers.get("cookie")  # gets back a str
-        # Create a dictionary from the pairs
-        cookie_dict = {}
-        for pair in cookie.split("; "):
-            key, value = pair.split("=", 1)
-            # Strip surrounding quotes if present
-            cookie_dict[key] = value.strip('"')
-
-        decoded_user_info = base64.b64decode(
-            cookie_dict.get("X-User-Info", "")
-        ).decode()
-        decoded_user_info = json.loads(decoded_user_info)
-
-        return cl.User(
-            identifier=decoded_user_info["email"],
-            metadata={
-                "name": decoded_user_info["name"],
-                "avatar": decoded_user_info["profile_image"],
-            },
-        )
+    @cl.oauth_callback
+    def auth_callback(
+        provider_id: str,
+        token: str,
+        raw_user_data: Dict[str, str],
+        default_user: cl.User,
+    ) -> Optional[cl.User]:
+        return default_user
 
     async def on_follow_up(self, action: cl.Action):
         message = await cl.Message(
@@ -509,8 +482,4 @@ async def start_app():
     cl.action_callback("follow up question")(chatbot.on_follow_up)
 
 
-loop = asyncio.get_event_loop()
-if loop.is_running():
-    asyncio.ensure_future(start_app())
-else:
-    asyncio.run(start_app())
+asyncio.run(start_app())
