@@ -61,11 +61,11 @@ name = "AI Tutor"
 # Large size content are by default collapsed for a cleaner ui
 default_collapse_content = true
 
-# Hide the chain of thought details from the user in the UI.
-hide_cot = true
+# Chain of Thought (CoT) display mode. Can be "hidden", "tool_call" or "full".
+cot = "hidden"
 
 # Link to your github repo. This will add a github button in the UI's header.
-# github = "https://github.com/DL4DS/dl4ds_tutor"
+github = "https://github.com/DL4DS/dl4ds_tutor"
 
 # Specify a CSS file that can be used to customize the user interface.
 # The CSS file can be served from the public directory or via an external link.
@@ -87,7 +87,7 @@ custom_meta_image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/
 # custom_build = "./public/build"
 
 [UI.theme]
-    default = "dark"
+    default = "light"
     #layout = "wide"
     #font_family = "Inter, sans-serif"
 # Override default MUI light theme. (Check theme.ts)
@@ -117,4 +117,4 @@ custom_meta_image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/
         #secondary = "#BDBDBD"
 
 [meta]
-generated_by = "1.1.306"
+generated_by = "1.1.402"

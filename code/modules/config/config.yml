@@ -37,13 +37,14 @@ llm_params:
     temperature: 0.7 # float
     repo_id: 'TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF' # HuggingFace repo id
     filename: 'tinyllama-1.1b-chat-v1.0.Q5_0.gguf' # Specific name of gguf file in the repo
+    model_path: 'storage/models/tinyllama-1.1b-chat-v1.0.Q5_0.gguf' # Path to the model file
   stream: False # bool
   pdf_reader: 'gpt' # str [llama, pymupdf, gpt]
 
 chat_logging:
   log_chat: True # bool
   platform: 'literalai'
-  callbacks: False # bool
+  callbacks: True # bool
 
 splitter_options:
   use_splitter: True # bool

@@ -170,3 +170,4 @@ storage/logs/*
 vectorstores/*
 
 */.files/*
+code/storage/models/
