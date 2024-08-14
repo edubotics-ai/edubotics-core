@@ -15,7 +15,6 @@ from modules.config.constants import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-import os
 
 GOOGLE_CLIENT_ID = OAUTH_GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET = OAUTH_GOOGLE_CLIENT_SECRET
