@@ -1,5 +1,5 @@
 ---
-title: AI Class Tutor
+title: AI Class Tutor -- Dev
 description: An LLM based AI class tutor with RAG on DL4DS course
 emoji: 🐶
 colorFrom: red
