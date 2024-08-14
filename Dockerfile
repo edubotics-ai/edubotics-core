@@ -26,8 +26,8 @@ WORKDIR /code/code
 
 RUN --mount=type=secret,id=HUGGINGFACEHUB_API_TOKEN,mode=0444,required=true 
 RUN --mount=type=secret,id=OPENAI_API_KEY,mode=0444,required=true 
-RUN --mount=type=variable,id=CHAINLIT_URL,mode=0444,required=true 
-RUN --mount=type=variable,id=LITERAL_API_URL,mode=0444,required=true 
+RUN --mount=type=secret,id=CHAINLIT_URL,mode=0444,required=true 
+RUN --mount=type=secret,id=LITERAL_API_URL,mode=0444,required=true 
 RUN --mount=type=secret,id=LLAMA_CLOUD_API_KEY,mode=0444,required=true 
 RUN --mount=type=secret,id=OAUTH_GOOGLE_CLIENT_ID,mode=0444,required=true 
 RUN --mount=type=secret,id=OAUTH_GOOGLE_CLIENT_SECRET,mode=0444,required=true 
