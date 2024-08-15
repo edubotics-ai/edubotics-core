@@ -30,3 +30,7 @@ pdf2image
 black
 flake8
 bandit
+fastapi
+google-auth
+google-auth-oauthlib
+Jinja2
