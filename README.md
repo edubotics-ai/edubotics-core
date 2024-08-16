@@ -1,3 +1,12 @@
+---
+title: AI Class Tutor
+description: An LLM based AI class tutor with RAG on DL4DS course
+emoji: 🐶
+colorFrom: red
+colorTo: green
+sdk: docker
+app_port: 7860
+---
 # DL4DS Tutor 🏃
 
 Check out the configuration reference at [Hugging Face Spaces Config Reference](https://huggingface.co/docs/hub/spaces-config-reference).
