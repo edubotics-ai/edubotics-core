@@ -30,3 +30,4 @@ pdf2image
 black
 flake8
 bandit
+google-auth
