@@ -16,11 +16,17 @@ from modules.chat.helpers import (
     get_history_setup_llm,
     get_last_config,
 )
+from modules.chat_processor.helpers import (
+    update_user_info,
+    get_time,
+    check_user_cooldown,
+)
 import copy
 from typing import Optional
 from chainlit.types import ThreadDict
 import time
 import base64
+from langchain_community.callbacks import get_openai_callback
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System"
@@ -291,9 +297,9 @@ class Chatbot:
 
         await self.make_llm_settings_widgets(self.config)  # Reload the settings widgets
 
-        await self.make_llm_settings_widgets(self.config)
         user = cl.user_session.get("user")
 
+        # TODO: remove self.user with cl.user_session.get("user")
         try:
             self.user = {
                 "user_id": user.identifier,
@@ -307,8 +313,6 @@ class Chatbot:
             }
 
         memory = cl.user_session.get("memory", [])
-
-        cl.user_session.set("user", self.user)
         self.llm_tutor = LLMTutor(self.config, user=self.user)
 
         self.chain = self.llm_tutor.qa_bot(
@@ -353,6 +357,33 @@ class Chatbot:
         start_time = time.time()
 
         chain = cl.user_session.get("chain")
+        token_count = 0  # initialize token count
+        if not chain:
+            await self.start()  # start the chatbot if the chain is not present
+            chain = cl.user_session.get("chain")
+
+        # update user info with last message time
+        user = cl.user_session.get("user")
+
+        print("\n\n User Token Usage: ", user.metadata["all_time_tokens"])
+        print("\n\n User Tokens Left: ", user.metadata["tokens_left"])
+
+        # see if user has token credits left
+        # if not, return message saying they have run out of tokens
+        if user.metadata["tokens_left"] <= 0:
+            current_datetime = get_time()
+            cooldown, cooldown_end_time = check_user_cooldown(user, current_datetime)
+            if cooldown:
+                user.metadata["in_cooldown"] = True
+                await update_user_info(user)
+                await cl.Message(
+                    content=(
+                        "Ah, seems like you have run out of tokens...Click "
+                        '<a href="/cooldown" style="color: #0000CD; text-decoration: none;" target="_self">here</a> for more info.'
+                    ),
+                    author=SYSTEM,
+                ).send()
+                return
 
         llm_settings = cl.user_session.get("llm_settings", {})
         view_sources = llm_settings.get("view_sources", False)
@@ -360,6 +391,7 @@ class Chatbot:
         stream = False  # Fix streaming
         user_query_dict = {"input": message.content}
         # Define the base configuration
+        cb = cl.AsyncLangchainCallbackHandler()
         chain_config = {
             "configurable": {
                 "user_id": self.user["user_id"],
@@ -367,20 +399,22 @@ class Chatbot:
                 "memory_window": self.config["llm_params"]["memory_window"],
             },
             "callbacks": (
-                [cl.LangchainCallbackHandler()]
+                [cb]
                 if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
                 else None
             ),
         }
 
-        if stream:
-            res = chain.stream(user_query=user_query_dict, config=chain_config)
-            res = await self.stream_response(res)
-        else:
-            res = await chain.invoke(
-                user_query=user_query_dict,
-                config=chain_config,
-            )
+        with get_openai_callback() as token_count_cb:
+            if stream:
+                res = chain.stream(user_query=user_query_dict, config=chain_config)
+                res = await self.stream_response(res)
+            else:
+                res = await chain.invoke(
+                    user_query=user_query_dict,
+                    config=chain_config,
+                )
+        token_count += token_count_cb.total_tokens
 
         answer = res.get("answer", res.get("result"))
 
@@ -395,21 +429,24 @@ class Chatbot:
 
         if self.config["llm_params"]["generate_follow_up"]:
             start_time = time.time()
+            cb_follow_up = cl.AsyncLangchainCallbackHandler()
             config = {
                 "callbacks": (
-                    [cl.LangchainCallbackHandler()]
+                    [cb_follow_up]
                     if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
                     else None
                 )
             }
+            with get_openai_callback() as token_count_cb:
+                list_of_questions = await self.question_generator.generate_questions(
+                    query=user_query_dict["input"],
+                    response=answer,
+                    chat_history=res.get("chat_history"),
+                    context=res.get("context"),
+                    config=config,
+                )
 
-            list_of_questions = await self.question_generator.generate_questions(
-                query=user_query_dict["input"],
-                response=answer,
-                chat_history=res.get("chat_history"),
-                context=res.get("context"),
-                config=config,
-            )
+            token_count += token_count_cb.total_tokens
 
             for question in list_of_questions:
 
@@ -423,6 +460,14 @@ class Chatbot:
                 )
 
             print("Time taken to generate questions: ", time.time() - start_time)
+
+        # # update user info with token count
+        user.metadata["tokens_left"] = user.metadata["tokens_left"] - token_count
+        user.metadata["all_time_tokens"] = (
+            user.metadata.get("all_time_tokens", 0) + token_count
+        )
+        user.metadata["last_message_time"] = get_time()
+        await update_user_info(user)
 
         await cl.Message(
             content=answer_with_sources,
@@ -445,15 +490,6 @@ class Chatbot:
         cl.user_session.set("memory", conversation_list)
         await self.start(config=thread_config)
 
-    # @cl.oauth_callback
-    # def auth_callback(
-    #     provider_id: str,
-    #     token: str,
-    #     raw_user_data: Dict[str, str],
-    #     default_user: cl.User,
-    # ) -> Optional[cl.User]:
-    #     return default_user
-
     @cl.header_auth_callback
     def header_auth_callback(headers: dict) -> Optional[cl.User]:
 
@@ -474,11 +510,9 @@ class Chatbot:
         decoded_user_info = json.loads(decoded_user_info)
 
         return cl.User(
-            identifier=decoded_user_info["email"],
-            metadata={
-                "name": decoded_user_info["name"],
-                "avatar": decoded_user_info["profile_image"],
-            },
+            id=decoded_user_info["literalai_info"]["id"],
+            identifier=decoded_user_info["literalai_info"]["identifier"],
+            metadata=decoded_user_info["literalai_info"]["metadata"],
         )
 
     async def on_follow_up(self, action: cl.Action):
