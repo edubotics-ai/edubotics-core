@@ -27,6 +27,7 @@ from chainlit.types import ThreadDict
 import time
 import base64
 from langchain_community.callbacks import get_openai_callback
+from datetime import datetime, timezone
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System"
@@ -365,21 +366,37 @@ class Chatbot:
         # update user info with last message time
         user = cl.user_session.get("user")
 
-        print("\n\n User Token Usage: ", user.metadata["all_time_tokens"])
         print("\n\n User Tokens Left: ", user.metadata["tokens_left"])
 
         # see if user has token credits left
         # if not, return message saying they have run out of tokens
-        if user.metadata["tokens_left"] <= 0:
+        if user.metadata["tokens_left"] <= 0 and "admin" not in user.metadata["role"]:
             current_datetime = get_time()
             cooldown, cooldown_end_time = check_user_cooldown(user, current_datetime)
             if cooldown:
-                user.metadata["in_cooldown"] = True
+                # get time left in cooldown
+                # convert both to datetime objects
+                cooldown_end_time = datetime.fromisoformat(cooldown_end_time).replace(
+                    tzinfo=timezone.utc
+                )
+                current_datetime = datetime.fromisoformat(current_datetime).replace(
+                    tzinfo=timezone.utc
+                )
+                cooldown_time_left = cooldown_end_time - current_datetime
+                # Get the total seconds
+                total_seconds = int(cooldown_time_left.total_seconds())
+                # Calculate hours, minutes, and seconds
+                hours, remainder = divmod(total_seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                # Format the time as 00 hrs 00 mins 00 secs
+                formatted_time = f"{hours:02} hrs {minutes:02} mins {seconds:02} secs"
                 await update_user_info(user)
                 await cl.Message(
                     content=(
                         "Ah, seems like you have run out of tokens...Click "
-                        '<a href="/cooldown" style="color: #0000CD; text-decoration: none;" target="_self">here</a> for more info.'
+                        '<a href="/cooldown" style="color: #0000CD; text-decoration: none;" target="_self">here</a> for more info. Please come back after {}'.format(
+                            formatted_time
+                        )
                     ),
                     author=SYSTEM,
                 ).send()
@@ -462,10 +479,8 @@ class Chatbot:
             print("Time taken to generate questions: ", time.time() - start_time)
 
         # # update user info with token count
-        user.metadata["tokens_left"] = user.metadata["tokens_left"] - token_count
-        user.metadata["all_time_tokens"] = (
-            user.metadata.get("all_time_tokens", 0) + token_count
-        )
+        if "admin" not in user.metadata["role"]:
+            user.metadata["tokens_left"] = user.metadata["tokens_left"] - token_count
         user.metadata["last_message_time"] = get_time()
         await update_user_info(user)
 
@@ -509,6 +524,10 @@ class Chatbot:
         ).decode()
         decoded_user_info = json.loads(decoded_user_info)
 
+        print(
+            f"\n\n USER ROLE: {decoded_user_info['literalai_info']['metadata']['role']} \n\n"
+        )
+
         return cl.User(
             id=decoded_user_info["literalai_info"]["id"],
             identifier=decoded_user_info["literalai_info"]["identifier"],
@@ -516,10 +535,11 @@ class Chatbot:
         )
 
     async def on_follow_up(self, action: cl.Action):
+        user = cl.user_session.get("user")
         message = await cl.Message(
             content=action.description,
             type="user_message",
-            author=self.user["user_id"],
+            author=user.identifier,
         ).send()
         async with cl.Step(
             name="on_follow_up", type="run", parent_id=message.id

@@ -156,6 +156,12 @@ async def update_user_info(user_info):
 
 
 def check_user_cooldown(user_info, current_time):
+
+    # Check if no tokens left
+    tokens_left = user_info.metadata.get("tokens_left", 0)
+    if tokens_left > 0:
+        return False, None
+
     user_info = convert_to_dict(user_info)
     last_message_time_str = user_info["metadata"].get("last_message_time")
 

@@ -43,9 +43,10 @@ templates = Jinja2Templates(directory="templates")
 session_store = {}
 CHAINLIT_PATH = "/chainlit_tutor"
 
+# only admin is given any additional permissions for now -- no limits on tokens
 USER_ROLES = {
     "tgardos@bu.edu": ["instructor", "bu"],
-    "xthomas@bu.edu": ["instructor", "bu"],
+    "xthomas@bu.edu": ["admin", "instructor", "bu"],
     "faridkar@bu.edu": ["instructor", "bu"],
     "xavierohan1@gmail.com": ["guest"],
     # Add more users and roles as needed
@@ -168,6 +169,7 @@ async def auth_google(request: Request):
         email = user_info["email"]
         name = user_info.get("name", "")
         profile_image = user_info.get("picture", "")
+        role = get_user_role(email)
 
         session_token = secrets.token_hex(16)
         session_store[session_token] = {
@@ -180,6 +182,7 @@ async def auth_google(request: Request):
         # add literalai user info to session store to be sent to chainlit
         literalai_user = await get_user_details(email)
         session_store[session_token]["literalai_info"] = literalai_user.to_dict()
+        session_store[session_token]["literalai_info"]["metadata"]["role"] = role
 
         user_info_json = json.dumps(session_store[session_token])
         user_info_encoded = base64.b64encode(user_info_json.encode()).decode()
@@ -204,18 +207,17 @@ async def cooldown(request: Request):
     cooldown, cooldown_end_time = check_user_cooldown(user_details, current_datetime)
     print(f"User in cooldown: {cooldown}")
     print(f"Cooldown end time: {cooldown_end_time}")
-    if cooldown:
+    if cooldown and "admin" not in get_user_role(user_info["email"]):
         return templates.TemplateResponse(
             "cooldown.html",
             {
                 "request": request,
                 "username": user_info["email"],
                 "role": get_user_role(user_info["email"]),
-                "cooldown_end_time": cooldown_end_time,  # Pass as ISO format string
+                "cooldown_end_time": cooldown_end_time,
             },
         )
     else:
-        user_details.metadata["in_cooldown"] = False
         await update_user_info(user_details)
         await reset_tokens_for_user(user_details)
         return RedirectResponse("/post-signin")
@@ -232,14 +234,14 @@ async def post_signin(request: Request):
     # if new user, set the number of tries
     if "tokens_left" not in user_details.metadata:
         await reset_tokens_for_user(user_details)
-        user_details.metadata["all_time_tokens"] = 0  # Initialize all_time_tokens
-    if "last_message_time" in user_details.metadata:
+
+    if "last_message_time" in user_details.metadata and "admin" not in get_user_role(
+        user_info["email"]
+    ):
         cooldown, _ = check_user_cooldown(user_details, current_datetime)
         if cooldown:
             return RedirectResponse("/cooldown")
-        else:
-            user_details.metadata["in_cooldown"] = False
-            await reset_tokens_for_user(user_details)
+
     if user_info:
         username = user_info["email"]
         role = get_user_role(username)
