@@ -97,10 +97,8 @@ async def del_user_info_from_cookie(request: Request, response: Response):
     # Delete cookies from the response
     response.delete_cookie("X-User-Info")
     response.delete_cookie("session_token")
-    
     # Get the session token from the request cookies
     session_token = request.cookies.get("session_token")
-    
     # Check if the session token exists in the session_store before deleting
     if session_token and session_token in session_store:
         del session_store[session_token]
@@ -196,7 +194,7 @@ async def auth_google(request: Request):
         response = RedirectResponse(url="/post-signin", status_code=303)
         response.set_cookie(key="session_token", value=session_token)
         response.set_cookie(
-            key="X-User-Info", value=user_info_encoded, httponly=True) # TODO: is the flag httponly=True necessary?
+            key="X-User-Info", value=user_info_encoded, httponly=True)  # TODO: is the flag httponly=True necessary?
         return response
     except Exception as e:
         print(f"Error during Google OAuth callback: {e}")
