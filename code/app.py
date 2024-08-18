@@ -194,7 +194,8 @@ async def auth_google(request: Request):
         response = RedirectResponse(url="/post-signin", status_code=303)
         response.set_cookie(key="session_token", value=session_token)
         response.set_cookie(
-            key="X-User-Info", value=user_info_encoded, httponly=True)  # TODO: is the flag httponly=True necessary?
+            key="X-User-Info", value=user_info_encoded, httponly=True
+        )  # TODO: is the flag httponly=True necessary?
         return response
     except Exception as e:
         print(f"Error during Google OAuth callback: {e}")
