@@ -1,83 +1,59 @@
-## **Work in Progress ...**
+## Terrier Tutor
 
-## Running Locally
+Welcome to the Terrier Tutor documentation! This guide is designed to help you get started with using and developing your own LLM-based Retrieval-Augmented Generation (RAG) applications.
 
-Please view `docs/setup.md` for more information on setting up the project.
+## What is Terrier Tutor?
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/DL4DS/dl4ds_tutor
-   ```
+Terrier Tutor is a framework designed to simplify the development of LLM-based RAG applications. Whether you're an educator, developer, or researcher, this documentation will walk you through the process of setting up, customizing, and extending Terrier Tutor to suit your specific needs.
 
-2. **Put your data under the `storage/data` directory**
-   - Add URLs in the `urls.txt` file.
-   - Add other PDF files in the `storage/data` directory.
+## Getting Started
 
-3. **To test Data Loading (Optional)**
-   ```bash
-   cd code
-   python -m modules.dataloader.data_loader
-   ```
+To get started, follow the setup instructions provided at [Setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/). Additionally, for instructions on running the project on your local machine, visit [Run Locally](https://dl4ds.github.io/dl4ds_tutor/guide/run_locally/).
 
-4. **Create the Vector Database**
-   ```bash
-   cd code
-   python -m modules.vectorstore.store_manager
-   ```
-   - Note: You need to run the above command when you add new data to the `storage/data` directory, or if the `storage/data/urls.txt` file is updated.
+## File Structure and Coding Guidelines
 
-5. **Run the Chainlit App**
-   ```bash
-   chainlit run main.py
-   ```
-
-See the [docs](https://github.com/DL4DS/dl4ds_tutor/tree/main/docs) for more information.
-
-## File Structure
-
-```plaintext
-code/
- ├── modules
- │   ├── chat                # Contains the chatbot implementation
- │   ├── chat_processor      # Contains the implementation to process and log the conversations
- │   ├── config              # Contains the configuration files
- │   ├── dataloader          # Contains the implementation to load the data from the storage directory
- │   ├── retriever           # Contains the implementation to create the retriever
- │   └── vectorstore         # Contains the implementation to create the vector database
- ├── public
- │   ├── logo_dark.png       # Dark theme logo
- │   ├── logo_light.png      # Light theme logo
- │   └── test.css            # Custom CSS file
- └── main.py
-
- 
-docs/                        # Contains the documentation to the codebase and methods used
-
-storage/
- ├── data                    # Store files and URLs here
- ├── logs                    # Logs directory, includes logs on vector DB creation, tutor logs, and chunks logged in JSON files
- └── models                  # Local LLMs are loaded from here
-
-vectorstores/                # Stores the created vector databases
-
-.env                         # This needs to be created, store the API keys here
-```
-- `code/modules/vectorstore/vectorstore.py`: Instantiates the `VectorStore` class to create the vector database.
-- `code/modules/vectorstore/store_manager.py`: Instantiates the `VectorStoreManager:` class to manage the vector database, and all associated methods.
-- `code/modules/retriever/retriever.py`: Instantiates the `Retriever` class to create the retriever.
-
-
-## Docker 
-
-The HuggingFace Space is built using the `Dockerfile` in the repository. To run it locally, use the `Dockerfile.dev` file.
-
+The project is organized into several key modules and files. Below is an overview of the file structure:
+   
 ```bash
-docker build --tag dev  -f Dockerfile.dev .
-docker run -it --rm -p 8000:8000 dev
+code/
+├── app.py                
+├── main.py                
+└── modules/
+    ├── dataloader/        
+    ├── vectorstore/       
+    ├── retriever/          
+    ├── config/            
+    ├── chat/            
+    └── chat_processor/    
 ```
+Each module is designed to facilitate easy customization and extension. For instance, the `modules/vectorstore/vectorstore.py` file contains the core logic for creating the vector database. If you want to implement your own custom vector store while maintaining consistency and without impacting any downstream logic, you can do so by following these steps:
 
-## Contributing
+1. Use the template provided in `modules/vectorstore/base.py`, which outlines the required methods and structure for a vector store.
+2. Create a new file, such as `modules/vectorstore/new_vectorstore.py`, and implement your custom vector store based on the template.
+3. Finally, integrate your custom vector store by calling it in the `modules/vectorstore/vectorstore.py` file.
 
-Please create an issue if you have any suggestions or improvements, and start working on it by creating a branch and by making a pull request to the main branch.
+This approach ensures that your customizations remain consistent with the existing pipeline and do not affect any other parts of the application.
 
-Please view `docs/contribute.md` for more information on contributing.
+
+### Key Files and Directories
+
+- **`app.py`**: This is the FastAPI application that serves as the main entry point. It handles user roles, authentication, and mounts the Chainlit UI as a sub-application. All endpoints, except for the Chainlit-specific ones, are defined here.
+
+- **`main.py`**: This file is the entry point for the Chainlit application, which is mounted as a sub-app in `app.py`. It manages the chat UI, conversation logic, and logs user interactions to LiteralAI.
+
+- **`modules/dataloader/`**: Contains the code for loading data from various sources like URLs, text files, and PDFs.
+
+- **`modules/vectorstore/`**: Handles the creation of the vector database from the loaded data.
+
+- **`modules/retriever/`**: Contains the logic for creating the retriever, which is responsible for fetching relevant data from the vector database.
+
+- **`modules/config/`**: Houses configuration settings for the application, allowing customization and adjustments.
+
+- **`modules/chat/`**: Manages the chat logic, including how conversations are handled within the application.
+
+- **`modules/chat_processor/`**: Responsible for processing chat interactions and logging them to LiteralAI.
+
+
+With this structure, Terrier Tutor offers a modular and organized approach to building fully-customizable LLM-based RAG applications. By following the guidelines provided in each section of this documentation, you can effectively set up, and deploy your own Tutor application.
+
+For further details on each module and component, refer to the corresponding documentation sections.
