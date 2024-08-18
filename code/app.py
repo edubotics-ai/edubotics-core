@@ -241,6 +241,8 @@ async def post_signin(request: Request):
         cooldown, _ = check_user_cooldown(user_details, current_datetime)
         if cooldown:
             return RedirectResponse("/cooldown")
+        else:
+            await reset_tokens_for_user(user_details)
 
     if user_info:
         username = user_info["email"]
