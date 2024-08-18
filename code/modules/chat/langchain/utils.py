@@ -299,7 +299,7 @@ async def return_questions(query, response, chat_history_str, context, config):
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system),
-            ("human", "{chat_history_str}, {context}, {query}, {response}"),
+            # ("human", "{chat_history_str}, {context}, {query}, {response}"),
         ]
     )
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)

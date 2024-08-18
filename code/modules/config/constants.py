@@ -4,6 +4,11 @@ import os
 load_dotenv()
 
 TIMEOUT = 60
+COOLDOWN_TIME = 60
+TOKENS_LEFT = 3000
+
+GITHUB_REPO = "https://github.com/DL4DS/dl4ds_tutor"
+DOCS_WEBSITE = "https://dl4ds.github.io/dl4ds_tutor/"
 
 # API Keys - Loaded from the .env file
 
