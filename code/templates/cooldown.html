@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cooldown Period | Terrier Tutor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+            background-repeat: repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            padding: 50px;
+            box-sizing: border-box;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin-bottom: 25px;
+            border: 2px solid #ddd;
+        }
+
+        .container h1 {
+            margin-bottom: 15px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .container p {
+            font-size: 16px;
+            color: #4a4a4a;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .cooldown-message {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .button {
+            padding: 12px 0;
+            margin: 12px 0;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            border: 1px solid #4285F4; /* Button border color */
+            background-color: #fff; /* Button background color */
+            color: #4285F4; /* Button text color */
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            display: none; /* Initially hidden */
+        }
+
+        .button.start-tutor {
+            display: none; /* Initially hidden */
+        }
+
+        .button:hover {
+            background-color: #e0e0e0;
+            border-color: #357ae8; /* Darker blue for hover */
+        }
+
+        .sign-out-button {
+            border: 1px solid #FF4C4C;
+            background-color: #fff;
+            color: #FF4C4C;
+            display: block; /* Ensure this button is always visible */
+        }
+
+        .sign-out-button:hover {
+            background-color: #ffe6e6; /* Light red on hover */
+            border-color: #e04343; /* Darker red for hover */
+            color: #e04343; /* Red text on hover */
+        }
+
+        #countdown {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/public/avatars/ai_tutor.png" alt="AI Tutor Avatar" class="avatar">
+        <h1>Hello, {{ username }}</h1>
+        <p>It seems like you need to wait a bit before starting a new session.</p>
+        <p class="cooldown-message">Time remaining until the cooldown period ends:</p>
+        <p id="countdown"></p>
+        <button id="startTutorBtn" class="button start-tutor" onclick="startTutor()">Start AI Tutor</button>
+        <form action="/logout" method="get">
+            <button type="submit" class="button sign-out-button">Sign Out</button>
+        </form>
+    </div>
+    <script>
+        function startCountdown(endTime) {
+            const countdownElement = document.getElementById('countdown');
+            const startTutorBtn = document.getElementById('startTutorBtn');
+            const endTimeDate = new Date(endTime);  // Parse the cooldown end time
+
+            function updateCountdown() {
+                const now = new Date();  // Get the current time
+                const timeLeft = endTimeDate.getTime() - now.getTime();  // Calculate the remaining time in milliseconds
+
+                if (timeLeft <= 0) {
+                    countdownElement.textContent = "Cooldown period has ended.";
+                    startTutorBtn.style.display = "block";  // Show the start tutor button
+                } else {
+                    const hours = Math.floor(timeLeft / 1000 / 60 / 60);
+                    const minutes = Math.floor((timeLeft / 1000 / 60) % 60);
+                    const seconds = Math.floor((timeLeft / 1000) % 60);
+                    countdownElement.textContent = `${hours}h ${minutes}m ${seconds}s`;
+                }
+            }
+
+            updateCountdown();  // Initial call to set the countdown
+            setInterval(updateCountdown, 1000);  // Update the countdown every second
+        }
+
+        function startTutor() {
+            // Redirect to AI Tutor session start or any other logic to start the tutor
+            window.location.href = "/start-tutor";
+        }
+
+        // Pass the cooldown_end_time to the script in ISO format with 'Z' to indicate UTC
+        startCountdown("{{ cooldown_end_time }}");
+    </script>
+</body>
+</html>

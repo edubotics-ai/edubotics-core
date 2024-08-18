@@ -1,19 +1,21 @@
-name: Sync with Hugging Face Hub
+name: Push Production to HuggingFace
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+  # run this workflow manuall from the Actions tab
+  workflow_dispatch:
 
 jobs:
-  build:
+  sync-to-hub:
     runs-on: ubuntu-latest
     steps:
-    - name: Sync with Hugging Face
-      uses: nateraw/huggingface-sync-action@v0.0.4
-      with:
-        github_repo_id: DL4DS/dl4ds_tutor
-        huggingface_repo_id: dl4ds/dl4ds_tutor
-        repo_type: space
-        space_sdk: static
-        hf_token: ${{ secrets.HF_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      - name: Deploy Production (main) to HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: git push --force https://trgardos:$HF_TOKEN@huggingface.co/spaces/dl4ds/dl4ds_tutor main:main

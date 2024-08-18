@@ -4,6 +4,11 @@ import os
 load_dotenv()
 
 TIMEOUT = 60
+COOLDOWN_TIME = 60
+TOKENS_LEFT = 3000
+
+GITHUB_REPO = "https://github.com/DL4DS/dl4ds_tutor"
+DOCS_WEBSITE = "https://dl4ds.github.io/dl4ds_tutor/"
 
 # API Keys - Loaded from the .env file
 
@@ -12,6 +17,7 @@ LLAMA_CLOUD_API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
 LITERAL_API_KEY_LOGGING = os.getenv("LITERAL_API_KEY_LOGGING")
 LITERAL_API_URL = os.getenv("LITERAL_API_URL")
+CHAINLIT_URL = os.getenv("CHAINLIT_URL")
 
 OAUTH_GOOGLE_CLIENT_ID = os.getenv("OAUTH_GOOGLE_CLIENT_ID")
 OAUTH_GOOGLE_CLIENT_SECRET = os.getenv("OAUTH_GOOGLE_CLIENT_SECRET")
