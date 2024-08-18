@@ -25,8 +25,6 @@ Please visit [setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/) for more 
 
 ## Running Locally
 
-Please view `docs/setup.md` for more information on setting up the project.
-
 1. **Clone the Repository**
    ```bash
    git clone https://github.com/DL4DS/dl4ds_tutor
