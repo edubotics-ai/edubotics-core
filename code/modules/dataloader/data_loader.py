@@ -421,10 +421,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Process some links.")
     parser.add_argument(
-        '--links',
-        nargs='+',
-        required=True,
-        help="List of links to process."
+        "--links", nargs="+", required=True, help="List of links to process."
     )
 
     args = parser.parse_args()
