@@ -26,7 +26,6 @@ CHAT_TURN_TYPE = Union[Tuple[str, str], BaseMessage]
 
 
 class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
-
     def _get_chat_history(self, chat_history: List[CHAT_TURN_TYPE]) -> str:
         _ROLE_MAP = {"human": "Student: ", "ai": "AI Tutor: "}
         buffer = ""
@@ -139,7 +138,6 @@ class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
 
 
 class CustomRunnableWithHistory(RunnableWithMessageHistory):
-
     def _get_chat_history(self, chat_history: List[CHAT_TURN_TYPE]) -> str:
         _ROLE_MAP = {"human": "Student: ", "ai": "AI Tutor: "}
         buffer = ""
@@ -282,7 +280,6 @@ def create_retrieval_chain(
 
 # TODO: Remove Hard-coded values
 async def return_questions(query, response, chat_history_str, context, config):
-
     system = (
         "You are someone that suggests a question based on the student's input and chat history. "
         "Generate a question that is relevant to the student's input and chat history. "

@@ -156,7 +156,6 @@ async def update_user_info(user_info):
 
 
 async def check_user_cooldown(user_info, current_time):
-
     # # Check if no tokens left
     tokens_left = user_info.metadata.get("tokens_left", 0)
     if tokens_left > 0 and not user_info.metadata.get("in_cooldown", False):
@@ -214,7 +213,6 @@ async def reset_tokens_for_user(user_info):
 
     # Calculate how many tokens should have been regenerated proportionally
     if current_tokens < max_tokens:
-
         # Calculate the regeneration rate per second based on REGEN_TIME for full regeneration
         regeneration_rate_per_second = max_tokens / REGEN_TIME
 

@@ -42,7 +42,6 @@ def get_sources(res, answer, stream=True, view_sources=False):
         full_answer += answer
 
     if view_sources:
-
         # Then, display the sources
         # check if the answer has sources
         if len(source_dict) == 0:
@@ -51,7 +50,6 @@ def get_sources(res, answer, stream=True, view_sources=False):
         else:
             full_answer += "\n\n**Sources:**\n"
             for idx, (url_name, source_data) in enumerate(source_dict.items()):
-
                 full_answer += f"\nSource {idx + 1} (Score: {source_data['score']}): {source_data['url']}\n"
 
                 name = f"Source {idx + 1} Text\n"

@@ -3,5 +3,5 @@ retriever:
     RAGatouille: "XThomasBU/Colbert_Index"
 
 metadata:
-  metada_links: ["https://dl4ds.github.io/sp2024/lectures/", "https://dl4ds.github.io/sp2024/schedule/"]
+  metadata_links: ["https://dl4ds.github.io/sp2024/lectures/", "https://dl4ds.github.io/sp2024/schedule/"]
   slide_base_link: "https://dl4ds.github.io"

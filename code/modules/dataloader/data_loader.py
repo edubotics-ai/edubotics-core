@@ -222,7 +222,7 @@ class ChunkProcessor:
 
     def chunk_docs(self, file_reader, uploaded_files, weblinks):
         addl_metadata = get_metadata(
-            *self.config["metadata"]["metada_links"], self.config
+            *self.config["metadata"]["metadata_links"], self.config
         )  # For any additional metadata
 
         # remove already processed files if reparse_files is False
@@ -324,7 +324,6 @@ class ChunkProcessor:
             return
 
         try:
-
             if file_path in self.document_data:
                 self.logger.warning(f"File {file_name} already processed")
                 documents = [
@@ -440,13 +439,16 @@ if __name__ == "__main__":
 
     data_loader = DataLoader(config, logger=logger)
     # Just for testing
-    document_chunks, document_names, documents, document_metadata = (
-        data_loader.get_chunks(
-            [
-                "https://dl4ds.github.io/fa2024/static_files/discussion_slides/00_discussion.pdf"
-            ],
-            [],
-        )
+    (
+        document_chunks,
+        document_names,
+        documents,
+        document_metadata,
+    ) = data_loader.get_chunks(
+        [
+            "https://dl4ds.github.io/fa2024/static_files/discussion_slides/00_discussion.pdf"
+        ],
+        [],
     )
 
     print(document_names[:5])
