@@ -248,7 +248,6 @@ async def reset_tokens_for_user(user_info):
             await update_user_info(user_info)
 
 
-
 async def get_thread_step_info(thread_id):
     step = await literal_client.api.get_step(thread_id)
     return step
