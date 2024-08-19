@@ -21,6 +21,7 @@ from modules.chat_processor.helpers import (
     get_time,
     check_user_cooldown,
     reset_tokens_for_user,
+    get_user_details,
 )
 import copy
 from typing import Optional
@@ -53,6 +54,24 @@ async def setup_data_layer():
         data_layer = None
 
     return data_layer
+
+
+async def update_user_from_chainlit(user, token_count=0):
+    if "admin" not in user.metadata["role"]:
+        user.metadata["tokens_left"] = user.metadata["tokens_left"] - token_count
+        user.metadata["all_time_tokens_allocated"] = (
+            user.metadata["all_time_tokens_allocated"] - token_count
+        )
+        user.metadata["tokens_left_at_last_message"] = user.metadata[
+            "tokens_left"
+        ]  # tokens_left will keep regenerating outside of chainlit
+    user.metadata["last_message_time"] = get_time()
+    await update_user_info(user)
+
+    tokens_left = user.metadata["tokens_left"]
+    if tokens_left < 0:
+        tokens_left = 0
+    return tokens_left
 
 
 class Chatbot:
@@ -367,6 +386,10 @@ class Chatbot:
 
         # update user info with last message time
         user = cl.user_session.get("user")
+        await reset_tokens_for_user(user)
+        updated_user = await get_user_details(user.identifier)
+        user.metadata = updated_user.metadata
+        cl.user_session.set("user", user)
 
         print("\n\n User Tokens Left: ", user.metadata["tokens_left"])
 
@@ -405,6 +428,15 @@ class Chatbot:
                 ).send()
                 user.metadata["in_cooldown"] = True
                 await update_user_info(user)
+                return
+            else:
+                await cl.Message(
+                    content=(
+                        "Ah, seems like you don't have any tokens left...Please wait while we regenerate your tokens. Click "
+                        '<a href="/cooldown" style="color: #0000CD; text-decoration: none;" target="_self">here</a> to view your token credits.'
+                    ),
+                    author=SYSTEM,
+                ).send()
                 return
 
         user.metadata["in_cooldown"] = False
@@ -486,18 +518,8 @@ class Chatbot:
             print("Time taken to generate questions: ", time.time() - start_time)
 
         # # update user info with token count
-        if "admin" not in user.metadata["role"]:
-            user.metadata["tokens_left"] = user.metadata["tokens_left"] - token_count
-            user.metadata["all_time_tokens_allocated"] = (
-                user.metadata["all_time_tokens_allocated"] - token_count
-            )
-            await reset_tokens_for_user(user)  # regenerate tokens for the user
-        user.metadata["last_message_time"] = get_time()
-        await update_user_info(user)
+        tokens_left = await update_user_from_chainlit(user, token_count)
 
-        tokens_left = user.metadata["tokens_left"]
-        if tokens_left < 0:
-            tokens_left = 0
         answer_with_sources += (
             '\n\n<footer><span style="font-size: 0.8em; text-align: right; display: block;">Tokens Left: '
             + str(tokens_left)

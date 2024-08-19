@@ -206,46 +206,34 @@ async def reset_tokens_for_user(user_info):
     elapsed_time_in_seconds = (current_time - last_message_time).total_seconds()
 
     # Current token count (can be negative)
-    current_tokens = user_info["metadata"].get("tokens_left", 0)
+    current_tokens = user_info["metadata"].get("tokens_left_at_last_message", 0)
+    current_tokens = min(current_tokens, TOKENS_LEFT)
 
     # Maximum tokens that can be regenerated
     max_tokens = user_info["metadata"].get("max_tokens", TOKENS_LEFT)
 
     # Calculate how many tokens should have been regenerated proportionally
     if current_tokens < max_tokens:
-        # Determine the time required to fully regenerate tokens from the current state
-        if current_tokens < 0:
-            time_to_full_regen = REGEN_TIME * (
-                1 + abs(current_tokens) / max_tokens
-            )  # more time to regenerate if tokens left is negative
-        else:
-            time_to_full_regen = REGEN_TIME * (
-                1 - current_tokens / max_tokens
-            )  # less time to regenerate if tokens left is positive
 
-        # Calculate the proportion of this time that has elapsed
-        proportion_of_time_elapsed = elapsed_time_in_seconds / time_to_full_regen
+        # Calculate the regeneration rate per second based on REGEN_TIME for full regeneration
+        regeneration_rate_per_second = max_tokens / REGEN_TIME
 
-        # Ensure the proportion doesn't exceed 1.0
-        proportion_of_time_elapsed = min(proportion_of_time_elapsed, 1.0)
-
-        # Calculate the tokens to regenerate based on the elapsed proportion
+        # Calculate how many tokens should have been regenerated based on the elapsed time
         tokens_to_regenerate = int(
-            proportion_of_time_elapsed * (max_tokens - current_tokens)
+            elapsed_time_in_seconds * regeneration_rate_per_second
         )
 
-        # Ensure tokens_to_regenerate is positive and doesn't exceed the maximum
-        if tokens_to_regenerate > 0:
-            new_token_count = min(current_tokens + tokens_to_regenerate, max_tokens)
+        # Ensure the new token count does not exceed max_tokens
+        new_token_count = min(current_tokens + tokens_to_regenerate, max_tokens)
 
-            print(
-                f"\n\n Adding {tokens_to_regenerate} tokens to the user, Time left for full credits: {max(0, time_to_full_regen - elapsed_time_in_seconds)} \n\n"
-            )
+        print(
+            f"\n\n Adding {tokens_to_regenerate} tokens to the user, Time elapsed: {elapsed_time_in_seconds} seconds, Tokens after regeneration: {new_token_count}, Tokens before: {current_tokens} \n\n"
+        )
 
-            # Update the user's token count
-            user_info["metadata"]["tokens_left"] = new_token_count
+        # Update the user's token count
+        user_info["metadata"]["tokens_left"] = new_token_count
 
-            await update_user_info(user_info)
+        await update_user_info(user_info)
 
 
 async def get_thread_step_info(thread_id):
