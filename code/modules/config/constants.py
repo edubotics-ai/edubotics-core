@@ -4,8 +4,10 @@ import os
 load_dotenv()
 
 TIMEOUT = 60
-COOLDOWN_TIME = 60
-TOKENS_LEFT = 3000
+COOLDOWN_TIME = 180
+REGEN_TIME = 300
+TOKENS_LEFT = 2000
+ALL_TIME_TOKENS_ALLOCATED = 1000000
 
 GITHUB_REPO = "https://github.com/DL4DS/dl4ds_tutor"
 DOCS_WEBSITE = "https://dl4ds.github.io/dl4ds_tutor/"

@@ -20,6 +20,7 @@ from modules.chat_processor.helpers import (
     update_user_info,
     get_time,
     check_user_cooldown,
+    reset_tokens_for_user,
 )
 import copy
 from typing import Optional
@@ -224,14 +225,14 @@ class Chatbot:
         await cl.Message(
             author=SYSTEM,
             content="LLM settings have been updated. You can continue with your Query!",
-            elements=[
-                cl.Text(
-                    name="settings",
-                    display="side",
-                    content=json.dumps(settings_dict, indent=4),
-                    language="json",
-                ),
-            ],
+            # elements=[
+            #     cl.Text(
+            #         name="settings",
+            #         display="side",
+            #         content=json.dumps(settings_dict, indent=4),
+            #         language="json",
+            #     ),
+            # ],
         ).send()
 
     async def set_starters(self):
@@ -372,8 +373,9 @@ class Chatbot:
         # if not, return message saying they have run out of tokens
         if user.metadata["tokens_left"] <= 0 and "admin" not in user.metadata["role"]:
             current_datetime = get_time()
-            cooldown, cooldown_end_time = check_user_cooldown(user, current_datetime)
+            cooldown, cooldown_end_time = await check_user_cooldown(user, current_datetime)
             if cooldown:
+                user.metadata["in_cooldown"] = True
                 # get time left in cooldown
                 # convert both to datetime objects
                 cooldown_end_time = datetime.fromisoformat(cooldown_end_time).replace(
@@ -481,8 +483,15 @@ class Chatbot:
         # # update user info with token count
         if "admin" not in user.metadata["role"]:
             user.metadata["tokens_left"] = user.metadata["tokens_left"] - token_count
+            user.metadata["all_time_tokens_allocated"] = user.metadata["all_time_tokens_allocated"] - token_count
+            await reset_tokens_for_user(user) # regenerate tokens for the user
         user.metadata["last_message_time"] = get_time()
         await update_user_info(user)
+
+        tokens_left = user.metadata["tokens_left"]
+        if tokens_left < 0:
+            tokens_left = 0
+        answer_with_sources += '\n\n<footer><span style="font-size: 0.8em; text-align: right; display: block;">Tokens Left: ' + str(tokens_left) + '</span></footer>\n'
 
         await cl.Message(
             content=answer_with_sources,
