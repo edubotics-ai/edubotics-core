@@ -15,7 +15,7 @@ from modules.config.constants import (
     GITHUB_REPO,
     DOCS_WEBSITE,
     ALL_TIME_TOKENS_ALLOCATED,
-    TOKENS_LEFT
+    TOKENS_LEFT,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -209,7 +209,9 @@ async def cooldown(request: Request):
     user_info = await get_user_info_from_cookie(request)
     user_details = await get_user_details(user_info["email"])
     current_datetime = get_time()
-    cooldown, cooldown_end_time = await check_user_cooldown(user_details, current_datetime)
+    cooldown, cooldown_end_time = await check_user_cooldown(
+        user_details, current_datetime
+    )
     print(f"User in cooldown: {cooldown}")
     print(f"Cooldown end time: {cooldown_end_time}")
     if cooldown and "admin" not in get_user_role(user_info["email"]):
@@ -240,9 +242,13 @@ async def post_signin(request: Request):
     user_details.metadata["last_login"] = current_datetime
     # if new user, set the number of tries
     if "tokens_left" not in user_details.metadata:
-        user_details.metadata["tokens_left"] = TOKENS_LEFT # set the number of tokens left for the new user
+        user_details.metadata["tokens_left"] = (
+            TOKENS_LEFT  # set the number of tokens left for the new user
+        )
         if "all_time_tokens_allocated" not in user_details.metadata:
-            user_details.metadata["all_time_tokens_allocated"] = ALL_TIME_TOKENS_ALLOCATED
+            user_details.metadata["all_time_tokens_allocated"] = (
+                ALL_TIME_TOKENS_ALLOCATED
+            )
         if "in_cooldown" not in user_details.metadata:
             user_details.metadata["in_cooldown"] = False
         await update_user_info(user_details)
@@ -252,8 +258,10 @@ async def post_signin(request: Request):
     ):
         cooldown, _ = await check_user_cooldown(user_details, current_datetime)
         if cooldown:
+            user_details.metadata["in_cooldown"] = True
             return RedirectResponse("/cooldown")
         else:
+            user_details.metadata["in_cooldown"] = False
             await reset_tokens_for_user(user_details)
 
     if user_info:
@@ -268,7 +276,9 @@ async def post_signin(request: Request):
                 "role": role,
                 "jwt_token": jwt_token,
                 "tokens_left": user_details.metadata["tokens_left"],
-                "all_time_tokens_allocated": user_details.metadata["all_time_tokens_allocated"],
+                "all_time_tokens_allocated": user_details.metadata[
+                    "all_time_tokens_allocated"
+                ],
                 "total_tokens_allocated": ALL_TIME_TOKENS_ALLOCATED,
             },
         )
@@ -331,7 +341,6 @@ async def get_tokens_left(request: Request):
     except Exception as e:
         print(f"Error getting tokens left: {e}")
         return {"tokens_left": 0}
-        
 
 
 mount_chainlit(app=app, target="main.py", path=CHAINLIT_PATH)

@@ -186,11 +186,12 @@ async def check_user_cooldown(user_info, current_time):
     if elapsed_time_in_seconds < COOLDOWN_TIME:
         return True, cooldown_end_time_iso  # Return in ISO 8601 format
 
-    user.metadata["in_cooldown"] = False
+    user_info["metadata"]["in_cooldown"] = False
     # If not in cooldown, regenerate tokens
     await reset_tokens_for_user(user_info)
 
     return False, None
+
 
 async def reset_tokens_for_user(user_info):
     user_info = convert_to_dict(user_info)
@@ -212,28 +213,41 @@ async def reset_tokens_for_user(user_info):
 
     # Calculate how many tokens should have been regenerated proportionally
     if current_tokens < max_tokens:
-        # Determine the time required to fully regenerate tokens from current state
+        # Determine the time required to fully regenerate tokens from the current state
         if current_tokens < 0:
-            time_to_full_regen = REGEN_TIME * (1 + abs(current_tokens) / max_tokens) # more time to regenerate if tokens left is negative
+            time_to_full_regen = REGEN_TIME * (
+                1 + abs(current_tokens) / max_tokens
+            )  # more time to regenerate if tokens left is negative
         else:
-            time_to_full_regen = REGEN_TIME * (1 - current_tokens / max_tokens) # less time to regenerate if tokens left is positive
+            time_to_full_regen = REGEN_TIME * (
+                1 - current_tokens / max_tokens
+            )  # less time to regenerate if tokens left is positive
 
         # Calculate the proportion of this time that has elapsed
-        proportion_of_time_elapsed = min(elapsed_time_in_seconds / time_to_full_regen, 1.0)
+        proportion_of_time_elapsed = elapsed_time_in_seconds / time_to_full_regen
+
+        # Ensure the proportion doesn't exceed 1.0
+        proportion_of_time_elapsed = min(proportion_of_time_elapsed, 1.0)
 
         # Calculate the tokens to regenerate based on the elapsed proportion
-        tokens_to_regenerate = int(proportion_of_time_elapsed * (max_tokens - current_tokens))
+        tokens_to_regenerate = int(
+            proportion_of_time_elapsed * (max_tokens - current_tokens)
+        )
 
         # Ensure tokens_to_regenerate is positive and doesn't exceed the maximum
         if tokens_to_regenerate > 0:
             new_token_count = min(current_tokens + tokens_to_regenerate, max_tokens)
 
-            print(f"\n\n Adding {tokens_to_regenerate} tokens to the user, Time left for full credits: {time_to_full_regen - elapsed_time_in_seconds} \n\n")
+            print(
+                f"\n\n Adding {tokens_to_regenerate} tokens to the user, Time left for full credits: {max(0, time_to_full_regen - elapsed_time_in_seconds)} \n\n"
+            )
 
             # Update the user's token count
             user_info["metadata"]["tokens_left"] = new_token_count
 
             await update_user_info(user_info)
+
+
 
 async def get_thread_step_info(thread_id):
     step = await literal_client.api.get_step(thread_id)
