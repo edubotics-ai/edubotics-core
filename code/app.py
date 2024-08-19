@@ -80,7 +80,7 @@ flow = Flow.from_client_config(
 
 
 def get_user_role(username: str):
-    return USER_ROLES.get(username, ["student"])  # Default to "student" role
+    return USER_ROLES.get(username, ["guest"])  # Default to "guest" role
 
 
 async def get_user_info_from_cookie(request: Request):
@@ -246,9 +246,7 @@ async def post_signin(request: Request):
             TOKENS_LEFT  # set the number of tokens left for the new user
         )
     if "all_time_tokens_allocated" not in user_details.metadata:
-        user_details.metadata["all_time_tokens_allocated"] = (
-            ALL_TIME_TOKENS_ALLOCATED
-        )
+        user_details.metadata["all_time_tokens_allocated"] = ALL_TIME_TOKENS_ALLOCATED
     if "in_cooldown" not in user_details.metadata:
         user_details.metadata["in_cooldown"] = False
     await update_user_info(user_details)
