@@ -37,7 +37,7 @@ Please visit [setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/) for more 
 3. **To test Data Loading (Optional)**
    ```bash
    cd code
-   python -m modules.dataloader.data_loader
+   python -m modules.dataloader.data_loader --links "your_pdf_link"
    ```
 
 4. **Create the Vector Database**

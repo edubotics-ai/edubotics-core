@@ -417,6 +417,18 @@ class DataLoader:
 
 if __name__ == "__main__":
     import yaml
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Process some links.")
+    parser.add_argument(
+        '--links',
+        nargs='+',
+        required=True,
+        help="List of links to process."
+    )
+
+    args = parser.parse_args()
+    links_to_process = args.links
 
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
@@ -445,9 +457,7 @@ if __name__ == "__main__":
         documents,
         document_metadata,
     ) = data_loader.get_chunks(
-        [
-            "https://dl4ds.github.io/fa2024/static_files/discussion_slides/00_discussion.pdf"
-        ],
+        links_to_process,
         [],
     )
 
