@@ -222,8 +222,7 @@ class ChunkProcessor:
 
     def chunk_docs(self, file_reader, uploaded_files, weblinks):
         addl_metadata = get_metadata(
-            "https://dl4ds.github.io/sp2024/lectures/",
-            "https://dl4ds.github.io/sp2024/schedule/",
+            *self.config["metadata"]["metada_links"], self.config
         )  # For any additional metadata
 
         # remove already processed files if reparse_files is False
@@ -426,6 +425,12 @@ if __name__ == "__main__":
     with open("../code/modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
 
+    with open("../code/modules/config/project_config.yml", "r") as f:
+        project_config = yaml.safe_load(f)
+
+    # Combine project config with the main config
+    config.update(project_config)
+
     STORAGE_DIR = os.path.join(BASE_DIR, config["vectorstore"]["data_path"])
     uploaded_files = [
         os.path.join(STORAGE_DIR, file)
@@ -434,6 +439,7 @@ if __name__ == "__main__":
     ]
 
     data_loader = DataLoader(config, logger=logger)
+    # Just for testing
     document_chunks, document_names, documents, document_metadata = (
         data_loader.get_chunks(
             [

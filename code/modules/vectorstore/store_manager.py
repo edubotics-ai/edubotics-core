@@ -168,19 +168,21 @@ if __name__ == "__main__":
 
     with open("modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
-    with open("modules/config/user_config.yml", "r") as f:
-        user_config = yaml.safe_load(f)
+    with open("modules/config/project_config.yml", "r") as f:
+        project_config = yaml.safe_load(f)
+
+    # combine the two configs
+    config.update(project_config)
     print(config)
-    print(user_config)
     print(f"Trying to create database with config: {config}")
     vector_db = VectorStoreManager(config)
     if config["vectorstore"]["load_from_HF"]:
         if (
             config["vectorstore"]["db_option"]
-            in user_config["retriever"]["retriever_hf_paths"]
+            in config["retriever"]["retriever_hf_paths"]
         ):
             vector_db.load_from_HF(
-                HF_PATH=user_config["retriever"]["retriever_hf_paths"][
+                HF_PATH=config["retriever"]["retriever_hf_paths"][
                     config["vectorstore"]["db_option"]
                 ]
             )

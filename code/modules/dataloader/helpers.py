@@ -21,7 +21,8 @@ def get_base_url(url):
     return base_url
 
 
-def get_metadata(lectures_url, schedule_url):
+### THIS FUNCTION IS NOT GENERALIZABLE.. IT IS SPECIFIC TO THE COURSE WEBSITE ###
+def get_metadata(lectures_url, schedule_url, config):
     """
     Function to get the lecture metadata from the lectures and schedule URLs.
     """
@@ -50,7 +51,9 @@ def get_metadata(lectures_url, schedule_url):
             slides_link_tag = description_div.find("a", title="Download slides")
             slides_link = slides_link_tag["href"].strip() if slides_link_tag else None
             slides_link = (
-                f"https://dl4ds.github.io{slides_link}" if slides_link else None
+                f"{config['metadata']['slide_base_link']}{slides_link}"
+                if slides_link
+                else None
             )
             if slides_link:
                 date_mapping[slides_link] = date
@@ -70,7 +73,9 @@ def get_metadata(lectures_url, schedule_url):
             slides_link_tag = block.find("a", title="Download slides")
             slides_link = slides_link_tag["href"].strip() if slides_link_tag else None
             slides_link = (
-                f"https://dl4ds.github.io{slides_link}" if slides_link else None
+                f"{config['metadata']['slide_base_link']}{slides_link}"
+                if slides_link
+                else None
             )
 
             # Extract the link to the lecture recording
