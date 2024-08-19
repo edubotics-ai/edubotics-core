@@ -124,4 +124,4 @@ CHAINLIT_URL=<your_chainlit_url>
 # Configuration
 
 The configuration file `code/modules/config.yaml` contains the parameters that control the behaviour of your app.
-The configuration file `code/modules/user_config.yaml` contains user-defined parameters.
+The configuration file `code/modules/project_config.yaml` contains project-specific parameters.

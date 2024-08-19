@@ -6,7 +6,6 @@ from typing import List
 
 
 class VectorStoreRetrieverScore(VectorStoreRetriever):
-
     # See https://github.com/langchain-ai/langchain/blob/61dd92f8215daef3d9cf1734b0d1f8c70c1571c3/libs/langchain/langchain/vectorstores/base.py#L500
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun

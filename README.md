@@ -37,7 +37,7 @@ Please visit [setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/) for more 
 3. **To test Data Loading (Optional)**
    ```bash
    cd code
-   python -m modules.dataloader.data_loader
+   python -m modules.dataloader.data_loader --links "your_pdf_link"
    ```
 
 4. **Create the Vector Database**
@@ -47,9 +47,10 @@ Please visit [setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/) for more 
    ```
    - Note: You need to run the above command when you add new data to the `storage/data` directory, or if the `storage/data/urls.txt` file is updated.
 
-5. **Run the Chainlit App**
+6. **Run the FastAPI App**
    ```bash
-   chainlit run main.py
+   cd code
+   uvicorn app:app --port 7860 
    ```
 
 ## Documentation

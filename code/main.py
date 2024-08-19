@@ -505,7 +505,6 @@ class Chatbot:
             token_count += token_count_cb.total_tokens
 
             for question in list_of_questions:
-
                 actions.append(
                     cl.Action(
                         name="follow up question",
@@ -549,7 +548,6 @@ class Chatbot:
 
     @cl.header_auth_callback
     def header_auth_callback(headers: dict) -> Optional[cl.User]:
-
         print("\n\n\nI am here\n\n\n")
         # try: # TODO: Add try-except block after testing
         # TODO: Implement to get the user information from the headers (not the cookie)

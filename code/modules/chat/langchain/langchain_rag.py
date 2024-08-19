@@ -19,7 +19,6 @@ from .utils import (
 
 
 class Langchain_RAG_V1(BaseRAG):
-
     def __init__(
         self,
         llm,

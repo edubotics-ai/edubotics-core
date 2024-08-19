@@ -47,7 +47,6 @@ class VectorStoreManager:
         return logger
 
     def load_files(self):
-
         files = os.listdir(self.config["vectorstore"]["data_path"])
         files = [
             os.path.join(self.config["vectorstore"]["data_path"], file)
@@ -69,7 +68,6 @@ class VectorStoreManager:
         return files, urls
 
     def create_embedding_model(self):
-
         self.logger.info("Creating embedding function")
         embedding_model_loader = EmbeddingModelLoader(self.config)
         embedding_model = embedding_model_loader.load_embedding_model()
@@ -100,7 +98,6 @@ class VectorStoreManager:
         )
 
     def create_database(self):
-
         start_time = time.time()  # Start time for creating database
         data_loader = DataLoader(self.config, self.logger)
         self.logger.info("Loading data")
@@ -110,9 +107,12 @@ class VectorStoreManager:
         self.logger.info(f"Number of webpages: {len(webpages)}")
         if f"{self.config['vectorstore']['url_file_path']}" in files:
             files.remove(f"{self.config['vectorstores']['url_file_path']}")  # cleanup
-        document_chunks, document_names, documents, document_metadata = (
-            data_loader.get_chunks(files, webpages)
-        )
+        (
+            document_chunks,
+            document_names,
+            documents,
+            document_metadata,
+        ) = data_loader.get_chunks(files, webpages)
         num_documents = len(document_chunks)
         self.logger.info(f"Number of documents in the DB: {num_documents}")
         metadata_keys = list(document_metadata[0].keys()) if document_metadata else []
@@ -128,7 +128,6 @@ class VectorStoreManager:
         )
 
     def load_database(self):
-
         start_time = time.time()  # Start time for loading database
         if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma", "RAPTOR"]:
             self.embedding_model = self.create_embedding_model()
@@ -168,19 +167,21 @@ if __name__ == "__main__":
 
     with open("modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
-    with open("modules/config/user_config.yml", "r") as f:
-        user_config = yaml.safe_load(f)
+    with open("modules/config/project_config.yml", "r") as f:
+        project_config = yaml.safe_load(f)
+
+    # combine the two configs
+    config.update(project_config)
     print(config)
-    print(user_config)
     print(f"Trying to create database with config: {config}")
     vector_db = VectorStoreManager(config)
     if config["vectorstore"]["load_from_HF"]:
         if (
             config["vectorstore"]["db_option"]
-            in user_config["retriever"]["retriever_hf_paths"]
+            in config["retriever"]["retriever_hf_paths"]
         ):
             vector_db.load_from_HF(
-                HF_PATH=user_config["retriever"]["retriever_hf_paths"][
+                HF_PATH=config["retriever"]["retriever_hf_paths"][
                     config["vectorstore"]["db_option"]
                 ]
             )

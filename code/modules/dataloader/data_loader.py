@@ -222,8 +222,7 @@ class ChunkProcessor:
 
     def chunk_docs(self, file_reader, uploaded_files, weblinks):
         addl_metadata = get_metadata(
-            "https://dl4ds.github.io/sp2024/lectures/",
-            "https://dl4ds.github.io/sp2024/schedule/",
+            *self.config["metadata"]["metadata_links"], self.config
         )  # For any additional metadata
 
         # remove already processed files if reparse_files is False
@@ -325,7 +324,6 @@ class ChunkProcessor:
             return
 
         try:
-
             if file_path in self.document_data:
                 self.logger.warning(f"File {file_name} already processed")
                 documents = [
@@ -419,12 +417,27 @@ class DataLoader:
 
 if __name__ == "__main__":
     import yaml
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Process some links.")
+    parser.add_argument(
+        "--links", nargs="+", required=True, help="List of links to process."
+    )
+
+    args = parser.parse_args()
+    links_to_process = args.links
 
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
     with open("../code/modules/config/config.yml", "r") as f:
         config = yaml.safe_load(f)
+
+    with open("../code/modules/config/project_config.yml", "r") as f:
+        project_config = yaml.safe_load(f)
+
+    # Combine project config with the main config
+    config.update(project_config)
 
     STORAGE_DIR = os.path.join(BASE_DIR, config["vectorstore"]["data_path"])
     uploaded_files = [
@@ -434,13 +447,15 @@ if __name__ == "__main__":
     ]
 
     data_loader = DataLoader(config, logger=logger)
-    document_chunks, document_names, documents, document_metadata = (
-        data_loader.get_chunks(
-            [
-                "https://dl4ds.github.io/fa2024/static_files/discussion_slides/00_discussion.pdf"
-            ],
-            [],
-        )
+    # Just for testing
+    (
+        document_chunks,
+        document_names,
+        documents,
+        document_metadata,
+    ) = data_loader.get_chunks(
+        links_to_process,
+        [],
     )
 
     print(document_names[:5])
