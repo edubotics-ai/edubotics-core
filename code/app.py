@@ -245,6 +245,8 @@ async def post_signin(request: Request):
         user_details.metadata["tokens_left"] = (
             TOKENS_LEFT  # set the number of tokens left for the new user
         )
+    if "last_message_time" not in user_details.metadata:
+        user_details.metadata["last_message_time"] = current_datetime
     if "all_time_tokens_allocated" not in user_details.metadata:
         user_details.metadata["all_time_tokens_allocated"] = ALL_TIME_TOKENS_ALLOCATED
     if "in_cooldown" not in user_details.metadata:
