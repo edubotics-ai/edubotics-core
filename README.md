@@ -47,9 +47,10 @@ Please visit [setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/) for more 
    ```
    - Note: You need to run the above command when you add new data to the `storage/data` directory, or if the `storage/data/urls.txt` file is updated.
 
-5. **Run the Chainlit App**
+6. **Run the FastAPI App**
    ```bash
-   chainlit run main.py
+   cd code
+   uvicorn app:app --port 7860 
    ```
 
 ## Documentation
