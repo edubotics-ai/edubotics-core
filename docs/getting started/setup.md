@@ -1,24 +1,39 @@
-# Initial Setup
+
+Terrier Tutor is built using [Chainlit](https://docs.chainlit.io/get-started/overview), a Python framework to build conversational chatbots powered by LLMs. 
+
+## Initial Setup
 
 ⚠️ **Create the .env file inside the `code/` directory.**
 
-## Python Environment
+### Set up Python Environment
 
 Python Version: 3.11
 
-Create a virtual environment and install the required packages:
+Create a Python virtual environment: 
+
+=== "Conda"
+    ```bash
+    conda create -n ai_tutor python=3.11
+    conda activate ai_tutor
+    ```
+
+=== "Virtualenv"
+    ```bash
+    python -m venv venv
+    source venv/bin/activate
+    ```
+
+Install dependencies
 
 ```bash
-conda create -n ai_tutor python=3.11
-conda activate ai_tutor
 pip install -r requirements.txt
 ```
 
-## Code Formatting
+### Code Formatting
 
 The codebase is formatted using [black](https://github.com/psf/black), and if making changes to the codebase, ensure that the code is formatted before submitting a pull request. More instructions can be found in `docs/contribute.md`.
 
-## Google OAuth 2.0 Client ID and Secret
+### Google OAuth 2.0 Client ID and Secret
 
 To set up the Google OAuth 2.0 Client ID and Secret, follow these steps:
 
@@ -38,7 +53,7 @@ OAUTH_GOOGLE_CLIENT_ID=<your_client_id>
 OAUTH_GOOGLE_CLIENT_SECRET=<your_client_secret>
 ```
 
-## Literal AI API Key
+### Literal AI API Key
 
 To obtain the Literal AI API key:
 
@@ -53,7 +68,7 @@ LITERAL_API_KEY_LOGGING=<your_api_key>
 LITERAL_API_URL=https://cloud.getliteral.ai
 ```
 
-## LlamaCloud API Key
+### LlamaCloud API Key
 
 To obtain the LlamaCloud API Key:
 
@@ -67,7 +82,7 @@ Set the following in the .env file (if running locally) or in secrets (if runnin
 LLAMA_CLOUD_API_KEY=<your_api_key>
 ```
 
-## Hugging Face Access Token
+### Hugging Face Access Token
 
 To obtain your Hugging Face access token:
 
@@ -81,7 +96,7 @@ Set the following in the .env file (if running locally) or in secrets (if runnin
 HUGGINGFACE_TOKEN=<your-huggingface-token>
 ```
 
-## Chainlit Authentication Secret
+### Chainlit Authentication Secret
 
 You must provide a JWT secret in the environment to use authentication. Run `chainlit create-secret` to generate one.
     
@@ -96,7 +111,7 @@ CHAINLIT_AUTH_SECRET=<your_jwt_secret>
 CHAINLIT_URL=<your_chainlit_url> # Example: CHAINLIT_URL=http://localhost:8000
 ```
 
-## OpenAI API Key
+### OpenAI API Key
 
 Set the following in the .env file (if running locally) or in secrets (if running on Hugging Face Spaces):
 
@@ -104,7 +119,7 @@ Set the following in the .env file (if running locally) or in secrets (if runnin
 OPENAI_API_KEY=<your_openai_api_key>
 ```
 
-## In a Nutshell
+### In a Nutshell
 
 Your .env file (secrets in HuggingFace) should look like this:
 
