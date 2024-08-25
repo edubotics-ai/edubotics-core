@@ -38,7 +38,7 @@ AGENT = "Agent"
 YOU = "User"
 ERROR = "Error"
 
-with open("modules/config/config.yml", "r") as f:
+with open("../../modules/config/config.yml", "r") as f:
     config = yaml.safe_load(f)
 
 
@@ -85,7 +85,7 @@ class Chatbot:
         """
         Load the configuration from a YAML file.
         """
-        with open("modules/config/config.yml", "r") as f:
+        with open("../../modules/config/config.yml", "r") as f:
             return yaml.safe_load(f)
 
     @no_type_check

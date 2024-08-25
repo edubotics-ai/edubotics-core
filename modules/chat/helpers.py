@@ -1,4 +1,4 @@
-from modules.config.prompts import prompts
+from modules.config.prompts import prompts  # TODO: MOVE THIS TO APP SPECIFIC DIRECTORY
 import chainlit as cl
 
 

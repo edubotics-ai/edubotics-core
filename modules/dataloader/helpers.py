@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import tempfile
-from modules.config.constants import TIMEOUT
+from modules.config.constants import TIMEOUT  # TODO: MOVE THIS TO APP SPECIFIC DIRECTORY
 
 
 def get_urls_from_file(file_path: str):

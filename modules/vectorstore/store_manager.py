@@ -164,10 +164,21 @@ class VectorStoreManager:
 
 if __name__ == "__main__":
     import yaml
+    import argparse
 
-    with open("modules/config/config.yml", "r") as f:
+    # Add argument parsing for config files
+    parser = argparse.ArgumentParser(description="Load configuration files.")
+    parser.add_argument(
+        "--config_file", type=str, help="Path to the main config file", required=True
+    )
+    parser.add_argument(
+        "--project_config_file", type=str, help="Path to the project config file", required=True
+    )
+    args = parser.parse_args()
+
+    with open(args.config_file, "r") as f:
         config = yaml.safe_load(f)
-    with open("modules/config/project_config.yml", "r") as f:
+    with open(args.project_config_file, "r") as f:
         project_config = yaml.safe_load(f)
 
     # combine the two configs

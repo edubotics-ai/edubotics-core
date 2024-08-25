@@ -169,5 +169,11 @@ code/.chainlit/translations/
 storage/logs/*
 vectorstores/*
 
-*/.files/*
+**/.files/*
 code/storage/models/
+
+**/translations/en-US.json
+**/translations/zh-CN.json
+
+
+**/vectorstores/*
