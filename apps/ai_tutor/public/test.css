@@ -2,6 +2,11 @@ a[href*='https://github.com/Chainlit/chainlit'] {
     visibility: hidden;
 }
 
+/* TODO: Default image is still shown in the starter questions */
+/* Hide the default avatar image */ 
+.MuiAvatar-root.MuiAvatar-circular {
+    background-image: none; /* Remove default image */
+}
 
 /* Target the container of the image and set a custom background image */
 .MuiAvatar-root.MuiAvatar-circular.css-m2icte {
@@ -13,12 +18,11 @@ a[href*='https://github.com/Chainlit/chainlit'] {
     border-radius: 50%; /* Maintain circular shape */
 }
 
-
-.MuiAvatar-root.MuiAvatar-circular.css-v72an7 {
+/* .MuiAvatar-root.MuiAvatar-circular.css-v72an7 {
     background-image: url('/public/avatars/ai-tutor.png'); /* Replace with your custom image URL */
-    background-size: cover; /* Ensure the image covers the entire container */
-    background-position: center; /* Center the image */
-    width: 40px; /* Ensure the dimensions match the original */
-    height: 40px; /* Ensure the dimensions match the original */
-    border-radius: 50%; /* Maintain circular shape */
-}
+/*    background-size: cover; /* Ensure the image covers the entire container */
+/*    background-position: center; /* Center the image */
+/*    width: 40px; /* Ensure the dimensions match the original */
+/*    height: 40px; /* Ensure the dimensions match the original */
+/*    border-radius: 50%; /* Maintain circular shape */
+/* } */
