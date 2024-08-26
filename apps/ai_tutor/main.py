@@ -6,7 +6,6 @@ from config.constants import (
 )
 from modules.chat_processor.literal_ai import CustomLiteralDataLayer
 import json
-import yaml
 from typing import Any, Dict, no_type_check
 import chainlit as cl
 from modules.chat.llm_tutor import LLMTutor
@@ -520,7 +519,7 @@ class Chatbot:
             + str(tokens_left)
             + "</span></footer>\n"
         )
-        
+
         await cl.Message(
             content=answer_with_sources,
             elements=source_elements,

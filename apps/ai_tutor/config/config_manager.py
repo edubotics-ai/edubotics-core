@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, conint, confloat, conlist, HttpUrl
+from pydantic import BaseModel, conint, confloat, HttpUrl
 from typing import Optional, List
 import yaml
 
@@ -148,7 +148,7 @@ class ConfigManager:
 
     def get_config(self) -> Config:
         return ConfigWrapper(self.config)
-    
+
     def validate_config(self):
         # If any required fields are missing, raise an error
         # required_fields = [

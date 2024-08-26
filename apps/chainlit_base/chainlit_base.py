@@ -1,14 +1,11 @@
 import chainlit.data as cl_data
 import asyncio
-import yaml
 from typing import Any, Dict, no_type_check
 import chainlit as cl
 from modules.chat.llm_tutor import LLMTutor
 from modules.chat.helpers import (
     get_sources,
-    get_history_chat_resume,
     get_history_setup_llm,
-    get_last_config,
 )
 import copy
 import time
@@ -23,6 +20,7 @@ YOU = "User"
 ERROR = "Error"
 
 config = config_manager.get_config().dict()
+
 
 class Chatbot:
     def __init__(self, config):
@@ -248,8 +246,6 @@ class Chatbot:
         start_time = time.time()
 
         await self.make_llm_settings_widgets(self.config)  # Reload the settings widgets
-
-        user = cl.user_session.get("user")
 
         # TODO: remove self.user with cl.user_session.get("user")
         self.user = {
