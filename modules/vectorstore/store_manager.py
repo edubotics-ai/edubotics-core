@@ -172,7 +172,10 @@ if __name__ == "__main__":
         "--config_file", type=str, help="Path to the main config file", required=True
     )
     parser.add_argument(
-        "--project_config_file", type=str, help="Path to the project config file", required=True
+        "--project_config_file",
+        type=str,
+        help="Path to the project config file",
+        required=True,
     )
     args = parser.parse_args()
 

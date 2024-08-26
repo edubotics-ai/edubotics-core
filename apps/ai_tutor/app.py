@@ -16,6 +16,7 @@ from modules.config.constants import (
     DOCS_WEBSITE,
     ALL_TIME_TOKENS_ALLOCATED,
     TOKENS_LEFT,
+    EMAIL_ENCRYPTION_KEY,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -26,6 +27,7 @@ from modules.chat_processor.helpers import (
     check_user_cooldown,
     update_user_info,
 )
+import hashlib
 
 GOOGLE_CLIENT_ID = OAUTH_GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET = OAUTH_GOOGLE_CLIENT_SECRET
@@ -46,13 +48,8 @@ session_store = {}
 CHAINLIT_PATH = "/chainlit_tutor"
 
 # only admin is given any additional permissions for now -- no limits on tokens
-USER_ROLES = {
-    "tgardos@bu.edu": ["instructor", "bu"],
-    "xthomas@bu.edu": ["admin", "instructor", "bu"],
-    "faridkar@bu.edu": ["instructor", "bu"],
-    "xavierohan1@gmail.com": ["guest"],
-    # Add more users and roles as needed
-}
+with open("private/students_encrypted.json", "r") as file:
+    USER_ROLES = json.load(file)
 
 # Create a Google OAuth flow
 flow = Flow.from_client_config(
@@ -80,7 +77,20 @@ flow = Flow.from_client_config(
 
 
 def get_user_role(username: str):
-    return USER_ROLES.get(username, ["guest"])  # Default to "guest" role
+
+    # Function to deterministically hash emails
+    def deterministic_hash(email, salt):
+        return hashlib.pbkdf2_hmac("sha256", email.encode(), salt, 100000).hex()
+
+    # encrypt email (#FIXME: this is not the best way to do this, not really encryption, more like a hash)
+    encryption_salt = EMAIL_ENCRYPTION_KEY.encode()
+    encrypted_email = deterministic_hash(username, encryption_salt)
+    role = USER_ROLES.get(encrypted_email, ["guest"])
+
+    if "guest" in role:
+        return "unauthorized"
+
+    return role
 
 
 async def get_user_info_from_cookie(request: Request):
@@ -146,6 +156,11 @@ async def login_page(request: Request):
 #     return response
 
 
+@app.get("/unauthorized", response_class=HTMLResponse)
+async def unauthorized(request: Request):
+    return templates.TemplateResponse("unauthorized.html", {"request": request})
+
+
 @app.get("/login/google")
 async def login_google(request: Request):
     # Clear any existing session cookies to avoid conflicts with guest sessions
@@ -175,6 +190,9 @@ async def auth_google(request: Request):
         name = user_info.get("name", "")
         profile_image = user_info.get("picture", "")
         role = get_user_role(email)
+
+        if role == "unauthorized":
+            return RedirectResponse("/unauthorized")
 
         session_token = secrets.token_hex(16)
         session_store[session_token] = {

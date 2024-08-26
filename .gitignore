@@ -177,3 +177,5 @@ code/storage/models/
 
 
 **/vectorstores/*
+
+**/private/students.json
