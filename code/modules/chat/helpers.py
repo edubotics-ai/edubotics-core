@@ -42,7 +42,6 @@ def get_sources(res, answer, stream=True, view_sources=False):
         full_answer += answer
 
     if view_sources:
-
         # Then, display the sources
         # check if the answer has sources
         if len(source_dict) == 0:
@@ -51,7 +50,6 @@ def get_sources(res, answer, stream=True, view_sources=False):
         else:
             full_answer += "\n\n**Sources:**\n"
             for idx, (url_name, source_data) in enumerate(source_dict.items()):
-
                 full_answer += f"\nSource {idx + 1} (Score: {source_data['score']}): {source_data['url']}\n"
 
                 name = f"Source {idx + 1} Text\n"
@@ -110,6 +108,7 @@ def get_prompt(config, prompt_type):
         return prompts["openai"]["rephrase_prompt"]
 
 
+# TODO: Do this better
 def get_history_chat_resume(steps, k, SYSTEM, LLM):
     conversation_list = []
     count = 0
@@ -119,14 +118,17 @@ def get_history_chat_resume(steps, k, SYSTEM, LLM):
                 conversation_list.append(
                     {"type": "user_message", "content": step["output"]}
                 )
+                count += 1
             elif step["type"] == "assistant_message":
                 if step["name"] == LLM:
                     conversation_list.append(
                         {"type": "ai_message", "content": step["output"]}
                     )
+                    count += 1
             else:
-                raise ValueError("Invalid message type")
-        count += 1
+                pass
+                # raise ValueError("Invalid message type")
+        # count += 1
         if count >= 2 * k:  # 2 * k to account for both user and assistant messages
             break
     conversation_list = conversation_list[::-1]

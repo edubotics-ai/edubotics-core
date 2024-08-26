@@ -20,7 +20,7 @@ allow_origins = ["*"]
 
 [features]
 # Process and display HTML in messages. This can be a security risk (see https://stackoverflow.com/questions/19603097/why-is-it-dangerous-to-render-user-generated-html-or-javascript)
-unsafe_allow_html = false
+unsafe_allow_html = true
 
 # Process and display mathematical expressions. This can clash with "$" characters in messages.
 latex = true
@@ -49,6 +49,8 @@ auto_tag_thread = true
     # Sample rate of the audio
     sample_rate = 44100
 
+edit_message = true
+
 [UI]
 # Name of the assistant.
 name = "AI Tutor"
@@ -59,11 +61,11 @@ name = "AI Tutor"
 # Large size content are by default collapsed for a cleaner ui
 default_collapse_content = true
 
-# Hide the chain of thought details from the user in the UI.
-hide_cot = true
+# Chain of Thought (CoT) display mode. Can be "hidden", "tool_call" or "full".
+cot = "hidden"
 
 # Link to your github repo. This will add a github button in the UI's header.
-# github = "https://github.com/DL4DS/dl4ds_tutor"
+github = "https://github.com/DL4DS/dl4ds_tutor"
 
 # Specify a CSS file that can be used to customize the user interface.
 # The CSS file can be served from the public directory or via an external link.
@@ -85,7 +87,7 @@ custom_meta_image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/
 # custom_build = "./public/build"
 
 [UI.theme]
-    default = "dark"
+    default = "light"
     #layout = "wide"
     #font_family = "Inter, sans-serif"
 # Override default MUI light theme. (Check theme.ts)
@@ -115,4 +117,4 @@ custom_meta_image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/
         #secondary = "#BDBDBD"
 
 [meta]
-generated_by = "1.1.304"
+generated_by = "1.1.402"

@@ -1,56 +1,31 @@
 from typing import Any, Dict, List, Union, Tuple, Optional
-from langchain_core.messages import (
-    BaseMessage,
-    AIMessage,
-    FunctionMessage,
-    HumanMessage,
-)
-
 from langchain_core.prompts.base import BasePromptTemplate, format_document
-from langchain_core.prompts.chat import MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.retrievers import BaseRetriever, RetrieverOutput
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.runnables import Runnable, RunnableBranch, RunnablePassthrough
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_core.runnables.utils import ConfigurableFieldSpec
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
     DEFAULT_DOCUMENT_SEPARATOR,
     DOCUMENTS_KEY,
-    BaseCombineDocumentsChain,
     _validate_prompt,
 )
-from langchain.chains.llm import LLMChain
-from langchain_core.callbacks import Callbacks
-from langchain_core.documents import Document
-
+from langchain_core.runnables.config import RunnableConfig
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.chat_models import ChatOpenAI
+from langchain.chains import ConversationalRetrievalChain
+from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
+import inspect
+from langchain_core.messages import BaseMessage
 
 CHAT_TURN_TYPE = Union[Tuple[str, str], BaseMessage]
 
-from langchain_core.runnables.config import RunnableConfig
-from langchain_core.messages import BaseMessage
-
-
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.chat_models import ChatOpenAI
-
-from langchain.chains import RetrievalQA, ConversationalRetrievalChain
-from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
-
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
-from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
-import inspect
-from langchain.chains.conversational_retrieval.base import _get_chat_history
-from langchain_core.messages import BaseMessage
-
 
 class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
-
     def _get_chat_history(self, chat_history: List[CHAT_TURN_TYPE]) -> str:
         _ROLE_MAP = {"human": "Student: ", "ai": "AI Tutor: "}
         buffer = ""
@@ -163,7 +138,6 @@ class CustomConversationalRetrievalChain(ConversationalRetrievalChain):
 
 
 class CustomRunnableWithHistory(RunnableWithMessageHistory):
-
     def _get_chat_history(self, chat_history: List[CHAT_TURN_TYPE]) -> str:
         _ROLE_MAP = {"human": "Student: ", "ai": "AI Tutor: "}
         buffer = ""
@@ -304,8 +278,8 @@ def create_retrieval_chain(
     return retrieval_chain
 
 
-def return_questions(query, response, chat_history_str, context):
-
+# TODO: Remove Hard-coded values
+async def return_questions(query, response, chat_history_str, context, config):
     system = (
         "You are someone that suggests a question based on the student's input and chat history. "
         "Generate a question that is relevant to the student's input and chat history. "
@@ -322,18 +296,22 @@ def return_questions(query, response, chat_history_str, context):
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system),
-            ("human", "{chat_history_str}, {context}, {query}, {response}"),
+            # ("human", "{chat_history_str}, {context}, {query}, {response}"),
         ]
     )
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     question_generator = prompt | llm | StrOutputParser()
-    new_questions = question_generator.invoke(
+    question_generator = question_generator.with_config(
+        run_name="follow_up_question_generator"
+    )
+    new_questions = await question_generator.ainvoke(
         {
             "chat_history_str": chat_history_str,
             "context": context,
             "query": query,
             "response": response,
-        }
+        },
+        config=config,
     )
 
     list_of_questions = new_questions.split("...")

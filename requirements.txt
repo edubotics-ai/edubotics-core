@@ -23,3 +23,14 @@ llama-cpp-python
 pymupdf
 websockets
 langchain-openai
+langchain-experimental
+html2text
+PyPDF2
+pdf2image
+black
+flake8
+bandit
+fastapi
+google-auth
+google-auth-oauthlib
+Jinja2

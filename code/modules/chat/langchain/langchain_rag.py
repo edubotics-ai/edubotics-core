@@ -1,20 +1,24 @@
 from langchain_core.prompts import ChatPromptTemplate
 
-from modules.chat.langchain.utils import *
-from langchain.memory import ChatMessageHistory
+# from modules.chat.langchain.utils import
+from langchain_community.chat_message_histories import ChatMessageHistory
 from modules.chat.base import BaseRAG
 from langchain_core.prompts import PromptTemplate
-from langchain.memory import (
-    ConversationBufferWindowMemory,
-    ConversationSummaryBufferMemory,
+from langchain.memory import ConversationBufferWindowMemory
+from langchain_core.runnables.utils import ConfigurableFieldSpec
+from .utils import (
+    CustomConversationalRetrievalChain,
+    create_history_aware_retriever,
+    create_stuff_documents_chain,
+    create_retrieval_chain,
+    return_questions,
+    CustomRunnableWithHistory,
+    BaseChatMessageHistory,
+    InMemoryHistory,
 )
-
-import chainlit as cl
-from langchain_community.chat_models import ChatOpenAI
 
 
 class Langchain_RAG_V1(BaseRAG):
-
     def __init__(
         self,
         llm,
@@ -95,8 +99,8 @@ class QuestionGenerator:
     def __init__(self):
         pass
 
-    def generate_questions(self, query, response, chat_history, context):
-        questions = return_questions(query, response, chat_history, context)
+    def generate_questions(self, query, response, chat_history, context, config):
+        questions = return_questions(query, response, chat_history, context, config)
         return questions
 
 
@@ -199,7 +203,7 @@ class Langchain_RAG_V2(BaseRAG):
                     is_shared=True,
                 ),
             ],
-        )
+        ).with_config(run_name="Langchain_RAG_V2")
 
         if callbacks is not None:
             self.rag_chain = self.rag_chain.with_config(callbacks=callbacks)

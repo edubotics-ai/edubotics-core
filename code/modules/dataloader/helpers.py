@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import tempfile
+from modules.config.constants import TIMEOUT
+
 
 def get_urls_from_file(file_path: str):
     """
@@ -19,18 +21,19 @@ def get_base_url(url):
     return base_url
 
 
-def get_metadata(lectures_url, schedule_url):
+### THIS FUNCTION IS NOT GENERALIZABLE.. IT IS SPECIFIC TO THE COURSE WEBSITE ###
+def get_metadata(lectures_url, schedule_url, config):
     """
     Function to get the lecture metadata from the lectures and schedule URLs.
     """
     lecture_metadata = {}
 
     # Get the main lectures page content
-    r_lectures = requests.get(lectures_url)
+    r_lectures = requests.get(lectures_url, timeout=TIMEOUT)
     soup_lectures = BeautifulSoup(r_lectures.text, "html.parser")
 
     # Get the main schedule page content
-    r_schedule = requests.get(schedule_url)
+    r_schedule = requests.get(schedule_url, timeout=TIMEOUT)
     soup_schedule = BeautifulSoup(r_schedule.text, "html.parser")
 
     # Find all lecture blocks
@@ -48,7 +51,9 @@ def get_metadata(lectures_url, schedule_url):
             slides_link_tag = description_div.find("a", title="Download slides")
             slides_link = slides_link_tag["href"].strip() if slides_link_tag else None
             slides_link = (
-                f"https://dl4ds.github.io{slides_link}" if slides_link else None
+                f"{config['metadata']['slide_base_link']}{slides_link}"
+                if slides_link
+                else None
             )
             if slides_link:
                 date_mapping[slides_link] = date
@@ -68,7 +73,9 @@ def get_metadata(lectures_url, schedule_url):
             slides_link_tag = block.find("a", title="Download slides")
             slides_link = slides_link_tag["href"].strip() if slides_link_tag else None
             slides_link = (
-                f"https://dl4ds.github.io{slides_link}" if slides_link else None
+                f"{config['metadata']['slide_base_link']}{slides_link}"
+                if slides_link
+                else None
             )
 
             # Extract the link to the lecture recording
@@ -118,7 +125,7 @@ def download_pdf_from_url(pdf_url):
     Returns:
         str: The local file path of the downloaded PDF file.
     """
-    response = requests.get(pdf_url)
+    response = requests.get(pdf_url, timeout=TIMEOUT)
     if response.status_code == 200:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
             temp_file.write(response.content)

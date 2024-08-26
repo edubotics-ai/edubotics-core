@@ -1,9 +1,9 @@
 from ragatouille import RAGPretrainedModel
 from modules.vectorstore.base import VectorStoreBase
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun, Callbacks
+from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from typing import Any, List, Optional, Sequence
+from typing import Any, List
 import os
 import json
 
@@ -85,6 +85,7 @@ class ColbertVectorStore(VectorStoreBase):
             document_ids=document_names,
             document_metadatas=document_metadata,
         )
+        print(f"Index created at {index_path}")
         self.colbert.set_document_count(len(document_names))
 
     def load_database(self):

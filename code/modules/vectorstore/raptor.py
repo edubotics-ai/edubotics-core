@@ -317,13 +317,10 @@ class RAPTORVectoreStore(VectorStoreBase):
         print(f"--Generated {len(all_clusters)} clusters--")
 
         # Summarization
-        template = """Here is content from the course DS598: Deep Learning for Data Science. 
-        
+        template = """Here is content from the course DS598: Deep Learning for Data Science.
         The content may be form webapge about the course, or lecture content, or any other relevant information.
         If the content is in bullet points (from  pdf lectre slides), you can summarize the bullet points.
-        
         Give a detailed summary of the content below.
-        
         Documentation:
         {context}
         """
