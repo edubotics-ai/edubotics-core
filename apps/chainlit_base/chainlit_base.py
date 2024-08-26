@@ -11,9 +11,9 @@ from modules.chat.helpers import (
     get_last_config,
 )
 import copy
-from chainlit.types import ThreadDict
 import time
 from langchain_community.callbacks import get_openai_callback
+from config.config_manager import config_manager
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System"
@@ -22,23 +22,7 @@ AGENT = "Agent"
 YOU = "User"
 ERROR = "Error"
 
-with open("config/config.yml", "r") as f:
-    config = yaml.safe_load(f)
-
-
-# async def setup_data_layer():
-#     """
-#     Set up the data layer for chat logging.
-#     """
-#     if config["chat_logging"]["log_chat"]:
-#         data_layer = CustomLiteralDataLayer(
-#             api_key=LITERAL_API_KEY_LOGGING, server=LITERAL_API_URL
-#         )
-#     else:
-#         data_layer = None
-
-#     return data_layer
-
+config = config_manager.get_config().dict()
 
 class Chatbot:
     def __init__(self, config):
@@ -46,13 +30,6 @@ class Chatbot:
         Initialize the Chatbot class.
         """
         self.config = config
-
-    async def _load_config(self):
-        """
-        Load the configuration from a YAML file.
-        """
-        with open("config/config.yml", "r") as f:
-            return yaml.safe_load(f)
 
     @no_type_check
     async def setup_llm(self):
@@ -225,38 +202,29 @@ class Chatbot:
         """
         Set starter messages for the chatbot.
         """
-        # Return Starters only if the chat is new
 
-        try:
-            thread = cl_data._data_layer.get_thread(
-                cl.context.session.thread_id
-            )  # see if the thread has any steps
-            if thread.steps or len(thread.steps) > 0:
-                return None
-        except Exception as e:
-            print(e)
-            return [
-                cl.Starter(
-                    label="recording on CNNs?",
-                    message="Where can I find the recording for the lecture on Transformers?",
-                    icon="/public/adv-screen-recorder-svgrepo-com.svg",
-                ),
-                cl.Starter(
-                    label="where's the slides?",
-                    message="When are the lectures? I can't find the schedule.",
-                    icon="/public/alarmy-svgrepo-com.svg",
-                ),
-                cl.Starter(
-                    label="Due Date?",
-                    message="When is the final project due?",
-                    icon="/public/calendar-samsung-17-svgrepo-com.svg",
-                ),
-                cl.Starter(
-                    label="Explain backprop.",
-                    message="I didn't understand the math behind backprop, could you explain it?",
-                    icon="/public/acastusphoton-svgrepo-com.svg",
-                ),
-            ]
+        return [
+            cl.Starter(
+                label="recording on CNNs?",
+                message="Where can I find the recording for the lecture on Transformers?",
+                icon="/public/adv-screen-recorder-svgrepo-com.svg",
+            ),
+            cl.Starter(
+                label="where's the slides?",
+                message="When are the lectures? I can't find the schedule.",
+                icon="/public/alarmy-svgrepo-com.svg",
+            ),
+            cl.Starter(
+                label="Due Date?",
+                message="When is the final project due?",
+                icon="/public/calendar-samsung-17-svgrepo-com.svg",
+            ),
+            cl.Starter(
+                label="Explain backprop.",
+                message="I didn't understand the math behind backprop, could you explain it?",
+                icon="/public/acastusphoton-svgrepo-com.svg",
+            ),
+        ]
 
     def rename(self, orig_author: str):
         """
@@ -271,7 +239,7 @@ class Chatbot:
         rename_dict = {"Chatbot": LLM}
         return rename_dict.get(orig_author, orig_author)
 
-    async def start(self, config=None):
+    async def start(self):
         """
         Start the chatbot, initialize settings widgets,
         and display and load previous conversation if chat logging is enabled.
@@ -279,26 +247,15 @@ class Chatbot:
 
         start_time = time.time()
 
-        self.config = (
-            await self._load_config() if config is None else config
-        )  # Reload the configuration on chat resume
-
         await self.make_llm_settings_widgets(self.config)  # Reload the settings widgets
 
         user = cl.user_session.get("user")
 
         # TODO: remove self.user with cl.user_session.get("user")
-        try:
-            self.user = {
-                "user_id": user.identifier,
-                "session_id": cl.context.session.thread_id,
-            }
-        except Exception as e:
-            print(e)
-            self.user = {
-                "user_id": "guest",
-                "session_id": cl.context.session.thread_id,
-            }
+        self.user = {
+            "user_id": "guest",
+            "session_id": cl.context.session.thread_id,
+        }
 
         memory = cl.user_session.get("memory", [])
         self.llm_tutor = LLMTutor(self.config, user=self.user)
@@ -432,21 +389,7 @@ class Chatbot:
             elements=source_elements,
             author=LLM,
             actions=actions,
-            metadata=self.config,
         ).send()
-
-    async def on_chat_resume(self, thread: ThreadDict):
-        thread_config = None
-        steps = thread["steps"]
-        k = self.config["llm_params"][
-            "memory_window"
-        ]  # on resume, alwyas use the default memory window
-        conversation_list = get_history_chat_resume(steps, k, SYSTEM, LLM)
-        thread_config = get_last_config(
-            steps
-        )  # TODO: Returns None for now - which causes config to be reloaded with default values
-        cl.user_session.set("memory", conversation_list)
-        await self.start(config=thread_config)
 
     async def on_follow_up(self, action: cl.Action):
         user = cl.user_session.get("user")
@@ -466,12 +409,9 @@ chatbot = Chatbot(config=config)
 
 
 async def start_app():
-    # cl_data._data_layer = await setup_data_layer()
-    # chatbot.literal_client = cl_data._data_layer.client if cl_data._data_layer else None
     cl.set_starters(chatbot.set_starters)
     cl.author_rename(chatbot.rename)
     cl.on_chat_start(chatbot.start)
-    cl.on_chat_resume(chatbot.on_chat_resume)
     cl.on_message(chatbot.main)
     cl.on_settings_update(chatbot.update_llm)
     cl.action_callback("follow up question")(chatbot.on_follow_up)

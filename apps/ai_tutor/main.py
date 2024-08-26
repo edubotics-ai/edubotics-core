@@ -1,6 +1,6 @@
 import chainlit.data as cl_data
 import asyncio
-from modules.config.constants import (
+from config.constants import (
     LITERAL_API_KEY_LOGGING,
     LITERAL_API_URL,
 )
@@ -18,11 +18,13 @@ from modules.chat.helpers import (
 )
 from modules.chat_processor.helpers import (
     update_user_info,
-    get_time,
-    check_user_cooldown,
-    reset_tokens_for_user,
     get_user_details,
 )
+from helpers import (
+    check_user_cooldown,
+    reset_tokens_for_user,
+)
+from helpers import get_time
 import copy
 from typing import Optional
 from chainlit.types import ThreadDict
@@ -30,6 +32,7 @@ import time
 import base64
 from langchain_community.callbacks import get_openai_callback
 from datetime import datetime, timezone
+from config.config_manager import config_manager
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System"
@@ -38,8 +41,8 @@ AGENT = "Agent"
 YOU = "User"
 ERROR = "Error"
 
-with open("config/config.yml", "r") as f:
-    config = yaml.safe_load(f)
+# set config
+config = config_manager.get_config().dict()
 
 
 async def setup_data_layer():
@@ -80,13 +83,6 @@ class Chatbot:
         Initialize the Chatbot class.
         """
         self.config = config
-
-    async def _load_config(self):
-        """
-        Load the configuration from a YAML file.
-        """
-        with open("config/config.yml", "r") as f:
-            return yaml.safe_load(f)
 
     @no_type_check
     async def setup_llm(self):
@@ -305,17 +301,13 @@ class Chatbot:
         rename_dict = {"Chatbot": LLM}
         return rename_dict.get(orig_author, orig_author)
 
-    async def start(self, config=None):
+    async def start(self):
         """
         Start the chatbot, initialize settings widgets,
         and display and load previous conversation if chat logging is enabled.
         """
 
         start_time = time.time()
-
-        self.config = (
-            await self._load_config() if config is None else config
-        )  # Reload the configuration on chat resume
 
         await self.make_llm_settings_widgets(self.config)  # Reload the settings widgets
 
@@ -386,7 +378,11 @@ class Chatbot:
 
         # update user info with last message time
         user = cl.user_session.get("user")
-        await reset_tokens_for_user(user)
+        await reset_tokens_for_user(
+            user,
+            self.config["token_config"]["tokens_left"],
+            self.config["token_config"]["regen_time"],
+        )
         updated_user = await get_user_details(user.identifier)
         user.metadata = updated_user.metadata
         cl.user_session.set("user", user)
@@ -524,13 +520,12 @@ class Chatbot:
             + str(tokens_left)
             + "</span></footer>\n"
         )
-
+        
         await cl.Message(
             content=answer_with_sources,
             elements=source_elements,
             author=LLM,
             actions=actions,
-            metadata=self.config,
         ).send()
 
     async def on_chat_resume(self, thread: ThreadDict):

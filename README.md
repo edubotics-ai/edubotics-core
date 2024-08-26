@@ -30,26 +30,31 @@ Please visit [setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/) for more 
    git clone https://github.com/DL4DS/dl4ds_tutor
    ```
 
-2. **Put your data under the `storage/data` directory**
+2. Create your app in the apps folder. (An example is the `apps/ai_tutor` app)
+   ```
+   cd apps
+   mkdir your_app
+   ```
+
+2. **Put your data under the `apps/your_app/storage/data` directory**
    - Add URLs in the `urls.txt` file.
-   - Add other PDF files in the `storage/data` directory.
+   - Add other PDF files in the `apps/your_app/storage/data` directory.
 
 3. **To test Data Loading (Optional)**
    ```bash
-   cd code
-   python -m modules.dataloader.data_loader --links "your_pdf_link"
+   cd apps/your_app
+   python -m modules.dataloader.data_loader --links "your_pdf_link" --config_file config/config.yml --project_config_file config/project_config.yml
    ```
 
 4. **Create the Vector Database**
    ```bash
-   cd code
-   python -m modules.vectorstore.store_manager
+   cd apps/your_app
+   python -m modules.vectorstore.store_manager --config_file config/config.yml --project_config_file config/project_config.yml
    ```
-   - Note: You need to run the above command when you add new data to the `storage/data` directory, or if the `storage/data/urls.txt` file is updated.
 
 6. **Run the FastAPI App**
    ```bash
-   cd code
+   cd apps/your_app
    uvicorn app:app --port 7860 
    ```
 
@@ -64,7 +69,7 @@ The HuggingFace Space is built using the `Dockerfile` in the repository. To run 
 
 ```bash
 docker build --tag dev  -f Dockerfile.dev .
-docker run -it --rm -p 8000:8000 dev
+docker run -it --rm -p 7860:7860 dev
 ```
 
 ## Contributing

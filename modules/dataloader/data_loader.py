@@ -423,6 +423,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--links", nargs="+", required=True, help="List of links to process."
     )
+    parser.add_argument(
+        "--config_file", type=str, help="Path to the main config file", required=True
+    )
+    parser.add_argument(
+        "--project_config_file",
+        type=str,
+        help="Path to the project config file",
+        required=True,
+    )
 
     args = parser.parse_args()
     links_to_process = args.links
@@ -430,10 +439,10 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
-    with open("../code/modules/config/config.yml", "r") as f:
+    with open(args.config_file, "r") as f:
         config = yaml.safe_load(f)
 
-    with open("../code/modules/config/project_config.yml", "r") as f:
+    with open(args.project_config_file, "r") as f:
         project_config = yaml.safe_load(f)
 
     # Combine project config with the main config

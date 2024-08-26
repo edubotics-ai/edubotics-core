@@ -5,3 +5,6 @@ retriever:
 metadata:
   metadata_links: ["https://dl4ds.github.io/sp2024/lectures/", "https://dl4ds.github.io/sp2024/schedule/"]
   slide_base_link: "https://dl4ds.github.io"
+
+api_config:
+  timeout: 60

@@ -8,26 +8,31 @@ from chainlit.utils import mount_chainlit
 import secrets
 import json
 import base64
-from modules.config.constants import (
+from config.constants import (
     OAUTH_GOOGLE_CLIENT_ID,
     OAUTH_GOOGLE_CLIENT_SECRET,
     CHAINLIT_URL,
-    GITHUB_REPO,
-    DOCS_WEBSITE,
-    ALL_TIME_TOKENS_ALLOCATED,
-    TOKENS_LEFT,
     EMAIL_ENCRYPTION_KEY,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from modules.chat_processor.helpers import (
-    get_user_details,
+from helpers import (
     get_time,
     reset_tokens_for_user,
     check_user_cooldown,
-    update_user_info,
 )
+from modules.chat_processor.helpers import get_user_details, update_user_info
+from config.config_manager import config_manager
 import hashlib
+
+# set config
+config = config_manager.get_config().dict()
+
+# set constants
+GITHUB_REPO = config["misc"]["github_repo"]
+DOCS_WEBSITE = config["misc"]["docs_website"]
+ALL_TIME_TOKENS_ALLOCATED = config["token_config"]["all_time_tokens_allocated"]
+TOKENS_LEFT = config["token_config"]["tokens_left"]
 
 GOOGLE_CLIENT_ID = OAUTH_GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET = OAUTH_GOOGLE_CLIENT_SECRET
@@ -246,7 +251,11 @@ async def cooldown(request: Request):
     else:
         user_details.metadata["in_cooldown"] = False
         await update_user_info(user_details)
-        await reset_tokens_for_user(user_details)
+        await reset_tokens_for_user(
+            user_details,
+            config["token_config"]["tokens_left"],
+            config["token_config"]["regen_time"],
+        )
         return RedirectResponse("/post-signin")
 
 
@@ -280,7 +289,11 @@ async def post_signin(request: Request):
             return RedirectResponse("/cooldown")
         else:
             user_details.metadata["in_cooldown"] = False
-            await reset_tokens_for_user(user_details)
+            await reset_tokens_for_user(
+                user_details,
+                config["token_config"]["tokens_left"],
+                config["token_config"]["regen_time"],
+            )
 
     if user_info:
         username = user_info["email"]
@@ -353,7 +366,11 @@ async def get_tokens_left(request: Request):
     try:
         user_info = await get_user_info_from_cookie(request)
         user_details = await get_user_details(user_info["email"])
-        await reset_tokens_for_user(user_details)
+        await reset_tokens_for_user(
+            user_details,
+            config["token_config"]["tokens_left"],
+            config["token_config"]["regen_time"],
+        )
         tokens_left = user_details.metadata["tokens_left"]
         return {"tokens_left": tokens_left}
     except Exception as e:
