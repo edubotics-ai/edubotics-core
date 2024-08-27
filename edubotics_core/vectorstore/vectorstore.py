@@ -1,7 +1,7 @@
-from modules.vectorstore.faiss import FaissVectorStore
-from modules.vectorstore.chroma import ChromaVectorStore
-from modules.vectorstore.colbert import ColbertVectorStore
-from modules.vectorstore.raptor import RAPTORVectoreStore
+from edubotics_core.vectorstore.faiss import FaissVectorStore
+from edubotics_core.vectorstore.chroma import ChromaVectorStore
+from edubotics_core.vectorstore.colbert import ColbertVectorStore
+from edubotics_core.vectorstore.raptor import RAPTORVectoreStore
 from huggingface_hub import snapshot_download
 import os
 import shutil

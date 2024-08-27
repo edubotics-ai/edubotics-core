@@ -35,4 +35,4 @@ RUN ls -R /code
 EXPOSE 7860
 
 # Default command to run the application
-CMD python -m modules.vectorstore.store_manager --config_file config/config.yml --project_config_file config/project_config.yml && python -m uvicorn app:app --host 0.0.0.0 --port 7860
+CMD python -m edubotics_core.vectorstore.store_manager --config_file config/config.yml --project_config_file config/project_config.yml && python -m uvicorn app:app --host 0.0.0.0 --port 7860

@@ -1,8 +1,8 @@
-from modules.vectorstore.vectorstore import VectorStore
-from modules.dataloader.helpers import get_urls_from_file
-from modules.dataloader.webpage_crawler import WebpageCrawler
-from modules.dataloader.data_loader import DataLoader
-from modules.vectorstore.embedding_model_loader import EmbeddingModelLoader
+from edubotics_core.vectorstore.vectorstore import VectorStore
+from edubotics_core.dataloader.helpers import get_urls_from_file
+from edubotics_core.dataloader.webpage_crawler import WebpageCrawler
+from edubotics_core.dataloader.data_loader import DataLoader
+from edubotics_core.vectorstore.embedding_model_loader import EmbeddingModelLoader
 import logging
 import os
 import time
@@ -137,7 +137,7 @@ class VectorStoreManager:
             self.loaded_vector_db = self.vector_db._load_database(self.embedding_model)
         except Exception as e:
             raise ValueError(
-                f"Error loading database, check if it exists. if not run python -m modules.vectorstore.store_manager / Resteart the HF Space: {e}"
+                f"Error loading database, check if it exists. if not run python -m edubotics_core.vectorstore.store_manager / Resteart the HF Space: {e}"
             )
             # print(f"Creating database")
             # self.create_database()

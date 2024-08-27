@@ -2,8 +2,8 @@ import chainlit.data as cl_data
 import asyncio
 from typing import Any, Dict, no_type_check
 import chainlit as cl
-from modules.chat.llm_tutor import LLMTutor
-from modules.chat.helpers import (
+from edubotics_core.chat.llm_tutor import LLMTutor
+from edubotics_core.chat.helpers import (
     get_sources,
     get_history_setup_llm,
 )

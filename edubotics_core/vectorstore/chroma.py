@@ -1,5 +1,5 @@
 from langchain_community.vectorstores import Chroma
-from modules.vectorstore.base import VectorStoreBase
+from edubotics_core.vectorstore.base import VectorStoreBase
 import os
 
 

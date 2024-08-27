@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import tempfile
-from modules.config.constants import (
+from edubotics_core.config.constants import (
     TIMEOUT,
 )  # TODO: MOVE THIS TO APP SPECIFIC DIRECTORY
 

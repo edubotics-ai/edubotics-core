@@ -5,11 +5,14 @@ with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
 setup(
-    name="dl4ds_tutor",
+    name="edubotics-core",
     version="0.1.0",
     packages=find_packages(),
-    package_dir={"modules": "modules"},
+    package_dir={"edubotics-core": "edubotics_core"},
     python_requires=">=3.7",
     install_requires=requirements,
-    description="A Deep Learning for Data Science Tutor application",
+    description="Core modules for edubotics-based LLM AI chatbots",
+    author="Xavier Thomas, Farid Karimli, Tom Gardos",
+    url="https://github.com/edubotics-ai/edubot-core",
+    license="MIT",
 )

@@ -104,7 +104,7 @@ class TokenConfig(BaseModel):
 
 
 class MiscConfig(BaseModel):
-    github_repo: HttpUrl = "https://github.com/DL4DS/dl4ds_tutor"
+    github_repo: HttpUrl = "https://github.com/edubotics-ai/edubot-core"
     docs_website: HttpUrl = "https://dl4ds.github.io/dl4ds_tutor/"
 
 
