@@ -68,7 +68,10 @@ async def reset_tokens_for_user(user_info, TOKENS_LEFT, REGEN_TIME):
     # Calculate how many tokens should have been regenerated proportionally
     if current_tokens < max_tokens:
         # Calculate the regeneration rate per second based on REGEN_TIME for full regeneration
-        regeneration_rate_per_second = (max_tokens - current_tokens) / REGEN_TIME
+        # If current_tokens is close to 0, then the regeneration rate is relatively high, and if current_tokens is close to max_tokens, then the regeneration rate is relatively low
+        regeneration_rate_per_second = (
+            max_tokens - max(current_tokens, 0)
+        ) / REGEN_TIME
 
         # Calculate how many tokens should have been regenerated based on the elapsed time
         tokens_to_regenerate = int(
