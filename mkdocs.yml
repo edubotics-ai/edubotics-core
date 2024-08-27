@@ -1,8 +1,8 @@
-site_name: AI Tutor Docs
+site_name: edubotics-core Docs
 
 # Repository
-repo_name: dl4ds/dl4ds_tutor
-repo_url: https://github.com/DL4DS/dl4ds_tutor
+repo_name: edubotics-ai/edubot-core
+repo_url: https://github.com/edubotics-ai/edubot-core
 
 theme:
   name: material
