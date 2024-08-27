@@ -21,7 +21,7 @@ from helpers import (
     reset_tokens_for_user,
     check_user_cooldown,
 )
-from modules.chat_processor.helpers import get_user_details, update_user_info
+from edubotics_core.chat_processor.helpers import get_user_details, update_user_info
 from config.config_manager import config_manager
 import hashlib
 

@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import tiktoken
-from modules.chat_processor.helpers import update_user_info, convert_to_dict
+from edubotics_core.chat_processor.helpers import update_user_info, convert_to_dict
 
 
 def get_time():

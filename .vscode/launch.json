@@ -17,7 +17,7 @@
         {   "name":"Python Debugger: Module store_manager",
             "type":"debugpy",
             "request":"launch",
-            "module":"modules.vectorstore.store_manager",
+            "module":"edubotics_core.vectorstore.store_manager",
             "env": {"PYTHONPATH": "${workspaceFolder}/code"},
             "cwd": "${workspaceFolder}/code",
             "justMyCode": true
@@ -26,7 +26,7 @@
             "name": "Python Debugger: Module data_loader",
             "type": "debugpy",
             "request": "launch",
-            "module": "modules.dataloader.data_loader",
+            "module": "edubotics_core.dataloader.data_loader",
             "env": {"PYTHONPATH": "${workspaceFolder}/code"},
             "cwd": "${workspaceFolder}/code",
             "justMyCode": true

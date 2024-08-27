@@ -1,5 +1,5 @@
 from ragatouille import RAGPretrainedModel
-from modules.vectorstore.base import VectorStoreBase
+from edubotics_core.vectorstore.base import VectorStoreBase
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
