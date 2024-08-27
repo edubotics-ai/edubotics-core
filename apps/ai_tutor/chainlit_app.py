@@ -13,7 +13,7 @@ from modules.chat.helpers import (
     get_sources,
     get_history_chat_resume,
     get_history_setup_llm,
-    get_last_config,
+    # get_last_config,
 )
 from modules.chat_processor.helpers import (
     update_user_info,
@@ -492,15 +492,15 @@ class Chatbot:
         ).send()
 
     async def on_chat_resume(self, thread: ThreadDict):
-        thread_config = None
+        # thread_config = None
         steps = thread["steps"]
         k = self.config["llm_params"][
             "memory_window"
         ]  # on resume, alwyas use the default memory window
         conversation_list = get_history_chat_resume(steps, k, SYSTEM, LLM)
-        thread_config = get_last_config(
-            steps
-        )  # TODO: Returns None for now - which causes config to be reloaded with default values
+        # thread_config = get_last_config(
+        #     steps
+        # )  # TODO: Returns None for now - which causes config to be reloaded with default values
         cl.user_session.set("memory", conversation_list)
         await self.start()
 
