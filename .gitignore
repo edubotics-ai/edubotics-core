@@ -181,3 +181,4 @@ code/storage/models/
 **/private/students.json
 
 **/apps/*/storage/logs/*
+**/apps/*/private/*
