@@ -1,4 +1,6 @@
-# Welcome to edubotics-core by Edubotics AI! 👋
+# edubotics-core
+
+## Welcome to edubotics-core by Edubotics AI! 👋
 
 ![PyPI](https://img.shields.io/pypi/v/edubotics-core.svg)
 ![GitHub stars](https://img.shields.io/github/stars/edubotics-ai/edubot-core.svg)
