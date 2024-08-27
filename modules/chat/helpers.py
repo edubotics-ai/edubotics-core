@@ -137,31 +137,59 @@ def get_history_chat_resume(steps, k, SYSTEM, LLM):
 
 def get_history_setup_llm(memory_list):
     conversation_list = []
-    for message in memory_list:
-        message_dict = message.to_dict() if hasattr(message, "to_dict") else message
+    i = 0
+    while i < len(memory_list) - 1:
+        # Process the current and next message
+        current_message = memory_list[i]
+        next_message = memory_list[i + 1]
 
-        # Check if the type attribute is present as a key or attribute
-        message_type = (
-            message_dict.get("type", None)
-            if isinstance(message_dict, dict)
-            else getattr(message, "type", None)
+        # Convert messages to dictionary if necessary
+        current_message_dict = (
+            current_message.to_dict()
+            if hasattr(current_message, "to_dict")
+            else current_message
+        )
+        next_message_dict = (
+            next_message.to_dict() if hasattr(next_message, "to_dict") else next_message
         )
 
-        # Check if content is present as a key or attribute
-        message_content = (
-            message_dict.get("content", None)
-            if isinstance(message_dict, dict)
-            else getattr(message, "content", None)
+        # Check message type and content for current and next message
+        current_message_type = (
+            current_message_dict.get("type", None)
+            if isinstance(current_message_dict, dict)
+            else getattr(current_message, "type", None)
+        )
+        current_message_content = (
+            current_message_dict.get("content", None)
+            if isinstance(current_message_dict, dict)
+            else getattr(current_message, "content", None)
         )
 
-        if message_type in ["ai", "ai_message"]:
-            conversation_list.append({"type": "ai_message", "content": message_content})
-        elif message_type in ["human", "user_message"]:
+        next_message_type = (
+            next_message_dict.get("type", None)
+            if isinstance(next_message_dict, dict)
+            else getattr(next_message, "type", None)
+        )
+        next_message_content = (
+            next_message_dict.get("content", None)
+            if isinstance(next_message_dict, dict)
+            else getattr(next_message, "content", None)
+        )
+
+        # Check if the current message is user message and the next one is AI message
+        if current_message_type in ["human", "user_message"] and next_message_type in [
+            "ai",
+            "ai_message",
+        ]:
             conversation_list.append(
-                {"type": "user_message", "content": message_content}
+                {"type": "user_message", "content": current_message_content}
             )
+            conversation_list.append(
+                {"type": "ai_message", "content": next_message_content}
+            )
+            i += 2  # Skip the next message since it has been paired
         else:
-            raise ValueError("Invalid message type")
+            i += 1  # Move to the next message if not a valid pair (example user message, followed by the cooldown system message)
 
     return conversation_list
 
