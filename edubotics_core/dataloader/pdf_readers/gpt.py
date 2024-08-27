@@ -6,7 +6,7 @@ from io import BytesIO
 from openai import OpenAI
 from pdf2image import convert_from_path
 from langchain.schema import Document
-from modules.config.constants import TIMEOUT
+from edubotics_core.config.constants import TIMEOUT
 
 
 class GPTParser:

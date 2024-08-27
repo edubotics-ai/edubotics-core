@@ -1,6 +1,6 @@
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from modules.config.constants import OPENAI_API_KEY, HUGGINGFACE_TOKEN
+from edubotics_core.config.constants import OPENAI_API_KEY, HUGGINGFACE_TOKEN
 
 
 class EmbeddingModelLoader:

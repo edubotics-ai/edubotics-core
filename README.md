@@ -9,9 +9,9 @@ app_port: 7860
 ---
 # DL4DS Tutor 🏃
 
-![Build Status](https://github.com/DL4DS/dl4ds_tutor/actions/workflows/push_to_hf_space.yml/badge.svg)
-![License](https://img.shields.io/github/license/DL4DS/dl4ds_tutor)
-![GitHub stars](https://img.shields.io/github/stars/DL4DS/dl4ds_tutor)
+![Build Status](https://github.com/edubotics-ai/edubot-core/actions/workflows/push_to_hf_space.yml/badge.svg)
+![License](https://img.shields.io/github/license/edubotics-ai/edubot-core)
+![GitHub stars](https://img.shields.io/github/stars/edubotics-ai/edubot-core)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)
 
 
@@ -33,7 +33,7 @@ Please visit [setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/) for more 
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/DL4DS/dl4ds_tutor
+   git clone https://github.com/edubotics-ai/edubot-core
    ```
 
 2. Create your app in the apps folder. (An example is the `apps/ai_tutor` app)
@@ -49,13 +49,13 @@ Please visit [setup](https://dl4ds.github.io/dl4ds_tutor/guide/setup/) for more 
 3. **To test Data Loading (Optional)**
    ```bash
    cd apps/your_app
-   python -m modules.dataloader.data_loader --links "your_pdf_link" --config_file config/config.yml --project_config_file config/project_config.yml
+   python -m edubotics_core.dataloader.data_loader --links "your_pdf_link" --config_file config/config.yml --project_config_file config/project_config.yml
    ```
 
 4. **Create the Vector Database**
    ```bash
    cd apps/your_app
-   python -m modules.vectorstore.store_manager --config_file config/config.yml --project_config_file config/project_config.yml
+   python -m edubotics_core.vectorstore.store_manager --config_file config/config.yml --project_config_file config/project_config.yml
    ```
 
 6. **Run the FastAPI App**

@@ -4,7 +4,7 @@ import asyncio
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urldefrag
-from modules.config.constants import TIMEOUT
+from edubotics_core.config.constants import TIMEOUT
 
 
 class WebpageCrawler:

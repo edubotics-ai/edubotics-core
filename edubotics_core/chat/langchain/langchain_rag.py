@@ -1,8 +1,8 @@
 from langchain_core.prompts import ChatPromptTemplate
 
-# from modules.chat.langchain.utils import
+# from edubotics_core.chat.langchain.utils import
 from langchain_community.chat_message_histories import ChatMessageHistory
-from modules.chat.base import BaseRAG
+from edubotics_core.chat.base import BaseRAG
 from langchain_core.prompts import PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.runnables.utils import ConfigurableFieldSpec

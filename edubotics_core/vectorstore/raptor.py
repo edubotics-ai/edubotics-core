@@ -11,7 +11,7 @@ from sklearn.mixture import GaussianMixture
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from modules.vectorstore.base import VectorStoreBase
+from edubotics_core.vectorstore.base import VectorStoreBase
 
 RANDOM_SEED = 42
 

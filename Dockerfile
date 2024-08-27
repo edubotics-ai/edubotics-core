@@ -40,4 +40,4 @@ RUN --mount=type=secret,id=LITERAL_API_KEY_LOGGING,mode=0444,required=true
 RUN --mount=type=secret,id=CHAINLIT_AUTH_SECRET,mode=0444,required=true 
 
 # Default command to run the application
-CMD python -m modules.vectorstore.store_manager --config_file config/config.yml --project_config_file config/project_config.yml && python -m uvicorn app:app --host 0.0.0.0 --port 7860
+CMD python -m edubotics_core.vectorstore.store_manager --config_file config/config.yml --project_config_file config/project_config.yml && python -m uvicorn app:app --host 0.0.0.0 --port 7860

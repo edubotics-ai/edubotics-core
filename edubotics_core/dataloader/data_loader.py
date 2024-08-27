@@ -18,11 +18,11 @@ from urllib.parse import urljoin
 import html2text
 import bs4
 import PyPDF2
-from modules.dataloader.pdf_readers.base import PDFReader
-from modules.dataloader.pdf_readers.llama import LlamaParser
-from modules.dataloader.pdf_readers.gpt import GPTParser
-from modules.dataloader.helpers import get_metadata
-from modules.config.constants import TIMEOUT
+from edubotics_core.dataloader.pdf_readers.base import PDFReader
+from edubotics_core.dataloader.pdf_readers.llama import LlamaParser
+from edubotics_core.dataloader.pdf_readers.gpt import GPTParser
+from edubotics_core.dataloader.helpers import get_metadata
+from edubotics_core.config.constants import TIMEOUT
 
 logger = logging.getLogger(__name__)
 BASE_DIR = os.getcwd()

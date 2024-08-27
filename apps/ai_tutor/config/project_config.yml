@@ -13,7 +13,7 @@ token_config:
   all_time_tokens_allocated: 1000000
 
 misc:
-  github_repo: "https://github.com/DL4DS/dl4ds_tutor"
+  github_repo: "https://github.com/edubotics-ai/edubot-core"
   docs_website: "https://dl4ds.github.io/dl4ds_tutor/"
 
 api_config:

@@ -4,18 +4,18 @@ from config.constants import (
     LITERAL_API_KEY_LOGGING,
     LITERAL_API_URL,
 )
-from modules.chat_processor.literal_ai import CustomLiteralDataLayer
+from edubotics_core.chat_processor.literal_ai import CustomLiteralDataLayer
 import json
 from typing import Any, Dict, no_type_check
 import chainlit as cl
-from modules.chat.llm_tutor import LLMTutor
-from modules.chat.helpers import (
+from edubotics_core.chat.llm_tutor import LLMTutor
+from edubotics_core.chat.helpers import (
     get_sources,
     get_history_chat_resume,
     get_history_setup_llm,
     # get_last_config,
 )
-from modules.chat_processor.helpers import (
+from edubotics_core.chat_processor.helpers import (
     update_user_info,
     get_user_details,
 )

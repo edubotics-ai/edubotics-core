@@ -1,8 +1,8 @@
-from modules.chat.helpers import get_prompt
-from modules.chat.chat_model_loader import ChatModelLoader
-from modules.vectorstore.store_manager import VectorStoreManager
-from modules.retriever.retriever import Retriever
-from modules.chat.langchain.langchain_rag import (
+from edubotics_core.chat.helpers import get_prompt
+from edubotics_core.chat.chat_model_loader import ChatModelLoader
+from edubotics_core.vectorstore.store_manager import VectorStoreManager
+from edubotics_core.retriever.retriever import Retriever
+from edubotics_core.chat.langchain.langchain_rag import (
     Langchain_RAG_V2,
     QuestionGenerator,
 )
