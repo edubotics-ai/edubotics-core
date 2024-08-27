@@ -7,6 +7,8 @@ import logging
 import os
 import time
 import asyncio
+import yaml
+import argparse
 
 
 class VectorStoreManager:
@@ -162,10 +164,7 @@ class VectorStoreManager:
         return len(self.vector_db)
 
 
-if __name__ == "__main__":
-    import yaml
-    import argparse
-
+def main():
     # Add argument parsing for config files
     parser = argparse.ArgumentParser(description="Load configuration files.")
     parser.add_argument(
@@ -216,3 +215,7 @@ if __name__ == "__main__":
     print("Loaded database")
 
     print(f"View the logs at {config['log_dir']}/vector_db.log")
+
+
+if __name__ == "__main__":
+    main()

@@ -20,4 +20,9 @@ setup(
     license="MIT",
     long_description=readme,
     long_description_content_type="text/markdown",
+    entry_points={
+        "console_scripts": [
+            "vectorstore_creator=edubotics_core.vectorstore.store_manager:main",
+        ],
+    },
 )
