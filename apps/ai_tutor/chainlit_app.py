@@ -502,7 +502,7 @@ class Chatbot:
             steps
         )  # TODO: Returns None for now - which causes config to be reloaded with default values
         cl.user_session.set("memory", conversation_list)
-        await self.start(config=thread_config)
+        await self.start()
 
     @cl.header_auth_callback
     def header_auth_callback(headers: dict) -> Optional[cl.User]:
