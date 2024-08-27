@@ -40,6 +40,10 @@ AGENT = "Agent"
 YOU = "User"
 ERROR = "Error"
 
+COOLDOWN_TIME = config_manager.get_config().dict()["token_config"]["cooldown_time"]
+TOKENS_LEFT = config_manager.get_config().dict()["token_config"]["tokens_left"]
+REGEN_TIME = config_manager.get_config().dict()["token_config"]["regen_time"]
+
 # set config
 config = config_manager.get_config().dict()
 
@@ -393,7 +397,7 @@ class Chatbot:
         if user.metadata["tokens_left"] <= 0 and "admin" not in user.metadata["role"]:
             current_datetime = get_time()
             cooldown, cooldown_end_time = await check_user_cooldown(
-                user, current_datetime
+                user, current_datetime, COOLDOWN_TIME, TOKENS_LEFT, REGEN_TIME
             )
             if cooldown:
                 # get time left in cooldown

@@ -24,7 +24,8 @@ class VectorStoreConfig(BaseModel):
     db_option: str = "RAGatouille"  # Options: [FAISS, Chroma, RAGatouille, RAPTOR]
     db_path: str = "vectorstores"
     model: str = (
-        "sentence-transformers/all-MiniLM-L6-v2"  # Options: [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002]
+        # Options: [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002]
+        "sentence-transformers/all-MiniLM-L6-v2"
     )
     search_top_k: conint(gt=0) = 3
     score_threshold: confloat(ge=0.0, le=1.0) = 0.2

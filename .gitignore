@@ -182,3 +182,5 @@ code/storage/models/
 
 **/apps/*/storage/logs/*
 **/apps/*/private/*
+
+.idea/

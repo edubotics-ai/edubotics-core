@@ -33,6 +33,8 @@ GITHUB_REPO = config["misc"]["github_repo"]
 DOCS_WEBSITE = config["misc"]["docs_website"]
 ALL_TIME_TOKENS_ALLOCATED = config["token_config"]["all_time_tokens_allocated"]
 TOKENS_LEFT = config["token_config"]["tokens_left"]
+COOLDOWN_TIME = config["token_config"]["cooldown_time"]
+REGEN_TIME = config["token_config"]["regen_time"]
 
 GOOGLE_CLIENT_ID = OAUTH_GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET = OAUTH_GOOGLE_CLIENT_SECRET
@@ -233,7 +235,7 @@ async def cooldown(request: Request):
     user_details = await get_user_details(user_info["email"])
     current_datetime = get_time()
     cooldown, cooldown_end_time = await check_user_cooldown(
-        user_details, current_datetime
+        user_details, current_datetime, COOLDOWN_TIME, TOKENS_LEFT, REGEN_TIME
     )
     print(f"User in cooldown: {cooldown}")
     print(f"Cooldown end time: {cooldown_end_time}")
@@ -283,7 +285,9 @@ async def post_signin(request: Request):
     if "last_message_time" in user_details.metadata and "admin" not in get_user_role(
         user_info["email"]
     ):
-        cooldown, _ = await check_user_cooldown(user_details, current_datetime)
+        cooldown, _ = await check_user_cooldown(
+            user_details, current_datetime, COOLDOWN_TIME, TOKENS_LEFT, REGEN_TIME
+        )
         if cooldown:
             user_details.metadata["in_cooldown"] = True
             return RedirectResponse("/cooldown")
