@@ -32,9 +32,6 @@ async def check_user_cooldown(
     cooldown_end_time = last_message_time + timedelta(seconds=COOLDOWN_TIME)
     cooldown_end_time_iso = cooldown_end_time.isoformat()
 
-    # Debug: Print the cooldown end time
-    print(f"Cooldown end time (ISO): {cooldown_end_time_iso}")
-
     # Check if the user is still in cooldown
     if elapsed_time_in_seconds < COOLDOWN_TIME:
         return True, cooldown_end_time_iso  # Return in ISO 8601 format
@@ -80,10 +77,6 @@ async def reset_tokens_for_user(user_info, TOKENS_LEFT, REGEN_TIME):
 
         # Ensure the new token count does not exceed max_tokens
         new_token_count = min(current_tokens + tokens_to_regenerate, max_tokens)
-
-        print(
-            f"\n\n Adding {tokens_to_regenerate} tokens to the user, Time elapsed: {elapsed_time_in_seconds} seconds, Tokens after regeneration: {new_token_count}, Tokens before: {current_tokens} \n\n"
-        )
 
         # Update the user's token count
         user_info["metadata"]["tokens_left"] = new_token_count

@@ -8,7 +8,6 @@ from modules.chat.helpers import (
     get_history_setup_llm,
 )
 import copy
-import time
 from langchain_community.callbacks import get_openai_callback
 from config.config_manager import config_manager
 
@@ -36,7 +35,6 @@ class Chatbot:
 
         #TODO: Clean this up.
         """
-        start_time = time.time()
 
         llm_settings = cl.user_session.get("llm_settings", {})
         (
@@ -83,8 +81,6 @@ class Chatbot:
 
         cl.user_session.set("chain", self.chain)
         cl.user_session.set("llm_tutor", self.llm_tutor)
-
-        print("Time taken to setup LLM: ", time.time() - start_time)
 
     @no_type_check
     async def update_llm(self, new_settings: Dict[str, Any]):
@@ -168,32 +164,9 @@ class Chatbot:
         """
         Inform the user about the updated LLM settings and display them as a message.
         """
-        llm_settings: Dict[str, Any] = cl.user_session.get("llm_settings", {})
-        llm_tutor = cl.user_session.get("llm_tutor")
-        settings_dict = {
-            "model": llm_settings.get("chat_model"),
-            "retriever": llm_settings.get("retriever_method"),
-            "memory_window": llm_settings.get("memory_window"),
-            "num_docs_in_db": (
-                len(llm_tutor.vector_db)
-                if llm_tutor and hasattr(llm_tutor, "vector_db")
-                else 0
-            ),
-            "view_sources": llm_settings.get("view_sources"),
-            "follow_up_questions": llm_settings.get("follow_up_questions"),
-        }
-        print("Settings Dict: ", settings_dict)
         await cl.Message(
             author=SYSTEM,
             content="LLM settings have been updated. You can continue with your Query!",
-            # elements=[
-            #     cl.Text(
-            #         name="settings",
-            #         display="side",
-            #         content=json.dumps(settings_dict, indent=4),
-            #         language="json",
-            #     ),
-            # ],
         ).send()
 
     async def set_starters(self):
@@ -243,8 +216,6 @@ class Chatbot:
         and display and load previous conversation if chat logging is enabled.
         """
 
-        start_time = time.time()
-
         await self.make_llm_settings_widgets(self.config)  # Reload the settings widgets
 
         # TODO: remove self.user with cl.user_session.get("user")
@@ -262,8 +233,6 @@ class Chatbot:
         self.question_generator = self.llm_tutor.question_generator
         cl.user_session.set("llm_tutor", self.llm_tutor)
         cl.user_session.set("chain", self.chain)
-
-        print("Time taken to start LLM: ", time.time() - start_time)
 
     async def stream_response(self, response):
         """
@@ -294,8 +263,6 @@ class Chatbot:
         Args:
             message: The incoming chat message.
         """
-
-        start_time = time.time()
 
         chain = cl.user_session.get("chain")
         token_count = 0  # initialize token count
@@ -342,12 +309,9 @@ class Chatbot:
         )
         answer_with_sources = answer_with_sources.replace("$$", "$")
 
-        print("Time taken to process the message: ", time.time() - start_time)
-
         actions = []
 
         if self.config["llm_params"]["generate_follow_up"]:
-            start_time = time.time()
             cb_follow_up = cl.AsyncLangchainCallbackHandler()
             config = {
                 "callbacks": (
@@ -376,9 +340,6 @@ class Chatbot:
                         label=question,
                     )
                 )
-
-            print("Time taken to generate questions: ", time.time() - start_time)
-            print("Total Tokens Used: ", token_count)
 
         await cl.Message(
             content=answer_with_sources,
