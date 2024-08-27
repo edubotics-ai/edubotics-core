@@ -12,9 +12,6 @@ RUN pip install -e .
 
 COPY . /code
 
-# Copy .env file to the application directory
-COPY .env /code/apps/ai_tutor/.env
-
 # List the contents of the /code directory to verify files are copied correctly
 RUN ls -R /code
 
