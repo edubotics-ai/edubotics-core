@@ -53,7 +53,7 @@ session_store = {}
 CHAINLIT_PATH = "/chainlit_tutor"
 
 # only admin is given any additional permissions for now -- no limits on tokens
-with open("private/students_encrypted.json", "r") as file:
+with open("public/files/students_encrypted.json", "r") as file:
     USER_ROLES = json.load(file)
 
 # Create a Google OAuth flow
@@ -378,7 +378,7 @@ async def get_tokens_left(request: Request):
         return {"tokens_left": 0}
 
 
-mount_chainlit(app=app, target="main.py", path=CHAINLIT_PATH)
+mount_chainlit(app=app, target="chainlit_app.py", path=CHAINLIT_PATH)
 
 if __name__ == "__main__":
     import uvicorn

@@ -38,7 +38,7 @@ def get_sources(res, answer, stream=True, view_sources=False):
     full_answer = ""  # Not to include the answer again if streaming
 
     if not stream:  # First, display the answer if not streaming
-        full_answer = "**Answer:**\n"
+        # full_answer = "**Answer:**\n"
         full_answer += answer
 
     if view_sources:

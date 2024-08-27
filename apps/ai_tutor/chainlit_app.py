@@ -266,24 +266,24 @@ class Chatbot:
             print(e)
             return [
                 cl.Starter(
-                    label="recording on CNNs?",
+                    label="recording on Transformers?",
                     message="Where can I find the recording for the lecture on Transformers?",
-                    icon="/public/adv-screen-recorder-svgrepo-com.svg",
+                    icon="/public/assets/images/starter_icons/adv-screen-recorder-svgrepo-com.svg",
                 ),
                 cl.Starter(
-                    label="where's the slides?",
+                    label="where's the schedule?",
                     message="When are the lectures? I can't find the schedule.",
-                    icon="/public/alarmy-svgrepo-com.svg",
+                    icon="/public/assets/images/starter_icons/alarmy-svgrepo-com.svg",
                 ),
                 cl.Starter(
                     label="Due Date?",
                     message="When is the final project due?",
-                    icon="/public/calendar-samsung-17-svgrepo-com.svg",
+                    icon="/public/assets/images/starter_icons/calendar-samsung-17-svgrepo-com.svg",
                 ),
                 cl.Starter(
                     label="Explain backprop.",
                     message="I didn't understand the math behind backprop, could you explain it?",
-                    icon="/public/acastusphoton-svgrepo-com.svg",
+                    icon="/public/assets/images/starter_icons/acastusphoton-svgrepo-com.svg",
                 ),
             ]
 
