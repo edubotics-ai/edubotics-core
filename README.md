@@ -9,6 +9,12 @@ app_port: 7860
 ---
 # DL4DS Tutor 🏃
 
+![Build Status](https://github.com/DL4DS/dl4ds_tutor/actions/workflows/push_to_hf_space.yml/badge.svg)
+![License](https://img.shields.io/github/license/DL4DS/dl4ds_tutor)
+![GitHub stars](https://img.shields.io/github/stars/DL4DS/dl4ds_tutor)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)
+
+
 Check out the configuration reference at [Hugging Face Spaces Config Reference](https://huggingface.co/docs/hub/spaces-config-reference).
 
 You can find a "production" implementation of the Tutor running live at [DL4DS Tutor](https://dl4ds-dl4ds-tutor.hf.space/)  from the
