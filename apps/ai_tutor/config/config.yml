@@ -1,0 +1,60 @@
+log_dir: 'storage/logs' # str
+log_chunk_dir: 'storage/logs/chunks' # str
+device: 'cpu' # str [cuda, cpu]
+
+vectorstore:
+  load_from_HF: True # bool
+  reparse_files: True # bool
+  data_path: 'storage/data' # str
+  url_file_path: 'storage/data/urls.txt' # str
+  expand_urls: True # bool
+  db_option : 'RAGatouille' # str [FAISS, Chroma, RAGatouille, RAPTOR]
+  db_path : 'vectorstores' # str
+  model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
+  search_top_k : 3 # int
+  score_threshold : 0.2 # float
+
+  faiss_params: # Not used as of now
+    index_path: 'vectorstores/faiss.index' # str
+    index_type: 'Flat' # str [Flat, HNSW, IVF]
+    index_dimension: 384 # int
+    index_nlist: 100 # int
+    index_nprobe: 10 # int
+
+  colbert_params:
+    index_name: "new_idx" # str
+
+llm_params: 
+  llm_arch: 'langchain' # [langchain]
+  use_history: True # bool
+  generate_follow_up: False # bool
+  memory_window: 3 # int
+  llm_style: 'Normal' # str [Normal, ELI5]
+  llm_loader: 'gpt-4o-mini' # str [local_llm, gpt-3.5-turbo-1106, gpt-4, gpt-4o-mini]
+  openai_params:
+    temperature: 0.7 # float
+  local_llm_params:
+    temperature: 0.7 # float
+    repo_id: 'TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF' # HuggingFace repo id
+    filename: 'tinyllama-1.1b-chat-v1.0.Q5_0.gguf' # Specific name of gguf file in the repo
+    model_path: 'storage/models/tinyllama-1.1b-chat-v1.0.Q5_0.gguf' # Path to the model file
+  stream: False # bool
+  pdf_reader: 'gpt' # str [llama, pymupdf, gpt]
+
+chat_logging:
+  log_chat: True # bool
+  platform: 'literalai'
+  callbacks: True # bool
+
+splitter_options:
+  use_splitter: True # bool
+  split_by_token : True # bool
+  remove_leftover_delimiters: True # bool
+  remove_chunks: False # bool
+  chunking_mode: 'semantic' # str [fixed, semantic]
+  chunk_size : 300 # int
+  chunk_overlap : 30 # int
+  chunk_separators : ["\n\n", "\n", " ", ""] # list of strings
+  front_chunks_to_remove : null # int or None
+  last_chunks_to_remove : null # int or None
+  delimiters_to_remove : ['\t', '\n', '   ', '  '] # list of strings

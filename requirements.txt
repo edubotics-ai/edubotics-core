@@ -34,3 +34,4 @@ fastapi
 google-auth
 google-auth-oauthlib
 Jinja2
+cryptography

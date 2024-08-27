@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cooldown Period | Terrier Tutor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+            background-repeat: repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            padding: 50px;
+            box-sizing: border-box;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin-bottom: 25px;
+            border: 2px solid #ddd;
+        }
+
+        .container h1 {
+            margin-bottom: 15px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .container p {
+            font-size: 16px;
+            color: #4a4a4a;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .cooldown-message {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .tokens-left {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .button {
+            padding: 12px 0;
+            margin: 12px 0;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            border: 1px solid #4285F4;
+            background-color: #fff;
+            color: #4285F4;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            display: none;
+        }
+
+        .button.start-tutor {
+            display: none;
+        }
+
+        .button:hover {
+            background-color: #e0e0e0;
+            border-color: #357ae8;
+        }
+
+        .sign-out-button {
+            border: 1px solid #FF4C4C;
+            background-color: #fff;
+            color: #FF4C4C;
+            display: block;
+        }
+
+        .sign-out-button:hover {
+            background-color: #ffe6e6;
+            border-color: #e04343;
+            color: #e04343;
+        }
+
+        #countdown {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #777;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/public/assets/images/avatars/ai-tutor.png" alt="AI Tutor Avatar" class="avatar">
+        <h1>Hello, {{ username }}</h1>
+        <p>It seems like you need to wait a bit before starting a new session.</p>
+        <p class="cooldown-message">Time remaining until the cooldown period ends:</p>
+        <p id="countdown"></p>
+        <p class="tokens-left">Tokens Left: <span id="tokensLeft">{{ tokens_left }}</span></p>
+        <button id="startTutorBtn" class="button start-tutor" onclick="startTutor()">Start AI Tutor</button>
+        <form action="/logout" method="get">
+            <button type="submit" class="button sign-out-button">Sign Out</button>
+        </form>
+        <div class="footer">Reload the page to update token stats</div>
+    </div>
+    <script>
+        function startCountdown(endTime) {
+            const countdownElement = document.getElementById('countdown');
+            const startTutorBtn = document.getElementById('startTutorBtn');
+            const endTimeDate = new Date(endTime);
+
+            function updateCountdown() {
+                const now = new Date();
+                const timeLeft = endTimeDate.getTime() - now.getTime();
+
+                if (timeLeft <= 0) {
+                    countdownElement.textContent = "Cooldown period has ended.";
+                    startTutorBtn.style.display = "block";
+                } else {
+                    const hours = Math.floor(timeLeft / 1000 / 60 / 60);
+                    const minutes = Math.floor((timeLeft / 1000 / 60) % 60);
+                    const seconds = Math.floor((timeLeft / 1000) % 60);
+                    countdownElement.textContent = `${hours}h ${minutes}m ${seconds}s`;
+                }
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        function startTutor() {
+            window.location.href = "/start-tutor";
+        }
+
+        function updateTokensLeft() {
+            fetch('/get-tokens-left')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('tokensLeft').textContent = data.tokens_left;
+                })
+                .catch(error => console.error('Error fetching tokens:', error));
+        }
+
+        // Start the countdown
+        startCountdown("{{ cooldown_end_time }}");
+
+        // Update tokens left when the page loads
+        updateTokensLeft();
+    </script>
+</body>
+</html>

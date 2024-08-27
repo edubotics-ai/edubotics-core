@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Terrier Tutor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7; /* Light gray background */
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); /* Subtle geometric pattern */
+            background-repeat: repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            padding: 50px;
+            box-sizing: border-box;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin-bottom: 25px;
+            border: 2px solid #ddd;
+        }
+
+        .container h1 {
+            margin-bottom: 15px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .container p {
+            font-size: 16px;
+            color: #4a4a4a;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .button {
+            padding: 12px 0;
+            margin: 12px 0;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            border: 1px solid #4285F4; /* Google button border color */
+            background-color: #fff; /* Guest button color */
+            color: #4285F4; /* Google button text color */
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #e0f0ff; /* Light blue on hover */
+            border-color: #357ae8; /* Darker blue for hover */
+            color: #357ae8; /* Blue text on hover */
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 15px;
+            color: #666;
+            text-align: center; /* Center the text in the footer */
+        }
+
+        .footer a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center; /* Center the content of the links */
+            transition: color 0.3s ease;
+            margin-bottom: 8px;
+            width: 100%; /* Make the link block level */
+        }
+
+        .footer a:hover {
+            color: #000;
+        }
+
+        .footer svg {
+            margin-right: 8px;
+            fill: currentColor;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/public/assets/images/avatars/ai-tutor.png" alt="AI Tutor Avatar" class="avatar">
+        <h1>Terrier Tutor</h1>
+        <p>Welcome to the DS598 AI Tutor. Please sign in to continue.</p>
+        <form action="/login/google" method="get">
+            <button type="submit" class="button">Sign in with Google</button>
+        </form>
+        <div class="footer">
+            <a href="{{ GITHUB_REPO }}" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                    <path d="M12 .5C5.596.5.5 5.596.5 12c0 5.098 3.292 9.414 7.852 10.94.574.105.775-.249.775-.553 0-.272-.01-1.008-.015-1.98-3.194.694-3.87-1.544-3.87-1.544-.521-1.324-1.273-1.676-1.273-1.676-1.04-.714.079-.7.079-.7 1.148.08 1.75 1.181 1.75 1.181 1.022 1.752 2.683 1.246 3.34.954.104-.74.4-1.246.73-1.533-2.551-.292-5.234-1.276-5.234-5.675 0-1.253.447-2.277 1.181-3.079-.12-.293-.51-1.47.113-3.063 0 0 .96-.307 3.15 1.174.913-.255 1.892-.383 2.867-.388.975.005 1.954.133 2.868.388 2.188-1.481 3.147-1.174 3.147-1.174.624 1.593.233 2.77.114 3.063.735.802 1.18 1.826 1.18 3.079 0 4.407-2.688 5.38-5.248 5.668.413.354.782 1.049.782 2.113 0 1.526-.014 2.757-.014 3.132 0 .307.198.662.783.553C20.21 21.411 23.5 17.096 23.5 12c0-6.404-5.096-11.5-11.5-11.5z"/>
+                </svg>
+                View on GitHub
+            </a>
+            <a href="{{ DOCS_WEBSITE }}" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                    <path d="M19 2H8c-1.103 0-2 .897-2 2v16c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2V7l-5-5zm0 2l.001 4H14V4h5zm-1 14H9V4h4v6h6v8zM7 4H6v16c0 1.654 1.346 3 3 3h9v-2H9c-.551 0-1-.449-1-1V4z"/>
+                </svg>
+                View Docs
+            </a>
+        </div>
+    </div>
+</body>
+</html>
