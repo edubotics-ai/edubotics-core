@@ -235,7 +235,7 @@ async def cooldown(request: Request):
     user_details = await get_user_details(user_info["email"])
     current_datetime = get_time()
     cooldown, cooldown_end_time = await check_user_cooldown(
-        user_details, current_datetime
+        user_details, current_datetime, COOLDOWN_TIME, TOKENS_LEFT, REGEN_TIME
     )
     print(f"User in cooldown: {cooldown}")
     print(f"Cooldown end time: {cooldown_end_time}")
