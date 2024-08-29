@@ -184,7 +184,7 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
         if config["configurable"]["memory_window"] == 0:  # if k is 0, return empty list
             messages = []
         else:
-            messages = messages[-2 * config["configurable"]["memory_window"] :]
+            messages = messages[-2 * config["configurable"]["memory_window"]:]
 
         messages = self._get_chat_history(messages)
 
@@ -240,7 +240,7 @@ def create_stuff_documents_chain(
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
 ) -> Runnable[Dict[str, Any], Any]:
     """Create a chain for passing a list of Documents to a model."""
-    _validate_prompt(prompt)
+    _validate_prompt(prompt, "context")
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
 
