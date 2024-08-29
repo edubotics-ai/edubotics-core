@@ -1,12 +1,11 @@
 import base64
-import os
 import requests
 
 from io import BytesIO
 from openai import OpenAI
 from pdf2image import convert_from_path
 from langchain.schema import Document
-from edubotics_core.config.constants import TIMEOUT
+from edubotics_core.config.constants import TIMEOUT, OPENAI_API_KEY
 
 
 class GPTParser:
@@ -17,7 +16,7 @@ class GPTParser:
 
     def __init__(self):
         self.client = OpenAI()
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.api_key = OPENAI_API_KEY
         self.prompt = """
          The provided documents are images of PDFs of lecture slides of deep learning material.
          They contain LaTeX equations, images, and text.
