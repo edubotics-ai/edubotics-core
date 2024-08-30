@@ -41,20 +41,6 @@ jobs:
           echo "Changes detected in apps directory."
         fi
 
-    - name: Commit changes
-      run: |
-        cd edubotics-app
-        git commit -m "Sync Apps Directory" || echo "No changes to commit"
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-
-    - name: Push changes
-      run: |
-        cd edubotics-app
-        git push origin main
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v5
       with:
@@ -64,3 +50,4 @@ jobs:
         title: "Apps Dir Sync"
         body: "This PR syncs the apps/ directory between edubotics-core and edubotics-app repositories."
         labels: "sync"
+        base: main  
