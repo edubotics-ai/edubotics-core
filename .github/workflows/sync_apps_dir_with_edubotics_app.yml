@@ -44,8 +44,10 @@ jobs:
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v5
       with:
+        token: ${{ secrets.PAT_TOKEN }}
         commit-message: "Sync Apps Directory"
         branch: "sync-apps-dir"
         title: "Apps Dir Sync"
         body: "This PR syncs the apps/ directory between edubotics-core and edubotics-app repositories."
         labels: "sync"
+        base: main  
