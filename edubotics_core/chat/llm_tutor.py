@@ -6,6 +6,9 @@ from edubotics_core.chat.langchain.langchain_rag import (
     Langchain_RAG_V2,
     QuestionGenerator,
 )
+from edubotics_core.chat.langgraph.langgraph_agentic_rag import (
+    Langgraph_Agentic_RAG,
+)
 
 
 class LLMTutor:
@@ -117,12 +120,21 @@ class LLMTutor:
                 config=self.config,
                 callbacks=callbacks,
             )
-
-            self.question_generator = QuestionGenerator()
+        elif self.config["llm_params"]["llm_arch"] == "langgraph":
+            self.qa_chain = Langgraph_Agentic_RAG(
+                llm=llm,
+                memory=memory,
+                retriever=retriever,
+                qa_prompt=qa_prompt,
+                rephrase_prompt=rephrase_prompt,
+                config=self.config,
+                callbacks=callbacks,
+            )
         else:
             raise ValueError(
                 f"Invalid LLM Architecture: {self.config['llm_params']['llm_arch']}"
             )
+        self.question_generator = QuestionGenerator()
         return self.qa_chain
 
     def load_llm(self):

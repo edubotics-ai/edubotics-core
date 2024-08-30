@@ -25,7 +25,7 @@ vectorstore:
     index_name: "new_idx" # str
 
 llm_params: 
-  llm_arch: 'langchain' # [langchain]
+  llm_arch: 'langgraph' # [langchain, langgraph]
   use_history: True # bool
   generate_follow_up: False # bool
   memory_window: 3 # int
