@@ -1,5 +1,5 @@
 prompts = {
-    "openai": {
+    "gpt-4o-mini": {
         "rephrase_prompt": (
             "You are someone that rephrases statements. Rephrase the student's question to add context from their chat history if relevant, ensuring it remains from the student's point of view. "
             "Incorporate relevant details from the chat history to make the question clearer and more specific. "

@@ -26,9 +26,11 @@ class LLMTutor:
         self.user = user
         self.logger = logger
         self.vector_db = VectorStoreManager(config, logger=self.logger).load_database()
-        self.qa_prompt = get_prompt(config, "qa")  # Initialize qa_prompt
+        self.qa_prompt = get_prompt(
+            config, "qa", all_prompts=self.config["prompts_dict"]["prompts"]
+        )  # Initialize qa_prompt
         self.rephrase_prompt = get_prompt(
-            config, "rephrase"
+            config, "rephrase", all_prompts=self.config["prompts_dict"]["prompts"]
         )  # Initialize rephrase_prompt
 
         # TODO: Removed this functionality for now, don't know if we need it
@@ -60,7 +62,7 @@ class LLMTutor:
 
         if "llm_params.llm_style" in changes:
             self.qa_prompt = get_prompt(
-                self.config, "qa"
+                self.config, "qa", all_prompts=self.config["prompts_dict"]["prompts"]
             )  # Update qa_prompt if ELI5 changes
 
     def get_config_changes(self, old_config, new_config):

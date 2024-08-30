@@ -10,7 +10,6 @@ from typing import Any, Dict, no_type_check
 import chainlit as cl
 from edubotics_core.chat.llm_tutor import LLMTutor
 from edubotics_core.chat.helpers import (
-    get_sources,
     get_history_chat_resume,
     get_history_setup_llm,
     # get_last_config,
@@ -22,6 +21,7 @@ from edubotics_core.chat_processor.helpers import (
 from helpers import (
     check_user_cooldown,
     reset_tokens_for_user,
+    get_sources,
 )
 from helpers import get_time
 import copy
