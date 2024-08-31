@@ -177,7 +177,7 @@ class AgentState(TypedDict):
     # The add_messages function defines how an update should be processed
     # Default is to replace. add_messages says "append"
     messages: Annotated[Sequence[BaseMessage], add_messages]
-    context: Annotated[Sequence[BaseMessage], add_messages]
+    context: dict
 
 
 # Data model
@@ -497,7 +497,7 @@ class Langgraph_Agentic_RAG(BaseRAG):
     async def invoke(self, user_query, config, **kwargs):
         inputs = {
             "messages": [
-                ("user", "What is the course about??"),
+                ("user", user_query['input']),
             ]
         }
         for output in self.graph.stream(inputs, {"recursion_limit": 10}):
@@ -509,10 +509,34 @@ class Langgraph_Agentic_RAG(BaseRAG):
 
         print("---END---")
         res = {}
-        print(output)
-        exit()
-        # res["answer"] = output
-        # res["context"] = self.docs
+        print(output.keys())
+        if 'generate' in output:
+            res["answer"] = output['generate']['messages'][0]
+            res["context"] = ast.literal_eval(output['generate']['context'])
+        elif 'agent' in output:
+            res["answer"] = output['agent']['messages'][0]
+            # res["context"] = ast.literal_eval(output['agent']['context'])
+            # context is None
+            res["context"] = [{
+                "page_content": "No context found",
+                "metadata": {
+                    "source": "No context found",
+                    "page": "No context found",
+                    "score": "No context found",
+                },
+            }]
+
+        if type(res["answer"]) != str:
+            res["answer"] = res["answer"].content
+        # else:
+        #     res["answer"] = output['rewrite']['messages'][0]
+        #     res["context"] = ast.literal_eval(output['rewrite']['context'])
+        # create Document objects
+        docs = []
+        for doc in res["context"]:
+            docs.append(Document(page_content=doc['page_content'], metadata=doc['metadata']))
+        res["context"] = docs
+
         return res
 
 
