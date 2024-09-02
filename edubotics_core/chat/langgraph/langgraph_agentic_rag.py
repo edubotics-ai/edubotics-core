@@ -1,4 +1,3 @@
-from langchain_core.prompts import ChatPromptTemplate
 from edubotics_core.chat.langchain.utils import (
     BaseChatMessageHistory,
     InMemoryHistory,
@@ -8,25 +7,34 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph import StateGraph, START, END
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
-from typing import Annotated, Sequence, TypedDict
+from typing import Annotated
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from pprint import pprint
+from functools import partial
+from typing import Optional, TypedDict, Sequence
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.callbacks import Callbacks
+from langchain_core.prompts import (
+    BasePromptTemplate,
+    # aformat_document,
+    # format_document,
+)
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.tools.simple import Tool
+
 # from langchain.tools.retriever import create_retriever_tool
 from langchain import hub
-from langchain.tools import Tool
-from typing import Annotated, Literal, Sequence, TypedDict
+from typing import Literal
 import ast
 from langchain.schema import Document
 
-
-
+import json
 import re
+
 
 def parse_document_string(doc_string):
     # Use regex to find all instances of metadata and page_content
@@ -37,37 +45,16 @@ def parse_document_string(doc_string):
     for metadata_str, page_content in matches:
         # Convert the metadata string to a dictionary using eval (safe here since it’s controlled)
         metadata = eval(metadata_str)
-        
+
         # Create a Document object
         doc = Document(metadata=metadata, page_content=page_content)
         documents.append(doc)
 
     return documents
 
+
 # Implemented from: https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/#nodes-and-edges
 # and:https://github.com/aelaguiz/update_writer/blob/6910cfa6b7825548f4159d36250b25dec1055e66/src/lib/lib_tools.py#L86
-
-from langchain_core.pydantic_v1 import BaseModel, Field
-class RetrieverInput(BaseModel):
-    """Input to the retriever."""
-
-    query: str = Field(description="query to look up in retriever")
-
-from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
-
-from functools import partial
-from typing import Optional
-
-from langchain_core.callbacks import Callbacks
-from langchain_core.prompts import (
-    BasePromptTemplate,
-    PromptTemplate,
-    # aformat_document,
-    # format_document,
-)
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.tools.simple import Tool
 
 
 class RetrieverInput(BaseModel):
@@ -79,8 +66,10 @@ class RetrieverInput(BaseModel):
 def format_document(doc, document_prompt):
     return doc
 
+
 async def aformat_document(doc, document_prompt):
     return doc
+
 
 def _get_relevant_documents(
     query: str,
@@ -95,13 +84,15 @@ def _get_relevant_documents(
     # )
     docs_list = []
     for doc in docs:
-        docs_list.append({
-            "page_content": doc.page_content,
-            "metadata": doc.metadata,
-            "source": doc.metadata["source"],
-            "page": doc.metadata["page"],
-            "score": doc.metadata["score"],
-        })
+        docs_list.append(
+            {
+                "page_content": doc.page_content,
+                "metadata": doc.metadata,
+                "source": doc.metadata["source"],
+                "page": doc.metadata["page"],
+                "score": doc.metadata["score"],
+            }
+        )
     return docs_list
 
 
@@ -118,15 +109,16 @@ async def _aget_relevant_documents(
     # )
     docs_list = []
     for doc in docs:
-        docs_list.append({
-            "page_content": doc.page_content,
-            "metadata": doc.metadata,
-            "source": doc.metadata["source"],
-            "page": doc.metadata["page"],
-            "score": doc.metadata["score"],
-        })
+        docs_list.append(
+            {
+                "page_content": doc.page_content,
+                "metadata": doc.metadata,
+                "source": doc.metadata["source"],
+                "page": doc.metadata["page"],
+                "score": doc.metadata["score"],
+            }
+        )
     return docs_list
-    
 
 
 def create_retriever_tool(
@@ -197,11 +189,13 @@ class Langgraph_Agentic_RAG(BaseRAG):
         retriever,
         qa_prompt: str,
         rephrase_prompt: str,
+        # summary_prompt: str,
+        # action_prompt: str,
         config: dict,
         callbacks=None,
     ):
         """
-        Initialize the Langgrah_Agentic_RAG class.
+        Initialize the Langgraph_Agentic_RAG class.
 
         Args:
             llm (LanguageModelLike): The language model instance.
@@ -209,6 +203,8 @@ class Langgraph_Agentic_RAG(BaseRAG):
             retriever (BaseRetriever): The retriever instance.
             qa_prompt (str): The QA prompt string.
             rephrase_prompt (str): The rephrase prompt string.
+            summary_prompt (str): The summary prompt string.
+            action_prompt (str): The actionable insights prompt string.
             config (dict): Configuration dictionary.
             callbacks (Optional[list]): Optional list of callbacks.
         """
@@ -224,14 +220,112 @@ class Langgraph_Agentic_RAG(BaseRAG):
 
         self.qa_prompt = qa_prompt
         self.rephrase_prompt = rephrase_prompt
+
+        summary_prompt = """
+        You are a helpful assistant that summarizes the retrieved documents.
+        """
+        action_prompt = """
+        You are a helpful assistant that extracts actionable insights from the context and the user question.
+        """
+        self.summary_prompt = summary_prompt
+        self.action_prompt = action_prompt
         self.config = config
         self.store = {}
 
         # Initialize the agentic graph workflow
         self.graph = self.initialize_graph()
 
+    def follow_up(self, state):
+        """
+        Generate a follow-up question asking for more information if the documents are not relevant.
 
-    def grade_documents(self, state) -> Literal["generate", "rewrite"]:
+        Args:
+            state (dict): The current state
+
+        Returns:
+            dict: The updated state with a follow-up question
+        """
+        print("---FOLLOW UP---")
+        question = state["messages"][0].content
+
+        follow_up_prompt = f"""
+        It seems that the retrieved information is not sufficient or relevant to the user's query:
+        context: {context}
+        \n ------- \n
+        question: {question} 
+        \n ------- \n
+        Ask a follow-up question to get more information or clarify the user's request.
+        """
+
+        # LLM
+        model = ChatOpenAI(temperature=0, model="gpt-4o-mini", streaming=True)
+        follow_up_message = model.invoke([HumanMessage(content=follow_up_prompt)])
+
+        return {"messages": [follow_up_message]}
+
+    def summarize_documents(self, state):
+        """
+        Summarize the retrieved documents to provide a concise overview.
+
+        Args:
+            state (messages): The current state
+
+        Returns:
+            dict: The updated state with the summarized content
+        """
+        print("---SUMMARIZE DOCUMENTS---")
+        messages = state["messages"]
+
+        docs = messages[-1].content
+
+        # Summarization Prompt
+        summary_prompt = PromptTemplate(template=self.summary_prompt)
+
+        # LLM
+        llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0, streaming=True)
+
+        # Chain
+        summarize_chain = summary_prompt | llm | StrOutputParser()
+
+        # Run summarization
+        summary = summarize_chain.invoke({"context": docs})
+        return {"messages": [AIMessage(content=summary)], "context": state["context"]}
+
+    def extract_actionable_insights(self, state):
+        """
+        Extract actionable insights from the retrieved documents and the user question.
+
+        Args:
+            state (messages): The current state
+
+        Returns:
+            dict: The updated state with actionable insights
+        """
+        print("---EXTRACT ACTIONABLE INSIGHTS---")
+        retrieved_docs = state["context"]
+        question = state["messages"][0].content
+
+        # Actionable Insights Prompt
+        self.action_prompt = """
+        You are a helpful assistant that extracts actionable insights from the context and the user question.
+        Here is the user context: {context}
+        Here is the user question: {question}
+        """
+        action_prompt = PromptTemplate(template=self.action_prompt)
+
+        # LLM
+        llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0, streaming=True)
+
+        # Chain
+        action_chain = action_prompt | llm | StrOutputParser()
+
+        # Run actionable insights extraction
+        insights = action_chain.invoke(
+            {"context": retrieved_docs, "question": question}
+        )
+        return {"messages": [AIMessage(content=insights)], "context": state["context"]}
+
+    def grade_documents(self, state) -> Literal["rewrite", "follow_up"]:
         """
         Determines whether the retrieved documents are relevant to the question.
 
@@ -258,7 +352,7 @@ class Langgraph_Agentic_RAG(BaseRAG):
 
         # Prompt
         prompt = PromptTemplate(
-            template="""You are a grader assessing relevance of a retrieved document to a user question. \n 
+            template="""You are a grader assessing relevance of a retrieved document to a user question. \n
             Here is the retrieved document: \n\n {context} \n\n
             Here is the user question: {question} \n
             If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
@@ -274,56 +368,25 @@ class Langgraph_Agentic_RAG(BaseRAG):
 
         question = messages[0].content
         docs = last_message.content
-        
 
-        print(question)
-        # print(docs)
-        # print(type(docs))
-        docs = ast.literal_eval(docs)
-        print(docs)
-        # print(type(docs))
-        # exit()
-        # docs = parse_document_string(docs)  # TODO: This is a hack to convert the string representation of a list of documents to an actual list of documents. Fix later.
-        # doc_contents = [doc.page_content for doc in docs]
         doc_contents_str = str(docs)
-        # print(doc_contents_str)
 
-        scored_result = chain.invoke({"question": question, "context": doc_contents_str})
+        scored_result = chain.invoke(
+            {"question": question, "context": doc_contents_str}
+        )
 
         score = scored_result.binary_score
 
         if score == "yes":
             print("---DECISION: DOCS RELEVANT---")
-            return "generate"
+            return "extract_insights"
 
         else:
             print("---DECISION: DOCS NOT RELEVANT---")
             print(score)
             return "rewrite"
 
-
     ### Nodes
-
-
-    def agent(self, state):
-        """
-        Invokes the agent model to generate a response based on the current state. Given
-        the question, it will decide to retrieve using the retriever tool, or simply end.
-
-        Args:
-            state (messages): The current state
-
-        Returns:
-            dict: The updated state with the agent response appended to messages
-        """
-        print("---CALL AGENT---")
-        messages = state["messages"]
-        model = ChatOpenAI(temperature=0, streaming=True, model="gpt-4o-mini")
-        model = model.bind_tools(self.tools)
-        response = model.invoke(messages)
-        # We return a list, because this will get added to the existing list
-        return {"messages": [response], "context": state["context"]}
-
 
     def rewrite(self, state):
         """
@@ -356,7 +419,6 @@ class Langgraph_Agentic_RAG(BaseRAG):
         model = ChatOpenAI(temperature=0, model="gpt-4o-mini", streaming=True)
         response = model.invoke(msg)
         return {"messages": [response]}
-
 
     def generate(self, state):
         """
@@ -395,6 +457,24 @@ class Langgraph_Agentic_RAG(BaseRAG):
         response = rag_chain.invoke({"context": docs, "question": question})
         return {"messages": [response], "context": docs}
 
+    def agent(self, state):
+        """
+        Invokes the agent model to generate a response based on the current state. Given
+        the question, it will decide to retrieve using the retriever tool, or simply end.
+
+        Args:
+            state (messages): The current state
+
+        Returns:
+            dict: The updated state with the agent response appended to messages
+        """
+        print("---CALL AGENT---")
+        messages = state["messages"]
+        model = ChatOpenAI(temperature=0, streaming=True, model="gpt-4o-mini")
+        model = model.bind_tools(self.tools)
+        response = model.invoke(messages)
+        # We return a list, because this will get added to the existing list
+        return {"messages": [response], "context": state["context"]}
 
     def initialize_graph(self):
         """
@@ -414,35 +494,46 @@ class Langgraph_Agentic_RAG(BaseRAG):
         workflow.add_node("rewrite", self.rewrite)  # Re-writing the question
         workflow.add_node(
             "generate", self.generate
-        )  # Generating a response after we know the documents are relevant
-        # Call agent node to decide to retrieve or not
+        )  # Generate a response after relevance check
+        workflow.add_node(
+            "extract_insights", self.extract_actionable_insights
+        )  # Extract actionable insights
+
+        # Always start with the agent
         workflow.add_edge(START, "agent")
 
-        # Decide whether to retrieve
+        # Agent decides whether to retrieve or not
         workflow.add_conditional_edges(
             "agent",
-            # Assess agent decision
-            tools_condition,
+            tools_condition,  # The condition logic to decide the next step
             {
-                # Translate the condition outputs to nodes in our graph
-                "tools": "retrieve",
+                "tools": "retrieve",  # Go to retrieve if tools_condition meets
                 END: END,
             },
         )
 
-        # Edges taken after the `action` node is called.
+        # After retrieval, go to generate
+        workflow.add_edge("retrieve", "generate")
+
+        # After generating, grade the documents and decide the next steps
         workflow.add_conditional_edges(
-            "retrieve",
-            # Assess agent decision
+            "generate",
             self.grade_documents,
+            {
+                "extract_insights": "extract_insights",  # Go to extract insights if documents are relevant
+                "rewrite": "rewrite",  # Go to rewrite if documents are not relevant
+            },
         )
-        workflow.add_edge("generate", END)
+
+        # After extracting insights, end the process
+        workflow.add_edge("extract_insights", END)
+
+        # If rewriting is necessary, loop back to the agent to decide next steps
         workflow.add_edge("rewrite", "agent")
 
-        # Compile
+        # Compile the workflow
         graph = workflow.compile()
         return graph
-
 
     def add_history_from_list(self, conversation_list):
         """
@@ -495,48 +586,46 @@ class Langgraph_Agentic_RAG(BaseRAG):
         return self.store[(user_id, conversation_id)]
 
     async def invoke(self, user_query, config, **kwargs):
-        inputs = {
-            "messages": [
-                ("user", user_query['input']),
-            ]
-        }
-        for output in self.graph.stream(inputs, {"recursion_limit": 10}):
-            for key, value in output.items():
+        inputs = {"messages": [("user", user_query["input"])]}
+        output = {}
+
+        # Stream outputs from the graph
+        for node_output in self.graph.stream(inputs, {"recursion_limit": 10}):
+            output.update(node_output)
+            for key, value in node_output.items():
                 pprint(f"Output from node '{key}':")
                 pprint("---")
                 pprint(value, indent=2, width=80, depth=None)
             pprint("\n---\n")
 
         print("---END---")
-        res = {}
-        print(output.keys())
-        if 'generate' in output:
-            res["answer"] = output['generate']['messages'][0]
-            res["context"] = ast.literal_eval(output['generate']['context'])
-        elif 'agent' in output:
-            res["answer"] = output['agent']['messages'][0]
-            # res["context"] = ast.literal_eval(output['agent']['context'])
-            # context is None
-            res["context"] = [{
-                "page_content": "No context found",
-                "metadata": {
-                    "source": "No context found",
-                    "page": "No context found",
-                    "score": "No context found",
-                },
-            }]
 
-        if type(res["answer"]) != str:
-            res["answer"] = res["answer"].content
-        # else:
-        #     res["answer"] = output['rewrite']['messages'][0]
-        #     res["context"] = ast.literal_eval(output['rewrite']['context'])
-        # create Document objects
-        docs = []
-        for doc in res["context"]:
-            docs.append(Document(page_content=doc['page_content'], metadata=doc['metadata']))
-        res["context"] = docs
+        # Generalized extraction based on output keys
+        key = next(
+            (
+                k
+                for k in ["extract_insights", "rewrite", "generate", "agent"]
+                if k in output
+            ),
+            None,
+        )
+
+        if key:
+            context_str = output[key].get("context", "[]")
+            # Ensure the context is a string before attempting to load it
+            res = {
+                "answer": output[key]["messages"][0],
+                "context": json.loads(context_str if context_str is not None else "[]"),
+            }
+            if isinstance(res["answer"], AIMessage):
+                res["answer"] = res["answer"].content
+
+            # Convert context to Document objects
+            res["context"] = [
+                Document(page_content=doc["page_content"], metadata=doc["metadata"])
+                for doc in res["context"]
+            ]
+        else:
+            res = {"answer": None, "context": []}
 
         return res
-
-
