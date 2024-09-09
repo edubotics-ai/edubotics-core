@@ -21,6 +21,7 @@ import PyPDF2
 from edubotics_core.dataloader.pdf_readers.base import PDFReader
 from edubotics_core.dataloader.pdf_readers.llama import LlamaParser
 from edubotics_core.dataloader.pdf_readers.gpt import GPTParser
+from edubotics_core.dataloader.repo_readers.github import GithubReader
 from edubotics_core.dataloader.helpers import get_metadata
 from edubotics_core.config.constants import TIMEOUT
 
@@ -85,6 +86,8 @@ class FileReader:
         else:
             self.pdf_reader = PDFReader()
         self.web_reader = HTMLReader()
+        self.github_reader = GithubReader(
+            "Farid-Karimli")
         self.logger.info(
             f"Initialized FileReader with {kind} PDF reader and HTML reader"
         )
@@ -134,6 +137,15 @@ class FileReader:
         else:
             self.logger.error(f"Failed to fetch .tex file from URL: {tex_url}")
             return None
+
+    def read_github_repo(self, github_url: str):
+        repo_contents = self.github_reader.get_repo_contents(github_url)
+        docs = [Document(page_content=content, metadata={'source': file})
+                for file, content in repo_contents.items() if content != None]
+        for i, doc in enumerate(docs):
+            doc.metadata['page'] = i
+
+        return docs
 
 
 class ChunkProcessor:
@@ -348,6 +360,8 @@ class ChunkProcessor:
         try:
             if "youtube" in link:
                 documents = file_reader.read_youtube_transcript(link)
+            elif "github" in link:
+                documents = file_reader.read_github_repo(link)
             else:
                 documents = file_reader.read_html(link)
 
@@ -419,18 +433,20 @@ if __name__ == "__main__":
     import yaml
     import argparse
 
+    CWD = os.getcwd()
+
     parser = argparse.ArgumentParser(description="Process some links.")
     parser.add_argument(
-        "--links", nargs="+", required=True, help="List of links to process."
+        "--links", nargs="+", required=False, help="List of links to process."
     )
     parser.add_argument(
-        "--config_file", type=str, help="Path to the main config file", required=True
+        "--config_file", type=str, help="Path to the main config file", default=os.path.join(CWD, "edubotics_core/config/config.yml")
     )
     parser.add_argument(
         "--project_config_file",
         type=str,
         help="Path to the project config file",
-        required=True,
+        default=os.path.join(CWD, "edubotics_core/config/project_config.yml"),
     )
 
     args = parser.parse_args()
@@ -448,12 +464,20 @@ if __name__ == "__main__":
     # Combine project config with the main config
     config.update(project_config)
 
-    STORAGE_DIR = os.path.join(BASE_DIR, config["vectorstore"]["data_path"])
+    STORAGE_DIR = os.path.join(BASE_DIR, "edubotics_core/" +
+                               config["vectorstore"]["data_path"])
     uploaded_files = [
         os.path.join(STORAGE_DIR, file)
         for file in os.listdir(STORAGE_DIR)
         if file != "urls.txt"
     ]
+
+    urls_file = os.path.join(STORAGE_DIR, "urls.txt")
+    with open(urls_file, "r") as f:
+        weblinks = f.readlines()
+
+    weblinks = [link.strip() for link in weblinks]
+    print(weblinks)
 
     data_loader = DataLoader(config, logger=logger)
     # Just for testing
@@ -463,8 +487,8 @@ if __name__ == "__main__":
         documents,
         document_metadata,
     ) = data_loader.get_chunks(
-        links_to_process,
-        [],
+        uploaded_files,
+        weblinks,
     )
 
     print(document_names[:5])
