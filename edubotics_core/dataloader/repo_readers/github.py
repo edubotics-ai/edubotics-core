@@ -1,11 +1,7 @@
-import os
 import requests
 import base64
-from dotenv import load_dotenv
-from urllib.parse import urlparse
-from .helpers import extract_notebook_content
-
-load_dotenv()
+from edubotics_core.dataloader.repo_readers.helpers import extract_notebook_content
+from edubotics_core.config.constants import GITHUB_PERSONAL_ACCESS_TOKEN
 
 
 class GithubReader:
@@ -18,12 +14,11 @@ class GithubReader:
             personal_access_token (str): The GitHub personal access token for authentication.
         """
         self.username = username
-        self.personal_access_token = os.getenv(
-            'GITHUB_PERSONAL_ACCESS_TOKEN')
+        self.personal_access_token = GITHUB_PERSONAL_ACCESS_TOKEN
 
         self.ignore_files = [
             "README.md",
-            '.DS_Store',
+            ".DS_Store",
             "requirements.txt",
             "LICENSE",
             "COPYING",
@@ -35,12 +30,22 @@ class GithubReader:
         ]
 
         self.ignore_ext = [
-            "csv"
+            "csv",
+            "pyc",
+            "jpg",
+            "png",
+            "gif",
+            "jpeg",
+        ]
+
+        self.repo_allow_list = [
+            "release/",
         ]
 
         if not self.personal_access_token:
             raise Warning(
-                "Personal access token is not set. You may need to use a personal access token with the correct scopes for private repositories.")
+                "Personal access token is not set. You may need to use a personal access token with the correct scopes for private repositories."
+            )
 
     def get_repo_contents(self, url):
         """
@@ -57,7 +62,7 @@ class GithubReader:
         # top level path is ''
         return self.read_github_repo_contents(repo_owner, repo_name, branch)
 
-    def read_github_repo_contents(self, repo_owner, repo_name, branch='main', path=''):
+    def read_github_repo_contents(self, repo_owner, repo_name, branch="main", path=""):
         """
         Fetch the contents of a private GitHub repository.
 
@@ -73,43 +78,52 @@ class GithubReader:
 
         url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{path}?ref={branch}"
         auth_string = f"{self.username}:{self.personal_access_token}"
-        auth_bytes = auth_string.encode('ascii')
-        auth_b64 = base64.b64encode(auth_bytes).decode('ascii')
+        auth_bytes = auth_string.encode("ascii")
+        auth_b64 = base64.b64encode(auth_bytes).decode("ascii")
 
-        headers = {
-            "Authorization": f"Basic {auth_b64}"
-        }
+        headers = {"Authorization": f"Basic {auth_b64}"}
 
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             for item in response.json():
-                if item['type'] == 'file':
+                if item["type"] == "file":
 
-                    file_path = item['path']
+                    file_path = item["path"]
                     extension = file_path.split(".")[-1]
+
+                    if self.repo_allow_list:
+                        if not any(
+                            pattern in file_path for pattern in self.repo_allow_list
+                        ):
+                            continue
                     if file_path in self.ignore_files or extension in self.ignore_ext:
                         continue
 
                     file_content = self.get_github_file_content(
-                        repo_owner, repo_name, file_path, branch)
+                        repo_owner, repo_name, file_path, branch
+                    )
 
                     full_path = f"https://github.com/{repo_owner}/{repo_name}/blob/{branch}/{file_path}"
                     repo_contents[full_path] = file_content
 
-                elif item['type'] == 'dir':
+                elif item["type"] == "dir":
 
-                    sub_dir_path = item['path']
+                    sub_dir_path = item["path"]
                     sub_dir_contents = self.read_github_repo_contents(
-                        repo_owner, repo_name, branch, sub_dir_path)
+                        repo_owner, repo_name, branch, sub_dir_path
+                    )
 
                     repo_contents.update(sub_dir_contents)
         else:
             print(
-                f"Failed to fetch repository contents: {response.status_code}. You may need to use a personal access token with the correct scopes.")
+                f"Failed to fetch repository contents: {response.status_code}. You may need to use a personal access token with the correct scopes."
+            )
         return repo_contents
 
-    def get_github_file_content(self, repo_owner: str, repo_name: str, file_path: str, branch: str = 'main'):
+    def get_github_file_content(
+        self, repo_owner: str, repo_name: str, file_path: str, branch: str = "main"
+    ):
         """
         Fetch the content of a file from a private GitHub repository.
 
@@ -124,16 +138,18 @@ class GithubReader:
         """
         url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}?ref={branch}"
         auth_string = f"{self.username}:{self.personal_access_token}"
-        auth_bytes = auth_string.encode('ascii')
-        auth_b64 = base64.b64encode(auth_bytes).decode('ascii')
+        auth_bytes = auth_string.encode("ascii")
+        auth_b64 = base64.b64encode(auth_bytes).decode("ascii")
 
-        headers = {
-            "Authorization": f"Basic {auth_b64}"
-        }
+        headers = {"Authorization": f"Basic {auth_b64}"}
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            content = response.json()['content']
-            decoded_content = base64.b64decode(content).decode('utf-8')
+            content = response.json()["content"]
+            decoded_content = base64.b64decode(content).decode("utf-8")
+
+            if not decoded_content.strip():
+                print(f"File {file_path} is empty.")
+                return None
 
             if file_path.endswith(".ipynb"):
                 decoded_content = extract_notebook_content(decoded_content)
@@ -158,16 +174,16 @@ class GithubReader:
         from urllib.parse import urlparse
 
         parsed_url = urlparse(url)
-        path_parts = parsed_url.path.strip('/').split('/')
+        path_parts = parsed_url.path.strip("/").split("/")
 
         if len(path_parts) < 2:
             raise ValueError("Invalid GitHub URL")
 
         repo_owner = path_parts[0]
         repo_name = path_parts[1]
-        branch = 'main'  # Default branch
+        branch = "main"  # Default branch
 
-        if len(path_parts) > 3 and path_parts[2] == 'tree':
+        if len(path_parts) > 3 and path_parts[2] == "tree":
             branch = path_parts[3]
 
         return repo_owner, repo_name, branch
@@ -175,18 +191,20 @@ class GithubReader:
 
 # Usage example
 if __name__ == "__main__":
-    username = 'Farid-Karimli'
+    username = "Farid-Karimli"
 
     reader = GithubReader(username)
 
     # Example usage of the parse_github_url method
-    github_url = "https://github.com/tools4ds/fa2024_assignments/tree/main"
+    github_url = "https://github.com/DL4DS/sp2024_notebooks/tree/main"
     owner, name, branch = GithubReader.parse_github_url(github_url)
     print(f"Owner: {owner}, Repo: {name}, Branch: {branch}")
     repo_contents = reader.get_repo_contents(github_url)
 
     # The repo_contents dictionary now contains the contents of all files in the repository
     for file_path, file_content in repo_contents.items():
+        if file_content is None:
+            continue
         print(f"File: {file_path}")
         print(file_content[:20])
         print("---")

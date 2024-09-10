@@ -34,16 +34,18 @@ def extract_notebook_content(notebook_content):
     notebook = nbformat.reads(notebook_content, as_version=4)
     notebook_content = ""
     for cell in notebook.cells:
-        if cell.cell_type == 'markdown' or cell.cell_type == 'raw':
+        if cell.cell_type == "markdown" or cell.cell_type == "raw":
             notebook_content += cell.source + "\n"
-        elif cell.cell_type == 'code':
+        elif cell.cell_type == "code":
             notebook_content += "```python\n" + cell.source + "\n```\n"
     return notebook_content
 
 
 if __name__ == "main":
     # Example usage
-    notebook_url = 'https://raw.githubusercontent.com/parente/nbestimate/master/estimate.ipynb'
+    notebook_url = (
+        "https://raw.githubusercontent.com/parente/nbestimate/master/estimate.ipynb"
+    )
     notebook_content = read_notebook_from_url(notebook_url)
     if notebook_content:
         notebook_text = extract_notebook_content(notebook_content)
