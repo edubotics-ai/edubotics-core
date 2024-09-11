@@ -49,12 +49,16 @@ class VectorStoreManager:
         return logger
 
     def load_files(self):
-        files = os.listdir(self.config["vectorstore"]["data_path"])
+        files = os.listdir(os.path.join(
+            os.getcwd(), "edubotics_core", self.config["vectorstore"]["data_path"]))
         files = [
-            os.path.join(self.config["vectorstore"]["data_path"], file)
-            for file in files
+            os.path.join(os.getcwd(), "edubotics_core",
+                         self.config["vectorstore"]["data_path"], file)
+            for file in files if file != "urls.txt"
         ]
-        urls = get_urls_from_file(self.config["vectorstore"]["url_file_path"])
+        url_file_path = os.path.join(
+            os.getcwd(), 'edubotics_core', self.config["vectorstore"]["url_file_path"])
+        urls = get_urls_from_file(url_file_path)
         if self.config["vectorstore"]["expand_urls"]:
             all_urls = []
             for url in urls:
@@ -103,12 +107,15 @@ class VectorStoreManager:
         start_time = time.time()  # Start time for creating database
         data_loader = DataLoader(self.config, self.logger)
         self.logger.info("Loading data")
-        files, urls = self.load_files()
+        local_files, urls = self.load_files()
+        print(f"Local files: {local_files}")
+        print(f"URLs: {urls}")
         files, webpages = self.webpage_crawler.clean_url_list(urls)
+        files.extend(local_files)
         self.logger.info(f"Number of files: {len(files)}")
         self.logger.info(f"Number of webpages: {len(webpages)}")
         if f"{self.config['vectorstore']['url_file_path']}" in files:
-            files.remove(f"{self.config['vectorstores']['url_file_path']}")  # cleanup
+            files.remove(f"{self.config['vectorstore']['url_file_path']}")  # cleanup
         (
             document_chunks,
             document_names,
@@ -166,15 +173,16 @@ class VectorStoreManager:
 
 def main():
     # Add argument parsing for config files
+    CWD = os.getcwd()
     parser = argparse.ArgumentParser(description="Load configuration files.")
     parser.add_argument(
-        "--config_file", type=str, help="Path to the main config file", required=True
+        "--config_file", type=str, help="Path to the main config file", default=os.path.join(CWD, "edubotics_core/config/config.yml")
     )
     parser.add_argument(
         "--project_config_file",
         type=str,
         help="Path to the project config file",
-        required=True,
+        default=os.path.join(CWD, "edubotics_core/config/project_config.yml")
     )
     args = parser.parse_args()
 

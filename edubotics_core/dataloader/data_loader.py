@@ -22,6 +22,7 @@ from edubotics_core.dataloader.pdf_readers.base import PDFReader
 from edubotics_core.dataloader.pdf_readers.llama import LlamaParser
 from edubotics_core.dataloader.pdf_readers.gpt import GPTParser
 from edubotics_core.dataloader.repo_readers.github import GithubReader
+from edubotics_core.dataloader.repo_readers.helpers import read_notebook_from_file
 from edubotics_core.dataloader.helpers import get_metadata
 from edubotics_core.config.constants import TIMEOUT
 
@@ -146,6 +147,9 @@ class FileReader:
             doc.metadata['page'] = i
 
         return docs
+
+    def read_notebook(self, notebook_path):
+        return [Document(page_content=read_notebook_from_file(notebook_path))]
 
 
 class ChunkProcessor:
@@ -330,6 +334,7 @@ class ChunkProcessor:
             "docx": file_reader.read_docx,
             "srt": file_reader.read_srt,
             "tex": file_reader.read_tex_from_url,
+            "ipynb": file_reader.read_notebook,
         }
         if file_type not in read_methods:
             self.logger.warning(f"Unsupported file type: {file_type}")
@@ -360,7 +365,7 @@ class ChunkProcessor:
         try:
             if "youtube" in link:
                 documents = file_reader.read_youtube_transcript(link)
-            elif "github" in link:
+            elif "github.com" in link:
                 documents = file_reader.read_github_repo(link)
             else:
                 documents = file_reader.read_html(link)

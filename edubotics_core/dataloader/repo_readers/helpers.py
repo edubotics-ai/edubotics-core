@@ -21,6 +21,21 @@ def read_notebook_from_url(notebook_url):
         return None
 
 
+def read_notebook_from_file(notebook_path):
+    """
+    Read the contents of a Jupyter notebook from a file.
+
+    Args:
+        notebook_path (str): The path to the Jupyter notebook file.
+
+    Returns:
+        str: The contents of the Jupyter notebook.
+    """
+    with open(notebook_path, "r") as file:
+        notebook_content = file.read()
+    return extract_notebook_content(notebook_content)
+
+
 def extract_notebook_content(notebook_content):
     """
     Extract the content from a Jupyter notebook, preserving the order of the cells.
@@ -41,10 +56,8 @@ def extract_notebook_content(notebook_content):
     return notebook_content
 
 
-if __name__ == "main":
-    # Example usage
-    notebook_url = 'https://raw.githubusercontent.com/parente/nbestimate/master/estimate.ipynb'
-    notebook_content = read_notebook_from_url(notebook_url)
+if __name__ == "__main__":
+    notebook_path = '/Users/faridkarimli/Desktop/Programming/AI/edubot-core/edubotics_core/storage/data/assignment1(1).ipynb'
+    notebook_content = read_notebook_from_file(notebook_path)
     if notebook_content:
-        notebook_text = extract_notebook_content(notebook_content)
-        print(notebook_text)
+        print(notebook_content)
