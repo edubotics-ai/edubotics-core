@@ -111,7 +111,7 @@ class VectorStoreManager:
         self.logger.info(f"Number of files: {len(files)}")
         self.logger.info(f"Number of webpages: {len(webpages)}")
         if f"{self.config['vectorstore']['url_file_path']}" in files:
-            files.remove(f"{self.config['vectorstores']['url_file_path']}")  # cleanup
+            files.remove(f"{self.config['vectorstore']['url_file_path']}")  # cleanup
         (
             document_chunks,
             document_names,
