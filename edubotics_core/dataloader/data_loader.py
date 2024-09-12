@@ -87,7 +87,7 @@ class FileReader:
         else:
             self.pdf_reader = PDFReader()
         self.web_reader = HTMLReader()
-        self.github_reader = GithubReader("Farid-Karimli")
+        self.github_reader = GithubReader()
         self.logger.info(
             f"Initialized FileReader with {kind} PDF reader and HTML reader"
         )
