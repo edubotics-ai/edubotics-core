@@ -103,8 +103,11 @@ class VectorStoreManager:
         start_time = time.time()  # Start time for creating database
         data_loader = DataLoader(self.config, self.logger)
         self.logger.info("Loading data")
-        files, urls = self.load_files()
+        local_files, urls = self.load_files()
+        print(f"Local files: {local_files}")
+        print(f"URLs: {urls}")
         files, webpages = self.webpage_crawler.clean_url_list(urls)
+        files.extend(local_files)
         self.logger.info(f"Number of files: {len(files)}")
         self.logger.info(f"Number of webpages: {len(webpages)}")
         if f"{self.config['vectorstore']['url_file_path']}" in files:

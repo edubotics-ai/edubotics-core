@@ -1,5 +1,6 @@
 import nbformat
 import requests
+import argparse
 
 
 def read_notebook_from_url(notebook_url):
@@ -19,6 +20,21 @@ def read_notebook_from_url(notebook_url):
     else:
         print(f"Failed to fetch notebook from URL: {response.status_code}")
         return None
+
+
+def read_notebook_from_file(notebook_path):
+    """
+    Read the contents of a Jupyter notebook from a file.
+
+    Args:
+        notebook_path (str): The path to the Jupyter notebook file.
+
+    Returns:
+        str: The contents of the Jupyter notebook.
+    """
+    with open(notebook_path, "r") as file:
+        notebook_content = file.read()
+    return extract_notebook_content(notebook_content)
 
 
 def extract_notebook_content(notebook_content):
@@ -41,12 +57,23 @@ def extract_notebook_content(notebook_content):
     return notebook_content
 
 
-if __name__ == "main":
-    # Example usage
-    notebook_url = (
-        "https://raw.githubusercontent.com/parente/nbestimate/master/estimate.ipynb"
+if __name__ == "__main__":
+    # Initialize argument parser
+    parser = argparse.ArgumentParser(
+        description="Read and print notebook content from a file."
     )
-    notebook_content = read_notebook_from_url(notebook_url)
+
+    # Add notebook_path as an argument
+    parser.add_argument(
+        "notebook_path",
+        type=str,
+        help="The path to the Jupyter notebook file (.ipynb) to read.",
+    )
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Read the notebook path from args
+    notebook_content = read_notebook_from_file(args.notebook_path)
     if notebook_content:
-        notebook_text = extract_notebook_content(notebook_content)
-        print(notebook_text)
+        print(notebook_content)
