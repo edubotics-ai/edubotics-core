@@ -1,11 +1,15 @@
 import requests
 import base64
 from edubotics_core.dataloader.repo_readers.helpers import extract_notebook_content
-from edubotics_core.config.constants import GITHUB_PERSONAL_ACCESS_TOKEN
+from edubotics_core.config.constants import (
+    GITHUB_USERNAME,
+    GITHUB_PERSONAL_ACCESS_TOKEN,
+)
+import argparse
 
 
 class GithubReader:
-    def __init__(self, username, personal_access_token=None):
+    def __init__(self, username=None, personal_access_token=None):
         """
         Initialize the GithubReader with the username and personal access token.
 
@@ -13,8 +17,14 @@ class GithubReader:
             username (str): The GitHub username for authentication.
             personal_access_token (str): The GitHub personal access token for authentication.
         """
-        self.username = username
-        self.personal_access_token = GITHUB_PERSONAL_ACCESS_TOKEN
+        if username is None:
+            self.username = GITHUB_USERNAME
+        else:
+            self.username = username
+        if personal_access_token is None:
+            self.personal_access_token = GITHUB_PERSONAL_ACCESS_TOKEN
+        else:
+            self.personal_access_token = personal_access_token
 
         self.ignore_files = [
             "README.md",
@@ -191,12 +201,16 @@ class GithubReader:
 
 # Usage example
 if __name__ == "__main__":
-    username = "Farid-Karimli"
+    # Set up argparse to get username and github_url as arguments
+    parser = argparse.ArgumentParser(description="Read GitHub repository contents.")
+    parser.add_argument(
+        "--github_url", type=str, help="GitHub repository URL", required=True
+    )
 
-    reader = GithubReader(username)
+    args = parser.parse_args()
+    github_url = args.github_url
 
-    # Example usage of the parse_github_url method
-    github_url = "https://github.com/DL4DS/sp2024_notebooks/tree/main"
+    reader = GithubReader()  # Initialize the GithubReader
     owner, name, branch = GithubReader.parse_github_url(github_url)
     print(f"Owner: {owner}, Repo: {name}, Branch: {branch}")
     repo_contents = reader.get_repo_contents(github_url)
