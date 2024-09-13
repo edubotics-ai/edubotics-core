@@ -49,15 +49,13 @@ class VectorStoreManager:
         return logger
 
     def load_files(self):
-        files = os.listdir(os.path.join(
-            os.getcwd(), "edubotics_core", self.config["vectorstore"]["data_path"]))
+        files = os.listdir(self.config["vectorstore"]["data_path"])
         files = [
-            os.path.join(os.getcwd(), "edubotics_core",
-                         self.config["vectorstore"]["data_path"], file)
+            os.path.join(
+                self.config["vectorstore"]["data_path"], file)
             for file in files if file != "urls.txt"
         ]
-        url_file_path = os.path.join(
-            os.getcwd(), 'edubotics_core', self.config["vectorstore"]["url_file_path"])
+        url_file_path = self.config["vectorstore"]["url_file_path"]
         urls = get_urls_from_file(url_file_path)
         if self.config["vectorstore"]["expand_urls"]:
             all_urls = []
@@ -176,13 +174,13 @@ def main():
     CWD = os.getcwd()
     parser = argparse.ArgumentParser(description="Load configuration files.")
     parser.add_argument(
-        "--config_file", type=str, help="Path to the main config file", default=os.path.join(CWD, "edubotics_core/config/config.yml")
+        "--config_file", type=str, help="Path to the main config file", default=os.path.join(CWD, "config/config.yml")
     )
     parser.add_argument(
         "--project_config_file",
         type=str,
         help="Path to the project config file",
-        default=os.path.join(CWD, "edubotics_core/config/project_config.yml")
+        default=os.path.join(CWD, "config/project_config.yml")
     )
     args = parser.parse_args()
 

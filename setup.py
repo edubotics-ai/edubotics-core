@@ -16,6 +16,10 @@ if git_tag.startswith("v"):
 else:
     version = git_tag
 
+if not version:
+    print("No version found, defaulting to 0.0.0")
+    version = "0.0.0"
+
 setup(
     name="edubotics-core",
     version=version,
