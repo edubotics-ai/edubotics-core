@@ -2,6 +2,8 @@
 
 ## Welcome to edubotics-core by Edubotics AI! 👋
 
+<img src="https://github.com/edubotics-ai/.github/blob/main/assets/images/edubot-mascot.png?raw=true" alt="edubotics-ai" width="30%" height="30%" align="right"/>
+
 ![PyPI](https://img.shields.io/pypi/v/edubotics-core.svg)
 ![GitHub stars](https://img.shields.io/github/stars/edubotics-ai/edubot-core.svg)
 ![License](https://img.shields.io/github/license/edubotics-ai/edubot-core.svg)
@@ -12,6 +14,10 @@
 
 edubotics-core is an open-source Python library that allows developers to build LLM-based chatbots efficiently. It provides a comprehensive set of core modules for vector storage, retrieval, processing, with more to come.
 
+
+[Visit our Github Repo! <span style="margin-left: 5px;">:simple-github:</span>](https://github.com/edubotics-ai/edubotics-core)
+
+
 ## 🛠 Installation
 
 You can install edubotics-core using pip:
@@ -21,14 +27,20 @@ pip install edubotics-core
 ```
 
 ## ✨ Key Features
-- Modular and Extensible: Easily create, modify, and extend to the core modules.
+
+- **Modular and Extensible**: Easily create, modify, and extend core modules to suit your needs.
+  
+    ### Core Modules:
+    - **Data Loader**: Load and preprocess various data formats such as PDFs, webpages, Jupyter Notebooks, and more.
+    - **Vector Storage**: Efficiently store and retrieve vector embeddings for scalable AI applications.
+    - **Retrieval**: Implement a variety of retrieval strategies for enhanced performance.
+    - **Processing**: Manage user inputs, log interactions, and apply custom processing functions.
+    - **Chat**: Integrate RAG (Retrieval-Augmented Generation), Agentic LLMs, and other advanced methods for intelligent and context-aware conversations.
 
 
-## 📚 Applications
-
-To see the full extent of what edubotics-core can do, check out the app templates we have built:
-
-- [Edubotics AI Tutor](https://github.com/edubotics-ai/edubot-app): A Digital AI Teaching Assistant setup for the [DS598](https://dl4ds.github.io/sp2024/) course at Boston University.
+## 📚 Real-World Applications
+See edubotics-core in action:
+- [Edubotics AI Tutor](https://github.com/edubotics-ai/edubot-app): A Digital AI Teaching Assistant setup for the [Deep Learning for Data Science](https://dl4ds.github.io/sp2024/) course at Boston University.
 
 ## 💁 Contributing
 

@@ -1,4 +1,5 @@
-💡 **Please ensure formatting, linting, and security checks pass before submitting a pull request**
+???+ info
+        Please ensure formatting, linting, and security checks pass before submitting a pull request.
 
 ## Code Formatting
 

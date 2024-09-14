@@ -3,7 +3,8 @@ Terrier Tutor is built using [Chainlit](https://docs.chainlit.io/get-started/ove
 
 ## Initial Setup
 
-⚠️ **Create the .env file inside the `code/` directory.**
+???+ warning "Important"
+        Do create your .env file and set the required environment variables as described in the sections below.
 
 ### Set up Python Environment
 
