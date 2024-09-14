@@ -7,7 +7,7 @@ from edubotics_core.chat.langchain.langchain_rag import (
     QuestionGenerator,
 )
 from edubotics_core.chat.langgraph.langgraph_agentic_rag import (
-    Langgraph_Agentic_RAG,
+    LanggraphAgenticRAG,
 )
 
 
@@ -123,7 +123,7 @@ class LLMTutor:
                 callbacks=callbacks,
             )
         elif self.config["llm_params"]["llm_arch"] == "langgraph":
-            self.qa_chain = Langgraph_Agentic_RAG(
+            self.qa_chain = LanggraphAgenticRAG(
                 llm=llm,
                 memory=memory,
                 retriever=retriever,
