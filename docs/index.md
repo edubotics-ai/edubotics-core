@@ -29,13 +29,16 @@ pip install edubotics-core
 ## ✨ Key Features
 
 - **Modular and Extensible**: Easily create, modify, and extend core modules to suit your needs.
-  
-    ### Core Modules:
-    - **Data Loader**: Load and preprocess various data formats such as PDFs, webpages, Jupyter Notebooks, and more.
-    - **Vector Storage**: Efficiently store and retrieve vector embeddings for scalable AI applications.
-    - **Retrieval**: Implement a variety of retrieval strategies for enhanced performance.
-    - **Processing**: Manage user inputs, log interactions, and apply custom processing functions.
-    - **Chat**: Integrate RAG (Retrieval-Augmented Generation), Agentic LLMs, and other advanced methods for intelligent and context-aware conversations.
+
+    ### 🌟 Core Modules:
+    - **📂 Data Loader**: Easily load and preprocess various data formats such as PDFs, webpages, Jupyter Notebooks, Github repos, and more, ensuring smooth data integration.
+    - **🗃️ Vector Storage**: Efficiently store and retrieve vector embeddings for scalable performance in AI applications.
+    - **🔍 Retrieval**: Implement flexible retrieval strategies to deliver fast and accurate responses in your AI models.
+    - **🛠️ Processing**: Manage user inputs, log interactions, and apply custom processing functions to maintain streamlined workflows.
+    - **💬 Chat**: Enable intelligent, context-aware conversations using RAG (Retrieval-Augmented Generation), Agentic LLMs, and more.
+
+
+
 
 
 ## 📚 Real-World Applications
