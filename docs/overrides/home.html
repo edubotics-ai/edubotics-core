@@ -83,69 +83,57 @@
     </div>
 </section>
 
-<!-- Installation Section -->
 <hr class="section-divider" />
 <section class="installation">
     <h2 class="section-heading">Get Started with Edubotics-Core</h2>
-    <p class="section-description">Follow these simple steps to install and configure Edubotics-Core for your projects.</p>
+    <p class="section-description">Install and configure Edubotics-Core for your project in a few simple steps.</p>
 
     <!-- Step 1: Install the package -->
-    <div class="instruction-box">
-        <div class="step-header">
-            <span class="step-number">Step 1</span>
-            <h3 class="step-title">Install The Edubotics-Core Package</h3>
-        </div>
-        <p class="instructions">Run the following command in your terminal to install Edubotics-Core:</p>
-        <div class="minimal-command">
+    <div class="step">
+        <h3 class="step-title">Install the Edubotics-Core Package</h3>
+        <p class="instructions">Run the following command in your terminal:</p>
+        <div class="command-box">
             <pre><code>pip install edubotics-core</code></pre>
         </div>
     </div>
+    
+    <hr class="step-divider" />
 
-    <!-- Step 2: Setup environment variables -->
-    <div class="instruction-box">
-        <div class="step-header">
-            <span class="step-number">Step 2</span>
-            <h3 class="step-title">Set Up Your Environment Variables</h3>
-        </div>
-        <p class="instructions">Ensure your environment is correctly set up:</p>
-        <ul class="instructions-list">
-            <li>
-                Follow the <a href="http://docs.edubotics.ai/getting%20started/setup/" target="_blank">setup instructions</a> to setup your Environment Variables.
-            </li>
-        </ul>
+    <!-- Step 2: Set up environment variables -->
+    <div class="step">
+        <h3 class="step-title">Set Up Your Environment Variables</h3>
+        <p class="instructions">Make sure your environment is properly configured by following the <a href="http://docs.edubotics.ai/getting%20started/setup/" target="_blank">setup guide</a>.</p>
     </div>
+
+    <hr class="step-divider" />
 
     <!-- Step 3: Add configuration files -->
-    <div class="instruction-box">
-        <div class="step-header">
-            <span class="step-number">Step 3</span>
-            <h3 class="step-title">Add The Necessary Configuration Files</h3>
-        </div>
+    <div class="step">
+        <h3 class="step-title">Add Configuration Files</h3>
+        <p class="instructions">Place these configuration files in your project directory:</p>
         <ul class="instructions-list">
-            <li>config.yml — LLM-related configuration settings</li>
-            <li>project_config.yml — App-related configuration settings</li>
+            <li>config.yml — For LLM related configuration</li>
+            <li>project_config.yml — For App related configuration</li>
         </ul>
     </div>
 
+    <hr class="step-divider" />
+
     <!-- Step 4: Create the vectorstore -->
-    <div class="instruction-box">
-        <div class="step-header">
-            <span class="step-number">Step 4</span>
-            <h3 class="step-title">Create Your Vectorstore</h3>
-        </div>
-        <p class="instructions">Run the command below to create your vectorstore:</p>
-        <div class="minimal-command">
+    <div class="step">
+        <h3 class="step-title">Create Your Vectorstore</h3>
+        <p class="instructions">Initialize the vectorstore using this command:</p>
+        <div class="command-box">
             <pre><code>vectorstore_creator --config_file config.yml --project_config_file project_config.yml</code></pre>
         </div>
     </div>
 
+    <hr class="step-divider" />
+
     <!-- Step 5: Get Started -->
-    <div class="instruction-box">
-        <div class="step-header">
-            <span class="step-number">Step 5</span>
-            <h3 class="step-title">Get Started With Building Your Application</h3>
-        </div>
-        <p class="instructions">At this step you will have everything setup to start building your App! Checkout the examples we put together below.</p>
+    <div class="step">
+        <h3 class="step-title">Start Building Your Application</h3>
+        <p class="instructions">You’re ready to start developing! Check out the <a href="#">examples</a> to get inspired.</p>
     </div>
 </section>
 

@@ -256,52 +256,6 @@ section {
     color: var(--hover-gray);
 }
 
-/* Responsive Design for Smaller Screens */
-@media (max-width: 768px) {
-    .hero h1 {
-        font-size: 2.5rem;
-    }
-
-    .hero p {
-        font-size: 1.0rem; /* Maintain uniform font size */
-    }
-
-    .hero-image {
-        max-width: 150px;
-    }
-
-    .cta-buttons {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .section-heading {
-        font-size: 2rem;
-    }
-
-    .section-description {
-        font-size: 1.0rem; /* Uniform font size for small screens */
-    }
-
-    .features-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Mobile Adjustments */
-@media (max-width: 480px) {
-    .hero h1 {
-        font-size: 2rem;
-    }
-
-    .section-heading {
-        font-size: 1.75rem;
-    }
-
-    .section-description {
-        font-size: 1.0rem; /* Keep uniform font size */
-    }
-}
 
 /* Minimal Command Style */
 /* Instructions Class for Additional Setup Text */
@@ -319,7 +273,7 @@ section {
 .instructions-list {
     font-family: 'Poppins', sans-serif;
     font-size: 1.0rem; /* Uniform font size for lists */
-    color: #555;
+    color: var(--primary-blue);
     margin-top: 1rem;
     margin-bottom: 1.5rem;
     line-height: 1.6;
@@ -342,7 +296,7 @@ section {
 .instructions-list a {
     font-family: 'Poppins', sans-serif;
     font-size: 1.0rem; /* Uniform font size */
-    color: #3498db; /* Set the desired hyperlink color */
+    color: var(--primary-blue);
     text-decoration: none; /* Remove underline */
     font-weight: 600; /* Make the link bold */
     transition: color 0.3s ease; /* Smooth transition on hover */
@@ -530,4 +484,78 @@ section {
     height: 100%;
     object-fit: contain; /* Ensures logos maintain aspect ratio and fit within the given dimensions */
     padding: 5px; /* Optional padding for spacing around the logo */
+}
+
+
+/* Installation Section Styling */
+.installation {
+    background-color: var(--secondary-gray);
+    padding: 50px;
+    text-align: left;
+}
+
+
+/* Step Styling */
+.installation .step {
+    margin-bottom: 40px;
+}
+
+.installation .step-title {
+    font-size: 1.0rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+}
+
+.installation .instructions {
+    font-size: 1rem;
+    color: #444;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+/* Divider Styling */
+.installation .step-divider {
+    border: 0;
+    height: 1px;
+    background: var(--light-gray);  /* Subtle divider color */
+    margin: 30px 0;  /* Provides separation between steps */
+}
+
+/* Command Box Styling */
+.installation .command-box {
+    background-color: #f7f7f7;
+    padding: 15px;
+    border-left: 4px solid var(--primary-blue);
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1rem;
+    margin-top: 15px;
+}
+
+.installation .command-box pre {
+    white-space: pre-wrap;
+    margin: 0;
+    color: #333;
+}
+
+/* Instructions List Styling */
+.installation .instructions-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 10px;
+    line-height: 1.6;
+}
+
+.installation .instructions-list li {
+    margin-bottom: 10px;
+    font-size: 1rem;
+    color: #444;
+}
+
+
+
+.installation .instructions-list strong {
+    color: var(--primary-blue);
+    font-weight: 600;
 }
