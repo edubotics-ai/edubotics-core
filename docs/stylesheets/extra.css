@@ -431,7 +431,6 @@ section {
     border: 2px solid var(--primary-blue);
     border-radius: 10px;
     margin: 2rem auto;
-    max-width: 800px; /* Optional: Limit width for readability */
 }
 
 .wip-docs h2 {
