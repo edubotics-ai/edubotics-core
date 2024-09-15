@@ -493,7 +493,6 @@ section {
 }
 
 /* Tech Stack Section */
-/* Tech Stack Section */
 .tech-stack {
     padding: 40px 20px;
     text-align: center;
@@ -502,7 +501,7 @@ section {
 
 .tech-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
     align-items: center;
 }
@@ -523,7 +522,8 @@ section {
 }
 
 .tech-logo {
-    max-width: 100%;
-    height: auto;
+    width: 150px;  /* Set fixed width */
+    height: 80px;  /* Set fixed height to ensure uniformity */
+    object-fit: contain; /* Ensures logos maintain aspect ratio and fit within the given dimensions */
     padding: 10px; /* Padding around logos */
 }
