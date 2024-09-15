@@ -468,3 +468,26 @@ section {
     margin-left: 0.5rem;
     color: #ffffff !important; /* Force the icon color to be white */
 }
+
+/* Work in Progress Section */
+.wip-docs {
+    text-align: center;
+    background-color: var(--secondary-gray);
+    padding: 4rem 2rem;
+    border: 2px solid var(--primary-blue);
+    border-radius: 10px;
+    margin: 2rem auto;
+    max-width: 800px; /* Optional: Limit width for readability */
+}
+
+.wip-docs h2 {
+    font-size: 2.5rem;
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+}
+
+.wip-docs p {
+    font-size: 1.2rem;
+    color: var(--dark-gray);
+    line-height: 1.6;
+}
