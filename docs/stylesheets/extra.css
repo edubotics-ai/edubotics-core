@@ -493,6 +493,7 @@ section {
 }
 
 /* Tech Stack Section */
+/* Tech Stack Section */
 .tech-stack {
     padding: 40px 20px;
     text-align: center;
@@ -504,15 +505,18 @@ section {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
     align-items: center;
+    justify-items: center;
 }
 
 .tech-item {
-    padding: 10px; /* Small padding */
+    width: 180px; /* Fixed width for the container */
+    height: 80px; /* Fixed height for the container */
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: #fff;
     border-radius: 8px;
+    padding: 10px; /* Small padding */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -522,8 +526,8 @@ section {
 }
 
 .tech-logo {
-    width: 150px;  /* Set fixed width */
-    height: 80px;  /* Set fixed height to ensure uniformity */
+    width: 100%; /* Make the logo fill the container */
+    height: 100%;
     object-fit: contain; /* Ensures logos maintain aspect ratio and fit within the given dimensions */
-    padding: 10px; /* Padding around logos */
+    padding: 5px; /* Optional padding for spacing around the logo */
 }
