@@ -436,6 +436,42 @@ section {
     line-height: 1.6;
 }
 
+/* Hero Section */
+.hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--secondary-gray);
+    border-bottom: 1px solid var(--light-gray);
+    padding: 4rem 1rem;
+    text-align: center; /* Make sure text is centered */
+}
+
+/* Hero Container */
+.hero-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Ensure content is centered */
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* Centering the Image in the Hero Section */
+.hero-image {
+    display: flex;
+    justify-content: center; /* Ensure image is centered */
+    width: 100%;
+    margin: 2rem 0;
+}
+
+.hero-image img {
+    max-width: 250px; /* Control the max width */
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+}
+
 /* Responsive Design for Smaller Screens */
 @media (max-width: 768px) {
     .hero h1 {
@@ -443,42 +479,12 @@ section {
     }
 
     .hero p {
-        font-size: 1.0rem; /* Maintain uniform font size */
+        font-size: 1.0rem;
     }
 
     .hero-image {
-        max-width: 150px;
-    }
-
-    .cta-buttons {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .section-heading {
-        font-size: 2rem;
-    }
-
-    .section-description {
-        font-size: 1.0rem; /* Uniform font size for small screens */
-    }
-
-    .features-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Mobile Adjustments */
-@media (max-width: 480px) {
-    .hero h1 {
-        font-size: 2rem;
-    }
-
-    .section-heading {
-        font-size: 1.75rem;
-    }
-
-    .section-description {
-        font-size: 1.0rem; /* Keep uniform font size */
+        display: flex; 
+        justify-content: center; /* Ensure image is centered on small screens */
+        max-width: 150px; /* Reduce the width on small screens */
     }
 }
