@@ -1,0 +1,560 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Primary Blue Color Variable */
+:root {
+    --primary-blue: #3498db; /* Consistent blue color */
+    --secondary-gray: #f5f5f5;
+    --dark-gray: #333;
+    --light-gray: #e6e6e6;
+    --hover-gray: #2c3e50;
+}
+
+/* Body Styling */
+body {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.0rem; /* Set global font size */
+    line-height: 1.8;
+    background-color: var(--secondary-gray);
+    color: var(--dark-gray);
+}
+
+/* Global Layout */
+section {
+    padding: 4rem 2rem;
+    width: 100%;
+}
+
+/* Section Divider */
+.section-divider {
+    height: 2px;
+    background-color: var(--light-gray);
+    margin: 4rem 0;
+}
+
+/* Hero Section */
+.hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--secondary-gray);
+    border-bottom: 1px solid var(--light-gray);
+    padding: 4rem 1rem;
+    text-align: left;
+}
+
+.hero-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* Centering the Image in the Hero Section */
+.hero-image {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.hero-image img {
+    width: 100%;
+    height: auto;
+    max-width: 250px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+}
+
+/* Hero Content */
+.hero-content {
+    max-width: 800px;
+    margin-bottom: 2rem;
+    padding: 0 1rem;
+}
+
+.hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.hero .welcome-message {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.2rem;
+    color: #333;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+    line-height: 1.2;
+}
+
+.hero .highlight {
+    position: relative;
+    display: inline-block;
+    font-weight: 600;
+    font-size: 4rem;
+    color: #2c3e50;
+}
+
+.hero .highlight::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 2px;
+    background-color: #e74c3c;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s ease;
+}
+
+.hero .highlight:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+/* Animation for glow effect */
+@keyframes textGlow {
+    from {
+        text-shadow: 0 0 10px var(--primary-blue), 0 0 20px var(--primary-blue), 0 0 30px var(--primary-blue);
+    }
+    to {
+        text-shadow: 0 0 20px #2ecc71, 0 0 30px #2ecc71, 0 0 40px #2ecc71;
+    }
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: var(--primary-blue); /* Use the consistent blue color */
+    margin-bottom: 0.5rem;
+    font-style: italic;
+}
+
+.hero p {
+    font-size: 1.0rem; /* Set paragraph text size */
+    color: #555;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+/* CTA Buttons */
+.cta-buttons {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.cta-button {
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-size: 1.0rem; /* Set button text size */
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    will-change: background-color, transform;
+}
+
+.cta-button.primary {
+    background-color: var(--primary-blue);
+    color: #fff;
+}
+
+.cta-button.primary:hover {
+    background-color: #2c3e50;
+    transform: scale(1.05);
+}
+
+.cta-button.secondary {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.cta-button.secondary:hover {
+    background-color: #f1f1f1;
+    transform: scale(1.05);
+}
+
+/* Section Headings */
+.section-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.7rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--primary-blue); /* Use consistent blue for headings */
+    margin-bottom: 1.5rem;
+}
+
+.section-description {
+    text-align: center;
+    font-size: 1.8rem;
+    color: #555;
+    margin-bottom: 2.5rem;
+}
+
+/* Key Features Section */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.feature-item {
+    padding: 2rem;
+    background-color: #fff;
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    will-change: transform, box-shadow;
+}
+
+.feature-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Installation and Applications Sections */
+.installation, .applications {
+    text-align: center;
+    background-color: var(--secondary-gray);
+    padding: 4rem 2rem;
+}
+
+.app-item {
+    font-size: 1.0rem; /* Uniform font size for app items */
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+}
+
+.app-item:hover {
+    transform: translateY(-5px);
+}
+
+.app-item a {
+    color: var(--primary-blue); /* Use consistent blue for links */
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.app-item a:hover {
+    color: var(--hover-gray);
+}
+
+
+/* Minimal Command Style */
+/* Instructions Class for Additional Setup Text */
+.instructions {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.0rem; /* Set uniform font size */
+    color: #333;
+    margin-top: 1.5rem;
+    line-height: 1.8;
+    font-style: normal; /* Remove italic for cleaner look */
+    text-align: left;
+}
+
+/* Instruction List Style */
+.instructions-list {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.0rem; /* Uniform font size for lists */
+    color: var(--primary-blue);
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.instructions-list li {
+    margin-bottom: 0.75rem; /* Space between list items */
+    padding-left: 1.5rem; /* Indent for list items */
+    position: relative; /* For custom bullet icon */
+}
+
+.instructions-list strong {
+    color: var(--primary-blue); /* Highlight the filenames in blue */
+    font-weight: 600;
+    font-size: 1.05rem; /* Slightly larger font size */
+}
+
+/* Style for hyperlinks inside instruction list */
+.instructions-list a {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.0rem; /* Uniform font size */
+    color: var(--primary-blue);
+    text-decoration: none; /* Remove underline */
+    font-weight: 600; /* Make the link bold */
+    transition: color 0.3s ease; /* Smooth transition on hover */
+}
+
+.instructions-list a:hover {
+    color: #2c3e50; /* Change color on hover */
+    text-decoration: underline; /* Optional: Add underline on hover */
+}
+
+/* Minimal Command Style */
+.minimal-command {
+    background-color: #f5f5f5;
+    color: #333;
+    padding: 1rem 1.5rem;
+    border-radius: 6px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.0rem; /* Uniform font size */
+    border-left: 4px solid var(--primary-blue); /* Consistent blue accent */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    box-sizing: border-box;
+    margin: 1.5rem 0;
+}
+
+.minimal-command pre {
+    white-space: pre-wrap;
+    margin: 0;
+}
+
+.minimal-command code {
+    display: block;
+    max-width: 100%;
+    margin: 0 auto;
+    text-align: left;
+}
+
+/* Instruction Box Style */
+.instruction-box {
+    background-color: #f9fafc;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.instruction-box:hover {
+    transform: translateY(-3px);
+}
+
+/* Real-World Applications Section */
+.applications {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background-color: var(--secondary-gray);
+}
+
+.app-item {
+    background-color: #fff;
+    border: 1px solid var(--light-gray);
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.app-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.app-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.app-image {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.app-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+}
+
+.app-description {
+    font-size: 1.15rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+    max-width: 600px;
+    text-align: center;
+}
+
+.learn-more {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--primary-blue); /* Ensure the background is visible */
+    color: #ffffff !important; /* Force the text to be white */
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.learn-more:hover {
+    background-color: var(--hover-gray); /* Darken the background on hover */
+    transform: translateY(-3px);
+}
+
+.learn-more i {
+    margin-left: 0.5rem;
+    color: #ffffff !important; /* Force the icon color to be white */
+}
+
+/* Work in Progress Section */
+.wip-docs {
+    text-align: center;
+    background-color: var(--secondary-gray);
+    padding: 4rem 2rem;
+    border: 2px solid var(--primary-blue);
+    border-radius: 10px;
+    margin: 2rem auto;
+}
+
+.wip-docs h2 {
+    font-size: 2.5rem;
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+}
+
+.wip-docs p {
+    font-size: 1.2rem;
+    color: var(--dark-gray);
+    line-height: 1.6;
+}
+
+/* Tech Stack Section */
+/* Tech Stack Section */
+.tech-stack {
+    padding: 40px 20px;
+    text-align: center;
+    background-color: #f9f9f9;
+}
+
+.tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    align-items: center;
+    justify-items: center;
+}
+
+.tech-item {
+    width: 180px; /* Fixed width for the container */
+    height: 80px; /* Fixed height for the container */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 10px; /* Small padding */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tech-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.tech-logo {
+    width: 100%; /* Make the logo fill the container */
+    height: 100%;
+    object-fit: contain; /* Ensures logos maintain aspect ratio and fit within the given dimensions */
+    padding: 5px; /* Optional padding for spacing around the logo */
+}
+
+
+/* Installation Section Styling */
+.installation {
+    background-color: var(--secondary-gray);
+    padding: 50px;
+    text-align: left;
+}
+
+
+/* Step Styling */
+.installation .step {
+    margin-bottom: 40px;
+}
+
+.installation .step-title {
+    font-size: 1.0rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+}
+
+.installation .instructions {
+    font-size: 1rem;
+    color: #444;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+/* Divider Styling */
+.installation .step-divider {
+    border: 0;
+    height: 1px;
+    background: var(--light-gray);  /* Subtle divider color */
+    margin: 30px 0;  /* Provides separation between steps */
+}
+
+/* Command Box Styling */
+.installation .command-box {
+    background-color: #f7f7f7;
+    padding: 15px;
+    border-left: 4px solid var(--primary-blue);
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1rem;
+    margin-top: 15px;
+}
+
+.installation .command-box pre {
+    white-space: pre-wrap;
+    margin: 0;
+    color: #333;
+}
+
+/* Instructions List Styling */
+.installation .instructions-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 10px;
+    line-height: 1.6;
+}
+
+.installation .instructions-list li {
+    margin-bottom: 10px;
+    font-size: 1rem;
+    color: #444;
+}
+
+
+
+.installation .instructions-list strong {
+    color: var(--primary-blue);
+    font-weight: 600;
+}

@@ -1,0 +1,200 @@
+{% extends "main.html" %}
+
+{% block tabs %}
+{{ super() }}
+<link rel="stylesheet" href="extras.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"> <!-- Added Font Awesome -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet"> <!-- Added Playfair Display font -->
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1 class="welcome-message">Welcome to <span class="highlight">Edubotics-Core</span></h1>
+            <div class="hero-image">
+                <img src="assets/edubot-mascot.png" alt="Edubotics AI Mascot">
+            </div>
+            <p class="subtitle">Empower Education with AI: Create Intelligent Chatbots Quickly and Efficiently 🚀</p>
+            <p>edubotics-core is an open-source Python library that allows developers to build LLM-based chatbots efficiently. It provides a comprehensive set of core modules for vector storage, retrieval, processing, with more to come.</p>
+            <div class="cta-buttons">
+                <a class="cta-button primary" href="https://github.com/edubotics-ai/edubotics-core">
+                    <i class="fab fa-github"></i> Visit GitHub Repo
+                </a>
+                <a class="cta-button secondary" href="{{ page.next_page.url | url }}">
+                    <i class="fas fa-play"></i> Get Started
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="section-divider" />
+<section class="wip-docs">
+    <h2 class="section-heading">Documentation Status</h2>
+    <p class="section-description">Please note that our documentation is currently a work in progress. We're actively working to provide more comprehensive guides and resources.</p>
+</section>
+
+
+
+<!-- Key Features Section -->
+<hr class="section-divider" />
+<section class="features">
+    <h2 class="section-heading">Key Features</h2>
+    <p class="section-description">Explore the core capabilities of Edubotics-Core</p>
+    <div class="features-grid">
+        <article class="feature-item">
+            <!-- Data Loader Font Awesome Icon -->
+            <i class="fas fa-file-upload fa-3x"></i>
+            <h3>Data Loader</h3>
+            <p>Easily load and preprocess various data formats such as PDFs, webpages, Jupyter Notebooks, GitHub repos, and more, ensuring smooth data integration.</p>
+        </article>
+        <article class="feature-item">
+            <!-- Vector Storage Font Awesome Icon -->
+            <i class="fas fa-database fa-3x"></i>
+            <h3>Vector Storage</h3>
+            <p>Efficiently store and retrieve vector embeddings for scalable performance in AI applications.</p>
+        </article>
+        <article class="feature-item">
+            <!-- Retrieval Font Awesome Icon -->
+            <i class="fas fa-search fa-3x"></i>
+            <h3>Retrieval</h3>
+            <p>Implement flexible retrieval strategies to deliver fast and accurate responses in your AI models.</p>
+        </article>
+        <article class="feature-item">
+            <!-- Processing Font Awesome Icon -->
+            <i class="fas fa-sync-alt fa-3x"></i>
+            <h3>Processing</h3>
+            <p>Manage user inputs, log interactions, and apply custom processing functions to maintain streamlined workflows.</p>
+        </article>
+        <article class="feature-item">
+            <!-- Chat Font Awesome Icon -->
+            <i class="fas fa-comments fa-3x"></i>
+            <h3>Chat</h3>
+            <p>Enable intelligent, context-aware conversations using RAG (Retrieval-Augmented Generation), Agentic LLMs, and more.</p>
+        </article>
+        <article class="feature-item">
+            <!-- Placeholder Font Awesome Icon -->
+            <i class="fas fa-plus-circle fa-3x"></i>
+            <h3>More to come...</h3>
+            <p>Exciting new features are on the way to further enhance your AI workflows.</p>
+        </article>
+    </div>
+</section>
+
+<hr class="section-divider" />
+<section class="installation">
+    <h2 class="section-heading">Get Started with Edubotics-Core</h2>
+    <p class="section-description">Install and configure Edubotics-Core for your project in a few simple steps.</p>
+
+    <!-- Step 1: Install the package -->
+    <div class="step">
+        <h3 class="step-title">Install the Edubotics-Core Package</h3>
+        <p class="instructions">Run the following command in your terminal:</p>
+        <div class="command-box">
+            <pre><code>pip install edubotics-core</code></pre>
+        </div>
+    </div>
+    
+    <hr class="step-divider" />
+
+    <!-- Step 2: Set up environment variables -->
+    <div class="step">
+        <h3 class="step-title">Set Up Your Environment Variables</h3>
+        <p class="instructions">Make sure your environment is properly configured by following the <a href="http://docs.edubotics.ai/getting%20started/setup/" target="_blank">setup guide</a>.</p>
+    </div>
+
+    <hr class="step-divider" />
+
+    <!-- Step 3: Add configuration files -->
+    <div class="step">
+        <h3 class="step-title">Add Configuration Files</h3>
+        <p class="instructions">Place these configuration files in your project directory:</p>
+        <ul class="instructions-list">
+            <li>config.yml — For LLM related configuration</li>
+            <li>project_config.yml — For App related configuration</li>
+        </ul>
+    </div>
+
+    <hr class="step-divider" />
+
+    <!-- Step 4: Create the vectorstore -->
+    <div class="step">
+        <h3 class="step-title">Create Your Vectorstore</h3>
+        <p class="instructions">Initialize the vectorstore using this command:</p>
+        <div class="command-box">
+            <pre><code>vectorstore_creator --config_file config.yml --project_config_file project_config.yml</code></pre>
+        </div>
+    </div>
+
+    <hr class="step-divider" />
+
+    <!-- Step 5: Get Started -->
+    <div class="step">
+        <h3 class="step-title">Start Building Your Application</h3>
+        <p class="instructions">You’re ready to start developing! Check out the <a href="#">examples</a> to get inspired.</p>
+    </div>
+</section>
+
+
+
+
+<!-- Real-World Applications Section -->
+<hr class="section-divider" />
+<section class="applications">
+    <h2 class="section-heading">Real-World Applications</h2>
+    <p class="section-description">Explore how Edubotics-Core is being used in real-world AI projects</p>
+    
+    <div class="app-item">
+        <div class="app-content">
+            <img src="assets/ai_tutor_page.png" alt="Edubotics AI Tutor" class="app-image">
+            <h3 class="app-title">Edubotics AI Tutor</h3>
+            <a href="https://github.com/edubotics-ai/edubot-app" class="learn-more">
+                Learn More
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<hr class="section-divider" />
+<section class="tech-stack">
+    <h2 class="section-heading">Tech Stack</h2>
+    <p class="section-description">Explore the Technologies used in Edubotics-Core</p>
+    <div class="tech-grid">
+        <article class="tech-item">
+            <img src="https://github.com/langchain-ai/langchain/blob/master/docs/static/img/brand/wordmark.png?raw=true" alt="LangChain Logo" class="tech-logo">
+        </article>
+        <article class="tech-item">
+            <img src="https://raw.githubusercontent.com/Chainlit/literalai-docs/main/logo/logo-light.svg" alt="Literal AI Logo" class="tech-logo">
+        </article>
+        <article class="tech-item">
+            <img src="https://raw.githubusercontent.com/Chainlit/docs/a938021bfa9802ba1d8a3c9592c546916d21a148/logo/light.svg" alt="LangGraph Logo" class="tech-logo">
+        </article>
+        <article class="tech-item">
+            <img src="https://raw.githubusercontent.com/langchain-ai/langgraph/55d79b150744f1faf5039f44e9055ef2527bbfa2/docs/docs/static/wordmark_dark.svg" alt="LangGraph Logo" class="tech-logo"> 
+        </article>
+        <article class="tech-item">
+            <img src="https://www.llamaindex.ai/llamaindex.svg" alt="LlamaIndex Logo" class="tech-logo">
+        </article>
+        <article class="tech-item">
+            <img src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" alt="FastAPI Logo" class="tech-logo">
+        </article>
+        <article class="tech-item">
+            <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.svg" alt="Hugging Face Logo" class="tech-logo">
+        </article>
+        <article class="tech-item">
+            <img src="https://www.trulens.org/assets/images/Neural_Network_Explainability.png" alt="TruLens Logo" class="tech-logo">
+        </article>
+        <article class="tech-item">
+            <img src="https://user-images.githubusercontent.com/1991296/230134379-7181e485-c521-4d23-a0d6-f7b3b61ba524.png" alt="Llama.cpp Logo" class="tech-logo">
+        </article>
+    </div>
+</section>
+
+
+
+
+
+{% endblock %}
