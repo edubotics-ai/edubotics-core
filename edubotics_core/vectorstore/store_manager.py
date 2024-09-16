@@ -51,10 +51,12 @@ class VectorStoreManager:
     def load_files(self):
         files = os.listdir(self.config["vectorstore"]["data_path"])
         files = [
-            os.path.join(self.config["vectorstore"]["data_path"], file)
-            for file in files
+            os.path.join(
+                self.config["vectorstore"]["data_path"], file)
+            for file in files if file != "urls.txt"
         ]
-        urls = get_urls_from_file(self.config["vectorstore"]["url_file_path"])
+        url_file_path = self.config["vectorstore"]["url_file_path"]
+        urls = get_urls_from_file(url_file_path)
         if self.config["vectorstore"]["expand_urls"]:
             all_urls = []
             for url in urls:
@@ -171,13 +173,13 @@ def main():
     # Add argument parsing for config files
     parser = argparse.ArgumentParser(description="Load configuration files.")
     parser.add_argument(
-        "--config_file", type=str, help="Path to the main config file", required=True
+        "--config_file", type=str, help="Path to the main config file", default=os.path.join(CWD, "config/config.yml")
     )
     parser.add_argument(
         "--project_config_file",
         type=str,
         help="Path to the project config file",
-        required=True,
+        default=os.path.join(CWD, "config/project_config.yml")
     )
     args = parser.parse_args()
 
