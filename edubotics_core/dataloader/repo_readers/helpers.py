@@ -1,5 +1,6 @@
 import nbformat
 import requests
+import os
 
 
 def read_notebook_from_url(notebook_url):
@@ -31,8 +32,12 @@ def read_notebook_from_file(notebook_path):
     Returns:
         str: The contents of the Jupyter notebook.
     """
-    with open(notebook_path, "r") as file:
-        notebook_content = file.read()
+    if not os.path.exists(notebook_path):
+        print(f"File {notebook_path} does not exist. Using filepath as URL instead.")
+        notebook_content = read_notebook_from_url(notebook_path)
+    else:
+        with open(notebook_path, "r") as file:
+            notebook_content = file.read()
     return extract_notebook_content(notebook_content)
 
 

@@ -57,9 +57,10 @@ class HTMLReader:
 
             resp = requests.head(absolute_url, timeout=TIMEOUT)
             if resp.status_code != 200:
-                logger.warning(
-                    f"Link {absolute_url} is broken. Status code: {resp.status_code}"
-                )
+                # logger.warning(
+                #    f"Link {absolute_url} is broken. Status code: {resp.status_code}"
+                # )
+                pass
 
         return str(soup)
 
@@ -290,16 +291,11 @@ class ChunkProcessor:
 
         return self.document_chunks_full, document_names, documents, document_metadata
 
-    def process_documents(
-        self, documents, file_path, file_type, metadata_source, addl_metadata
-    ):
+    def process_documents(self, documents, file_path, file_type, metadata_source, addl_metadata):
         file_data = {}
         file_metadata = {}
 
         for doc in documents:
-            # if len(doc.page_content) <= 400: # better approach to filter out non-informative documents
-            #     continue
-
             page_num = doc.metadata.get("page", 0)
             file_data[page_num] = doc.page_content
 
@@ -357,10 +353,10 @@ class ChunkProcessor:
             self.logger.error(f"Error processing file {file_name}: {str(e)}")
 
     def process_weblink(self, link, link_index, file_reader, addl_metadata):
+        self.logger.info(f"Reading link {link_index + 1} : {link}")
+
         if link in self.document_data:
             return
-
-        self.logger.info(f"Reading link {link_index + 1} : {link}")
 
         try:
             if "youtube" in link:
