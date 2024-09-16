@@ -171,6 +171,7 @@ class VectorStoreManager:
 
 def main():
     # Add argument parsing for config files
+    CWD = os.getcwd()
     parser = argparse.ArgumentParser(description="Load configuration files.")
     parser.add_argument(
         "--config_file", type=str, help="Path to the main config file", default=os.path.join(CWD, "config/config.yml")
