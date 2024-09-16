@@ -1,5 +1,6 @@
 import nbformat
 import requests
+import argparse
 import os
 
 
@@ -54,15 +55,30 @@ def extract_notebook_content(notebook_content):
     notebook = nbformat.reads(notebook_content, as_version=4)
     notebook_content = ""
     for cell in notebook.cells:
-        if cell.cell_type == 'markdown' or cell.cell_type == 'raw':
+        if cell.cell_type == "markdown" or cell.cell_type == "raw":
             notebook_content += cell.source + "\n"
-        elif cell.cell_type == 'code':
+        elif cell.cell_type == "code":
             notebook_content += "```python\n" + cell.source + "\n```\n"
     return notebook_content
 
 
 if __name__ == "__main__":
-    notebook_path = '/Users/faridkarimli/Desktop/Programming/AI/edubot-core/edubotics_core/storage/data/assignment1(1).ipynb'
-    notebook_content = read_notebook_from_file(notebook_path)
+    # Initialize argument parser
+    parser = argparse.ArgumentParser(
+        description="Read and print notebook content from a file."
+    )
+
+    # Add notebook_path as an argument
+    parser.add_argument(
+        "notebook_path",
+        type=str,
+        help="The path to the Jupyter notebook file (.ipynb) to read.",
+    )
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Read the notebook path from args
+    notebook_content = read_notebook_from_file(args.notebook_path)
     if notebook_content:
         print(notebook_content)

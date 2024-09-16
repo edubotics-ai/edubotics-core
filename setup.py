@@ -14,7 +14,7 @@ git_tag = os.environ.get("GITHUB_REF_NAME", "")
 if git_tag.startswith("v"):
     version = git_tag[1:]
 else:
-    version = git_tag
+    version = "0.0.0"  # Fall back to 0.0.0 if we can't find the tag
 
 if not version:
     print("No version found, defaulting to 0.0.0")

@@ -88,8 +88,7 @@ class FileReader:
         else:
             self.pdf_reader = PDFReader()
         self.web_reader = HTMLReader()
-        self.github_reader = GithubReader(
-            "Farid-Karimli")
+        self.github_reader = GithubReader()
         self.logger.info(
             f"Initialized FileReader with {kind} PDF reader and HTML reader"
         )
@@ -142,10 +141,13 @@ class FileReader:
 
     def read_github_repo(self, github_url: str):
         repo_contents = self.github_reader.get_repo_contents(github_url)
-        docs = [Document(page_content=content, metadata={'source': file})
-                for file, content in repo_contents.items() if content != None]
+        docs = [
+            Document(page_content=content, metadata={"source": file})
+            for file, content in repo_contents.items()
+            if content is not None
+        ]
         for i, doc in enumerate(docs):
-            doc.metadata['page'] = i
+            doc.metadata["page"] = i
 
         return docs
 
@@ -434,24 +436,18 @@ if __name__ == "__main__":
     import yaml
     import argparse
 
-    CWD = os.getcwd()
-
-    parser = argparse.ArgumentParser(description="Process some links.")
+    parser = argparse.ArgumentParser(description="Data Loader")
     parser.add_argument(
-        "--links", nargs="+", required=False, help="List of links to process."
-    )
-    parser.add_argument(
-        "--config_file", type=str, help="Path to the main config file", default=os.path.join(CWD, "edubotics_core/config/config.yml")
+        "--config_file", type=str, help="Path to the main config file", required=True
     )
     parser.add_argument(
         "--project_config_file",
         type=str,
         help="Path to the project config file",
-        default=os.path.join(CWD, "edubotics_core/config/project_config.yml"),
+        required=True,
     )
 
     args = parser.parse_args()
-    links_to_process = args.links
 
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
@@ -465,8 +461,7 @@ if __name__ == "__main__":
     # Combine project config with the main config
     config.update(project_config)
 
-    STORAGE_DIR = os.path.join(BASE_DIR, "edubotics_core/" +
-                               config["vectorstore"]["data_path"])
+    STORAGE_DIR = os.path.join(BASE_DIR, config["vectorstore"]["data_path"])
     uploaded_files = [
         os.path.join(STORAGE_DIR, file)
         for file in os.listdir(STORAGE_DIR)
@@ -478,7 +473,9 @@ if __name__ == "__main__":
         weblinks = f.readlines()
 
     weblinks = [link.strip() for link in weblinks]
-    print(weblinks)
+
+    print(f"Uploaded files: {uploaded_files}")
+    print(f"Web links: {weblinks}")
 
     data_loader = DataLoader(config, logger=logger)
     # Just for testing
