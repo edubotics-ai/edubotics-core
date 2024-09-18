@@ -37,7 +37,7 @@ You can install edubotics-core using pip:
 pip install edubotics-core
 ```
 
-Full documentation can be found [here](https://edubotics-ai.github.io/edubot-core/).
+Full documentation can be found [here](http://docs.edubotics.ai/).
 
 ## ✨ Key Features
 - Modular and Extensible: Easily create, modify, and extend to the core modules.
