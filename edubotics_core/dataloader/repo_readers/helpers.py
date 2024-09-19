@@ -59,6 +59,8 @@ def extract_notebook_content(notebook_content):
             notebook_content += cell.source + "\n"
         elif cell.cell_type == "code":
             notebook_content += "```python\n" + cell.source + "\n```\n"
+        elif cell.cell_type == "raw":
+            notebook_content += cell.source + "\n"
     return notebook_content
 
 

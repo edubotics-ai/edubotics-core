@@ -50,6 +50,7 @@ class GithubReader:
 
         self.repo_allow_list = [
             "release/",
+            "contents/"
         ]
 
         if not self.personal_access_token:
