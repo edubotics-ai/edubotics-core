@@ -26,6 +26,11 @@ class WebpageCrawler:
             return False
 
     async def get_links(self, session: ClientSession, website_link: str, base_url: str):
+        if not website_link.startswith(base_url):
+            return []
+        elif website_link.startswith("mailto:"):
+            return []
+
         html_data = await self.fetch(session, website_link)
         soup = BeautifulSoup(html_data, "html.parser")
         list_links = []
@@ -112,5 +117,7 @@ class WebpageCrawler:
 
     def normalize_url(self, url: str):
         # Strip the fragment identifier
+        if url.startswith("url: "):
+            url = url[5:]
         defragged_url, _ = urldefrag(url)
         return defragged_url
