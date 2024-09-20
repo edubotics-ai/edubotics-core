@@ -40,7 +40,7 @@ class WebpageCrawler:
             normalized_url = self.normalize_url(full_url)  # sections removed
             if (
                 normalized_url not in self.dict_href_links
-                and self.is_child_url(normalized_url, base_url)
+                # and self.is_child_url(normalized_url, base_url)
                 and self.url_exists(normalized_url)
             ):
                 self.dict_href_links[normalized_url] = None
