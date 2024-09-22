@@ -48,10 +48,7 @@ class GithubReader:
             "jpeg",
         ]
 
-        self.repo_allow_list = [
-            "release/",
-            "contents/"
-        ]
+        self.repo_allow_list = ["release/", "contents/"]
 
         if not self.personal_access_token:
             raise Warning(
