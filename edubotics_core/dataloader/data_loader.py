@@ -23,6 +23,7 @@ from edubotics_core.dataloader.pdf_readers.llama import LlamaParser
 from edubotics_core.dataloader.pdf_readers.gpt import GPTParser
 from edubotics_core.dataloader.repo_readers.github import GithubReader
 from edubotics_core.dataloader.repo_readers.helpers import read_notebook_from_file
+from edubotics_core.dataloader.metadata_extractor import LLMMetadataExtractor
 from edubotics_core.dataloader.helpers import get_metadata
 from edubotics_core.config.constants import TIMEOUT
 
@@ -93,16 +94,6 @@ class FileReader:
             f"Initialized FileReader with {kind} PDF reader and HTML reader"
         )
 
-    def extract_text_from_pdf(self, pdf_path):
-        text = ""
-        with open(pdf_path, "rb") as file:
-            reader = PyPDF2.PdfReader(file)
-            num_pages = len(reader.pages)
-            for page_num in range(num_pages):
-                page = reader.pages[page_num]
-                text += page.extract_text()
-        return text
-
     def read_pdf(self, temp_file_path: str):
         documents = self.pdf_reader.parse(temp_file_path)
         return documents
@@ -163,8 +154,9 @@ class FileReader:
 
 
 class ChunkProcessor:
-    def __init__(self, config, logger):
+    def __init__(self, config, project_config, logger):
         self.config = config
+        self.project_config = project_config
         self.logger = logger
 
         self.document_data = {}
@@ -249,7 +241,7 @@ class ChunkProcessor:
     def chunk_docs(self, file_reader, uploaded_files, weblinks):
         addl_metadata = get_metadata(
             *self.config["metadata"]["metadata_links"], self.config
-        )  # For any additional metadata
+        )  # For any additional metadata'''
 
         # remove already processed files if reparse_files is False
         if not self.config["vectorstore"]["reparse_files"]:
@@ -300,18 +292,43 @@ class ChunkProcessor:
 
         return self.document_chunks_full, document_names, documents, document_metadata
 
-    def process_documents(self, documents, file_path, file_type, metadata_source, addl_metadata):
+    def process_documents(
+        self, documents, file_path, file_type, metadata_source, addl_metadata
+    ):
         file_data = {}
         file_metadata = {}
 
-        for doc in documents:
-            page_num = doc.metadata.get("page", 0)
+        for i, doc in enumerate(documents):
+            page_num = doc.metadata.get("page", i)
             file_data[page_num] = doc.page_content
 
             # Create a new dictionary for metadata in each iteration
-            metadata = addl_metadata.get(file_path, {}).copy()
-            metadata["page"] = page_num
+            metadata = doc.metadata
             metadata["source"] = file_path
+            metadata["page"] = page_num
+
+            if self.project_config["metadata"]["lectures_pattern"] in file_path:
+                addl_metadata_copy = addl_metadata.copy()
+                metadata.update(addl_metadata_copy)
+                metadata["content_type"] = "lecture"
+            elif self.project_config["metadata"]["assignments_pattern"] in file_path:
+                assignment_base_url = self.project_config["metadata"][
+                    "assignment_base_link"
+                ]
+                target_url = file_path
+                depth = 3
+                found_url = self.webpage_crawler.find_target_url(
+                    assignment_base_url, target_url, depth
+                )
+                addl_metadata = LLMMetadataExtractor(
+                    fields=self.project_config["metadata"]["assignment_metadata_fields"]
+                ).extract_metadata(found_url)
+
+                metadata.update(addl_metadata)
+                metadata["content_type"] = "assignment"
+            else:
+                metadata["content_type"] = "other"
+
             file_metadata[page_num] = metadata
 
             if self.config["vectorstore"]["db_option"] not in ["RAGatouille"]:
@@ -427,11 +444,11 @@ class ChunkProcessor:
 
 
 class DataLoader:
-    def __init__(self, config, logger=None):
+    def __init__(self, config, project_config, logger=None):
         self.file_reader = FileReader(
             logger=logger, kind=config["llm_params"]["pdf_reader"]
         )
-        self.chunk_processor = ChunkProcessor(config, logger=logger)
+        self.chunk_processor = ChunkProcessor(config, project_config, logger=logger)
 
     def get_chunks(self, uploaded_files, weblinks):
         return self.chunk_processor.chunk_docs(
@@ -484,7 +501,7 @@ if __name__ == "__main__":
     print(f"Uploaded files: {uploaded_files}")
     print(f"Web links: {weblinks}")
 
-    data_loader = DataLoader(config, logger=logger)
+    data_loader = DataLoader(config, project_config, logger=logger)
     # Just for testing
     (
         document_chunks,

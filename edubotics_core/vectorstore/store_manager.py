@@ -12,8 +12,9 @@ import argparse
 
 
 class VectorStoreManager:
-    def __init__(self, config, logger=None):
+    def __init__(self, config, project_config, logger=None):
         self.config = config
+        self.project_config = project_config
         self.document_names = None
 
         # Set up logging to both console and a file
@@ -51,9 +52,9 @@ class VectorStoreManager:
     def load_files(self):
         files = os.listdir(self.config["vectorstore"]["data_path"])
         files = [
-            os.path.join(
-                self.config["vectorstore"]["data_path"], file)
-            for file in files if file != "urls.txt"
+            os.path.join(self.config["vectorstore"]["data_path"], file)
+            for file in files
+            if file != "urls.txt"
         ]
         url_file_path = self.config["vectorstore"]["url_file_path"]
         urls = get_urls_from_file(url_file_path)
@@ -103,11 +104,11 @@ class VectorStoreManager:
 
     def create_database(self):
         start_time = time.time()  # Start time for creating database
-        data_loader = DataLoader(self.config, self.logger)
+        data_loader = DataLoader(self.config, self.project_config, self.logger)
         self.logger.info("Loading data")
         local_files, urls = self.load_files()
-        print(f"Local files: {local_files}")
-        print(f"URLs: {urls}")
+        # print(f"Local files: {local_files}")
+        # print(f"URLs: {urls}")
         files, webpages = self.webpage_crawler.clean_url_list(urls)
         files.extend(local_files)
         self.logger.info(f"Number of files: {len(files)}")
@@ -174,13 +175,16 @@ def main():
     CWD = os.getcwd()
     parser = argparse.ArgumentParser(description="Load configuration files.")
     parser.add_argument(
-        "--config_file", type=str, help="Path to the main config file", default=os.path.join(CWD, "config/config.yml")
+        "--config_file",
+        type=str,
+        help="Path to the main config file",
+        default=os.path.join(CWD, "config/config.yml"),
     )
     parser.add_argument(
         "--project_config_file",
         type=str,
         help="Path to the project config file",
-        default=os.path.join(CWD, "config/project_config.yml")
+        default=os.path.join(CWD, "config/project_config.yml"),
     )
     args = parser.parse_args()
 
@@ -193,7 +197,7 @@ def main():
     config.update(project_config)
     print(config)
     print(f"Trying to create database with config: {config}")
-    vector_db = VectorStoreManager(config)
+    vector_db = VectorStoreManager(config, project_config)
     if config["vectorstore"]["load_from_HF"]:
         if (
             config["vectorstore"]["db_option"]
@@ -216,7 +220,7 @@ def main():
     print("Created database")
 
     print("Trying to load the database")
-    vector_db = VectorStoreManager(config)
+    vector_db = VectorStoreManager(config, project_config)
     vector_db.load_database()
     print("Loaded database")
 
