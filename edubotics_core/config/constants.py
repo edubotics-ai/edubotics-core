@@ -3,7 +3,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(".env")
 
 # Centralized definition of required constants for easy management and access
 TIMEOUT = os.getenv("TIMEOUT", 60)
