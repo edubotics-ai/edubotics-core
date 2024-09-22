@@ -152,7 +152,14 @@ class FileReader:
         return docs
 
     def read_notebook(self, notebook_path):
-        return [Document(page_content=read_notebook_from_file(notebook_path))]
+        if "github.com" in notebook_path and "blob" in notebook_path:
+            notebook_path = notebook_path.replace(
+                "github.com", "raw.githubusercontent.com"
+            )
+            notebook_path = notebook_path.replace("/blob/", "/")
+            self.logger.info(f"Changed notebook path to {notebook_path}")
+
+        return read_notebook_from_file(notebook_path)
 
 
 class ChunkProcessor:

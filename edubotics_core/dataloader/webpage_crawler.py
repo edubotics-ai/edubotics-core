@@ -94,12 +94,16 @@ class WebpageCrawler:
             return checked_urls
 
     def is_webpage(self, url: str) -> bool:
-        try:
-            response = requests.head(url, allow_redirects=True, timeout=TIMEOUT)
-            content_type = response.headers.get("Content-Type", "").lower()
-            return "text/html" in content_type
-        except requests.RequestException:
+
+        if url.endswith(".ipynb") or url.endswith(".pdf"):
             return False
+        else:
+            try:
+                response = requests.head(url, allow_redirects=True, timeout=TIMEOUT)
+                content_type = response.headers.get("Content-Type", "").lower()
+                return "text/html" in content_type
+            except requests.RequestException:
+                return False
 
     def clean_url_list(self, urls):
         files, webpages = [], []
@@ -121,3 +125,35 @@ class WebpageCrawler:
             url = url[5:]
         defragged_url, _ = urldefrag(url)
         return defragged_url
+
+    async def find_target_url(self, base_url: str, target_url: str, depth: int) -> str:
+        async with aiohttp.ClientSession() as session:
+            visited = set()  # To keep track of visited URLs
+            return await self._search_links(
+                session, base_url, target_url, visited, depth
+            )
+
+    async def _search_links(
+        self,
+        session: ClientSession,
+        current_url: str,
+        target_url: str,
+        visited: set,
+        depth: int,
+    ) -> str:
+        print(f"Searching for {target_url} at {current_url}")
+        if current_url in visited or depth < 0:
+            return None
+        visited.add(current_url)
+
+        links = await self.get_links(session, current_url, current_url)
+        for link in links:
+            if link == target_url:
+                return link
+            found_url = await self._search_links(
+                session, link, target_url, visited, depth - 1
+            )
+            if found_url:
+                return found_url
+
+        return None

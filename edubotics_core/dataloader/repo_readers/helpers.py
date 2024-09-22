@@ -1,7 +1,8 @@
+import os
 import nbformat
 import requests
 import argparse
-import os
+from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 
 def read_notebook_from_url(notebook_url):
@@ -42,26 +43,36 @@ def read_notebook_from_file(notebook_path):
     return extract_notebook_content(notebook_content)
 
 
-def extract_notebook_content(notebook_content):
+def extract_notebook_content(
+    notebook_content,
+    headers_to_split_on=[("###", "Section"), ("##", "Subsection"), ("#", "Title")],
+):
     """
     Extract the content from a Jupyter notebook, preserving the order of the cells.
 
     Args:
         notebook_content (str): The contents of the Jupyter notebook.
+        headers_to_split_on (list): A list of headers to split the notebook content by. Default is [("###", "Section"), ("##", "Subsection"), ("#", "Title")].
 
     Returns:
-        str: The contents of the notebook, with the cells in their original order.
+        List[Document]: The contents of the notebook, split by the headers_to_split_on.
     """
     notebook = nbformat.reads(notebook_content, as_version=4)
-    notebook_content = ""
+    content = ""
     for cell in notebook.cells:
-        if cell.cell_type == "markdown" or cell.cell_type == "raw":
-            notebook_content += cell.source + "\n"
+        if cell.cell_type == "markdown":
+            content += cell.source + "\n"
         elif cell.cell_type == "code":
-            notebook_content += "```python\n" + cell.source + "\n```\n"
+            content += "```python\n" + cell.source + "\n```\n"
         elif cell.cell_type == "raw":
-            notebook_content += cell.source + "\n"
-    return notebook_content
+            content += cell.source + "\n"
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+
+    chunks = markdown_splitter.split_text(content)
+    return chunks
 
 
 if __name__ == "__main__":
@@ -72,7 +83,7 @@ if __name__ == "__main__":
 
     # Add notebook_path as an argument
     parser.add_argument(
-        "notebook_path",
+        "--notebook_path",
         type=str,
         help="The path to the Jupyter notebook file (.ipynb) to read.",
     )
@@ -82,5 +93,6 @@ if __name__ == "__main__":
 
     # Read the notebook path from args
     notebook_content = read_notebook_from_file(args.notebook_path)
-    if notebook_content:
-        print(notebook_content)
+    for doc in notebook_content:
+        print(doc)
+        print("---")
