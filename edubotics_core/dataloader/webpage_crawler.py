@@ -3,7 +3,7 @@ from aiohttp import ClientSession
 import asyncio
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urldefrag
+from urllib.parse import urljoin, urldefrag, urlparse
 from edubotics_core.config.constants import TIMEOUT
 
 
@@ -19,6 +19,8 @@ class WebpageCrawler:
                 return await response.text(encoding="latin1")
 
     def url_exists(self, url: str) -> bool:
+        if url.startswith("mailto:"):
+            return False
         try:
             response = requests.head(url, timeout=TIMEOUT)
             return response.status_code == 200
@@ -141,12 +143,15 @@ class WebpageCrawler:
         visited: set,
         depth: int,
     ) -> str:
-        print(f"Searching for {target_url} at {current_url}")
+        if current_url.startswith("mailto:"):
+            return None
         if current_url in visited or depth < 0:
             return None
         visited.add(current_url)
 
-        links = await self.get_links(session, current_url, current_url)
+        base_url = urlparse(current_url).netloc
+        print(f"base_url: {base_url}")
+        links = await self.get_links(session, current_url, base_url)
         for link in links:
             if link == target_url:
                 return link

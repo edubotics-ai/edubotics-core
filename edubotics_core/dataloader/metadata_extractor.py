@@ -9,6 +9,30 @@ from openai import OpenAI
 load_dotenv()
 
 
+def gather_metadata(files, urls, config):
+    pass
+
+
+def filter_assignment_urls(files, config):
+    assignment_pattern = config['metadata']['assignment_base_link']
+    assignment_urls = []
+    for file in files:
+        if assignment_pattern in file:
+            assignment_urls.append(file)
+
+    return assignment_urls
+
+
+def filter_lecture_urls(files, urls, config):
+    lecture_pattern = config['metadata']['lectures_pattern']
+    lecture_urls = []
+    for file in files:
+        if lecture_pattern in file:
+            lecture_urls.append(file)
+
+    return lecture_urls
+
+
 class LLMMetadataExtractor:
     """
     Extracts metadata from a given webpage using an LLM.
@@ -34,6 +58,7 @@ class LLMMetadataExtractor:
         {fields_str}
 
         Please format the output as a JSON object with keys: {fields_str}.
+        If applicable, the source_file is the href that points to the assignment file. 
         If any information is not found, set the value to null.
 
         Text:
@@ -44,7 +69,7 @@ class LLMMetadataExtractor:
 
         # Call the OpenAI API
         response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[
                 {
                     "role": "system",
@@ -52,7 +77,7 @@ class LLMMetadataExtractor:
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.2,
+            temperature=0.3,
         )
 
         try:
@@ -62,6 +87,11 @@ class LLMMetadataExtractor:
                 .replace("\n```", "")
             )
             metadata = json.loads(metadata)
+
+            # TODO: This is a hack to get the source_file. We need to improve the LLM output.
+            source_file = soup.find("a", string=metadata["source_file"])
+            metadata["source_file"] = source_file["href"]
+
         except json.JSONDecodeError as e:
             print("Error: Could not parse JSON from LLM response")
             print(e)
@@ -71,7 +101,8 @@ class LLMMetadataExtractor:
 
 
 if __name__ == "__main__":
-    extractor = LLMMetadataExtractor(fields=["title", "due_date", "release_date"])
+    extractor = LLMMetadataExtractor(
+        fields=["title", "due_date", "release_date", "source_file"])
     metadata = extractor.extract_metadata(
         "https://tools4ds.github.io/fa2024/assignments/02_assignment.html"
     )

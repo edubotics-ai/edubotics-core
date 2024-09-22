@@ -25,6 +25,7 @@ from edubotics_core.dataloader.repo_readers.github import GithubReader
 from edubotics_core.dataloader.repo_readers.helpers import read_notebook_from_file
 from edubotics_core.dataloader.metadata_extractor import LLMMetadataExtractor
 from edubotics_core.dataloader.helpers import get_metadata
+from .webpage_crawler import WebpageCrawler
 from edubotics_core.config.constants import TIMEOUT
 
 logger = logging.getLogger(__name__)
@@ -154,9 +155,8 @@ class FileReader:
 
 
 class ChunkProcessor:
-    def __init__(self, config, project_config, logger):
+    def __init__(self, config, logger):
         self.config = config
-        self.project_config = project_config
         self.logger = logger
 
         self.document_data = {}
@@ -307,22 +307,14 @@ class ChunkProcessor:
             metadata["source"] = file_path
             metadata["page"] = page_num
 
-            if self.project_config["metadata"]["lectures_pattern"] in file_path:
+            if self.config["metadata"]["lectures_pattern"] in file_path:
                 addl_metadata_copy = addl_metadata.copy()
                 metadata.update(addl_metadata_copy)
                 metadata["content_type"] = "lecture"
-            elif self.project_config["metadata"]["assignments_pattern"] in file_path:
-                assignment_base_url = self.project_config["metadata"][
-                    "assignment_base_link"
-                ]
-                target_url = file_path
-                depth = 3
-                found_url = self.webpage_crawler.find_target_url(
-                    assignment_base_url, target_url, depth
-                )
+            elif self.config["metadata"]["assignments_pattern"] in file_path:
                 addl_metadata = LLMMetadataExtractor(
-                    fields=self.project_config["metadata"]["assignment_metadata_fields"]
-                ).extract_metadata(found_url)
+                    fields=self.config["metadata"]["assignment_metadata_fields"]
+                ).extract_metadata(file_path)
 
                 metadata.update(addl_metadata)
                 metadata["content_type"] = "assignment"
@@ -444,11 +436,12 @@ class ChunkProcessor:
 
 
 class DataLoader:
-    def __init__(self, config, project_config, logger=None):
+    def __init__(self, config, logger=None):
         self.file_reader = FileReader(
             logger=logger, kind=config["llm_params"]["pdf_reader"]
         )
-        self.chunk_processor = ChunkProcessor(config, project_config, logger=logger)
+        self.chunk_processor = ChunkProcessor(
+            config, logger=logger)
 
     def get_chunks(self, uploaded_files, weblinks):
         return self.chunk_processor.chunk_docs(
@@ -501,7 +494,7 @@ if __name__ == "__main__":
     print(f"Uploaded files: {uploaded_files}")
     print(f"Web links: {weblinks}")
 
-    data_loader = DataLoader(config, project_config, logger=logger)
+    data_loader = DataLoader(config, logger=logger)
     # Just for testing
     (
         document_chunks,
