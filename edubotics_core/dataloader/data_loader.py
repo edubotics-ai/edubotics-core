@@ -80,15 +80,18 @@ class HTMLReader:
 
 
 class FileReader:
-    def __init__(self, logger, kind):
+    def __init__(self, logger, config, kind):
         self.logger = logger
+        self.config = config
         self.kind = kind
+
         if kind == "llama":
             self.pdf_reader = LlamaParser()
         elif kind == "gpt":
             self.pdf_reader = GPTParser()
         else:
             self.pdf_reader = PDFReader()
+
         self.web_reader = HTMLReader()
         self.github_reader = GithubReader()
         self.logger.info(
@@ -151,7 +154,7 @@ class FileReader:
             notebook_path = notebook_path.replace("/blob/", "/")
             self.logger.info(f"Changed notebook path to {notebook_path}")
 
-        return read_notebook_from_file(notebook_path)
+        return read_notebook_from_file(notebook_path, headers_to_split_on=self.config["content"]["notebookheaders_to_split_on"])
 
 
 class ChunkProcessor:
@@ -438,7 +441,7 @@ class ChunkProcessor:
 class DataLoader:
     def __init__(self, config, logger=None):
         self.file_reader = FileReader(
-            logger=logger, kind=config["llm_params"]["pdf_reader"]
+            logger=logger, config=config, kind=config["llm_params"]["pdf_reader"]
         )
         self.chunk_processor = ChunkProcessor(
             config, logger=logger)

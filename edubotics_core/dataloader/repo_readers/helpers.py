@@ -24,7 +24,7 @@ def read_notebook_from_url(notebook_url):
         return None
 
 
-def read_notebook_from_file(notebook_path):
+def read_notebook_from_file(notebook_path, headers_to_split_on):
     """
     Read the contents of a Jupyter notebook from a file.
 
@@ -40,7 +40,7 @@ def read_notebook_from_file(notebook_path):
     else:
         with open(notebook_path, "r") as file:
             notebook_content = file.read()
-    return extract_notebook_content(notebook_content)
+    return extract_notebook_content(notebook_content, headers_to_split_on)
 
 
 def extract_notebook_content(
@@ -68,7 +68,7 @@ def extract_notebook_content(
             content += cell.source + "\n"
 
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
+        headers_to_split_on=headers_to_split_on, strip_headers=False
     )
 
     chunks = markdown_splitter.split_text(content)
