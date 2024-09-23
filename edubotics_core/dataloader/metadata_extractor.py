@@ -69,7 +69,7 @@ class LLMMetadataExtractor:
 
         # Call the OpenAI API
         response = self.client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
@@ -77,7 +77,7 @@ class LLMMetadataExtractor:
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.3,
+            temperature=0.2,
         )
 
         try:
@@ -89,8 +89,11 @@ class LLMMetadataExtractor:
             metadata = json.loads(metadata)
 
             # TODO: This is a hack to get the source_file. We need to improve the LLM output.
-            source_file = soup.find("a", string=metadata["source_file"])
-            metadata["source_file"] = source_file["href"]
+            try:
+                source_file = soup.find("a", string=metadata["source_file"])
+                metadata["source_file"] = source_file["href"]
+            except Exception as e:
+                pass
 
         except json.JSONDecodeError as e:
             print("Error: Could not parse JSON from LLM response")
