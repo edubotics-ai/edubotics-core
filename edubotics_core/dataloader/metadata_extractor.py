@@ -1,6 +1,5 @@
 import requests
 import json
-import os
 from typing import List
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -60,7 +59,6 @@ class LLMMetadataExtractor:
         Please format the output as a JSON object with keys: {fields_str}.
         If applicable, the source_file is the link that points to an assignment file (e.g. .ipynb, .pdf, etc). 
         Usually, it's under an <a> tag with the texts "Download", "View" or "notebook".
-
         If any information is not found, set the value to null.
 
         Text:
@@ -94,7 +92,7 @@ class LLMMetadataExtractor:
             try:
                 source_file = soup.find("a", string=metadata["source_file"])
                 metadata["source_file"] = source_file["href"]
-            except Exception as e:
+            except Exception:
                 pass
 
         except json.JSONDecodeError as e:

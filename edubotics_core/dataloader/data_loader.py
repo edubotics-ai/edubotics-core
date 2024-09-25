@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urljoin
 import html2text
 import bs4
-import PyPDF2
 from edubotics_core.dataloader.pdf_readers.base import PDFReader
 from edubotics_core.dataloader.pdf_readers.llama import LlamaParser
 from edubotics_core.dataloader.pdf_readers.gpt import GPTParser
@@ -25,7 +24,6 @@ from edubotics_core.dataloader.repo_readers.github import GithubReader
 from edubotics_core.dataloader.repo_readers.helpers import read_notebook_from_file
 from edubotics_core.dataloader.metadata_extractor import LLMMetadataExtractor
 from edubotics_core.dataloader.helpers import get_metadata
-from .webpage_crawler import WebpageCrawler
 from edubotics_core.config.constants import TIMEOUT
 
 logger = logging.getLogger(__name__)
