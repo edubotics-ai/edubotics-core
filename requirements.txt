@@ -48,7 +48,6 @@ dirtyjson==1.0.8
 diskcache==5.6.3
 distro==1.9.0
 docutils==0.21.2
--e git+https://github.com/edubotics-ai/edubotics-core.git@c62938b3ac70dc706ee10f15cd0b00d8c705d574#egg=edubotics_core
 entrypoints==0.4
 executing==2.1.0
 faiss-cpu==1.8.0.post1
