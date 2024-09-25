@@ -91,7 +91,7 @@ class GithubReader:
 
         headers = {"Authorization": f"Basic {auth_b64}"}
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=60)
 
         if response.status_code == 200:
             for item in response.json():

@@ -92,8 +92,9 @@ class LLMMetadataExtractor:
             try:
                 source_file = soup.find("a", string=metadata["source_file"])
                 metadata["source_file"] = source_file["href"]
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error: Could not find source_file in the webpage")
+                print(e)
 
         except json.JSONDecodeError as e:
             print("Error: Could not parse JSON from LLM response")
