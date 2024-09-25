@@ -43,7 +43,7 @@ class LLMMetadataExtractor:
 
     def extract_metadata(self, url: str) -> dict:
         # Fetch and parse the webpage
-        response = requests.get(url)
+        response = requests.get(url, timeout=60)
         soup = BeautifulSoup(response.text, "html.parser")
 
         # Extract the main content (you might need to adjust this based on the page structure)

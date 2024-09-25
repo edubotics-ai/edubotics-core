@@ -150,7 +150,7 @@ class GithubReader:
         auth_b64 = base64.b64encode(auth_bytes).decode("ascii")
 
         headers = {"Authorization": f"Basic {auth_b64}"}
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=60)
         if response.status_code == 200:
             content = response.json()["content"]
             decoded_content = base64.b64decode(content).decode("utf-8")

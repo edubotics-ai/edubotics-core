@@ -15,7 +15,7 @@ def read_notebook_from_url(notebook_url):
     Returns:
         str: The contents of the Jupyter notebook.
     """
-    response = requests.get(notebook_url)
+    response = requests.get(notebook_url, timeout=60)
     if response.status_code == 200:
         notebook_content = response.text
         return notebook_content
