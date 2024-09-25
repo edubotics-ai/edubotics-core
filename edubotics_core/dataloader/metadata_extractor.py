@@ -14,7 +14,7 @@ def gather_metadata(files, urls, config):
 
 
 def filter_assignment_urls(files, config):
-    assignment_pattern = config['metadata']['assignment_base_link']
+    assignment_pattern = config["metadata"]["assignment_base_link"]
     assignment_urls = []
     for file in files:
         if assignment_pattern in file:
@@ -24,7 +24,7 @@ def filter_assignment_urls(files, config):
 
 
 def filter_lecture_urls(files, urls, config):
-    lecture_pattern = config['metadata']['lectures_pattern']
+    lecture_pattern = config["metadata"]["lectures_pattern"]
     lecture_urls = []
     for file in files:
         if lecture_pattern in file:
@@ -58,7 +58,9 @@ class LLMMetadataExtractor:
         {fields_str}
 
         Please format the output as a JSON object with keys: {fields_str}.
-        If applicable, the source_file is the href that points to the assignment file. 
+        If applicable, the source_file is the link that points to an assignment file (e.g. .ipynb, .pdf, etc). 
+        Usually, it's under an <a> tag with the texts "Download", "View" or "notebook".
+
         If any information is not found, set the value to null.
 
         Text:
@@ -105,8 +107,9 @@ class LLMMetadataExtractor:
 
 if __name__ == "__main__":
     extractor = LLMMetadataExtractor(
-        fields=["title", "due_date", "release_date", "source_file"])
+        fields=["title", "due_date", "release_date", "source_file"]
+    )
     metadata = extractor.extract_metadata(
-        "https://tools4ds.github.io/fa2024/assignments/02_assignment.html"
+        "https://tools4ds.github.io/fa2024/assignments/01_assignment.html"
     )
     print(json.dumps(metadata, indent=2))

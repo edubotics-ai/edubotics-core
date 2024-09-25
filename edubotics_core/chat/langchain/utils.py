@@ -184,7 +184,7 @@ class CustomRunnableWithHistory(RunnableWithMessageHistory):
         if config["configurable"]["memory_window"] == 0:  # if k is 0, return empty list
             messages = []
         else:
-            messages = messages[-2 * config["configurable"]["memory_window"]:]
+            messages = messages[-2 * config["configurable"]["memory_window"] :]
 
         messages = self._get_chat_history(messages)
 

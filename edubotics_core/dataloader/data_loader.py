@@ -154,7 +154,10 @@ class FileReader:
             notebook_path = notebook_path.replace("/blob/", "/")
             self.logger.info(f"Changed notebook path to {notebook_path}")
 
-        return read_notebook_from_file(notebook_path, headers_to_split_on=self.config["content"]["notebookheaders_to_split_on"])
+        return read_notebook_from_file(
+            notebook_path,
+            headers_to_split_on=self.config["content"]["notebookheaders_to_split_on"],
+        )
 
 
 class ChunkProcessor:
@@ -443,8 +446,7 @@ class DataLoader:
         self.file_reader = FileReader(
             logger=logger, config=config, kind=config["llm_params"]["pdf_reader"]
         )
-        self.chunk_processor = ChunkProcessor(
-            config, logger=logger)
+        self.chunk_processor = ChunkProcessor(config, logger=logger)
 
     def get_chunks(self, uploaded_files, weblinks):
         return self.chunk_processor.chunk_docs(
