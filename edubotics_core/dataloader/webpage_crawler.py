@@ -24,7 +24,8 @@ class WebpageCrawler:
         try:
             response = requests.head(url, timeout=TIMEOUT)
             return response.status_code == 200
-        except requests.ConnectionError:
+        except Exception as e:
+            print(f"Error checking if URL exists: {e}")
             return False
 
     async def get_links(self, session: ClientSession, website_link: str, base_url: str):

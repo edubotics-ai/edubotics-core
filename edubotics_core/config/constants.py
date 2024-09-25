@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv(".env")
 
 # Centralized definition of required constants for easy management and access
-TIMEOUT = os.getenv("TIMEOUT", 60)
+TIMEOUT = os.getenv("TIMEOUT", 120)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 LLAMA_CLOUD_API_KEY = os.getenv("LLAMA_CLOUD_API_KEY", "")
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN", "")
