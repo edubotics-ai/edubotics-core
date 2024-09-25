@@ -57,7 +57,7 @@ class LLMMetadataExtractor:
         {fields_str}
 
         Please format the output as a JSON object with keys: {fields_str}.
-        If applicable, the source_file is the link that points to an assignment file (e.g. .ipynb, .pdf, etc). 
+        If applicable, the source_file is the link that points to an assignment file (e.g. .ipynb, .pdf, etc).
         Usually, it's under an <a> tag with the texts "Download", "View" or "notebook".
         If any information is not found, set the value to null.
 
