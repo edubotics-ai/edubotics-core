@@ -1,4 +1,4 @@
-from pydantic import BaseModel, conint, confloat, HttpUrl, Field
+from pydantic import BaseModel, conint, confloat, HttpUrl
 from typing import Optional, List, Dict, Any
 import yaml
 from .prompts import prompts

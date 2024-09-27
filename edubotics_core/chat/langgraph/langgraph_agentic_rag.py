@@ -12,17 +12,12 @@ from typing import Annotated, Optional, TypedDict, Sequence, Literal
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langgraph.graph.message import add_messages
 from langchain_core.prompts import PromptTemplate, BasePromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.callbacks import Callbacks
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.tools.simple import Tool
-from langchain import hub
 from langchain.schema import Document
-import json
-from pprint import pprint
 from functools import partial
 from langchain_core.messages import SystemMessage
-from langchain.agents import initialize_agent, AgentType
 
 
 class RetrieverInput(BaseModel):
@@ -209,7 +204,7 @@ class LanggraphAgenticRAG(BaseRAG):
 
     def extract_actionable_insights(self, state):
         print("---EXTRACT ACTIONABLE INSIGHTS---")
-        retrieved_docs = state["context"]
+        # retrieved_docs = state["context"]
         question = state["messages"][0].content
 
         messages = [

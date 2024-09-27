@@ -1,6 +1,3 @@
-import chainlit as cl
-
-
 def get_prompt(config, prompt_type, all_prompts):
     llm_params = config["llm_params"]
     llm_loader = llm_params["llm_loader"]
