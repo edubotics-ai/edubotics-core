@@ -1,16 +1,33 @@
-# edubotics-core
+
+<p align="center">
+  <a href="http://docs.edubotics.ai/">
+    <img src="https://github.com/edubotics-ai/.github/blob/main/assets/images/edubot-mascot.png?raw=true" alt="edubotics-ai" width="10%" height="10%">
+  </a>
+</p>
+<p align="center">
+    <em>Edubotics AI - Empower Education with AI: Create Intelligent Chatbots Quickly and Efficiently</em>
+</p>
+<p align="center">
+    <a href="https://github.com/edubotics-ai/edubot-core">
+        <img src="https://img.shields.io/pypi/v/edubotics-core.svg" alt="PyPI">
+    </a>
+    <a href="https://github.com/edubotics-ai/edubot-core">
+        <img src="https://img.shields.io/github/stars/edubotics-ai/edubot-core.svg" alt="GitHub stars">
+    </a>
+    <a href="https://github.com/edubotics-ai/edubot-core">
+        <img src="https://img.shields.io/github/license/edubotics-ai/edubot-core.svg" alt="License">
+    </a>
+    <a href="https://pypi.org/project/edubotics-core">
+        <img src="https://img.shields.io/pypi/dm/edubotics-core.svg" alt="PyPI Downloads">
+    </a>
+    <a href="https://github.com/edubotics-ai/edubot-core/graphs/contributors">
+        <img src="https://img.shields.io/github/contributors/edubotics-ai/edubot-core.svg" alt="GitHub Contributors">
+    </a>
+</p>
 
 ## Welcome to edubotics-core by Edubotics AI! 👋
 
-![PyPI](https://img.shields.io/pypi/v/edubotics-core.svg)
-![GitHub stars](https://img.shields.io/github/stars/edubotics-ai/edubot-core.svg)
-![License](https://img.shields.io/github/license/edubotics-ai/edubot-core.svg)
-![PyPI Downloads](https://img.shields.io/pypi/dm/edubotics-core.svg)
-[![GitHub Contributors](https://img.shields.io/github/contributors/edubotics-ai/edubot-core)](https://github.com/edubotics-ai/edubot-core/graphs/contributors)
-
-**Empower Education with AI: Create Intelligent Chatbots Quickly and Efficiently 🚀**
-
-edubotics-core is an open-source Python library that allows developers to build LLM-based chatbots efficiently. It provides a comprehensive set of core modules for vector storage, retrieval, processing, with more to come.
+**edubotics-core** is an open-source Python library that allows developers to build LLM-based chatbots efficiently. It provides a comprehensive set of core modules for vector storage, retrieval, processing, with more to come.
 
 ## 🛠 Installation
 
@@ -20,7 +37,7 @@ You can install edubotics-core using pip:
 pip install edubotics-core
 ```
 
-Full documentation can be found [here](https://edubotics-ai.github.io/edubot-core/).
+Full documentation can be found [here](http://docs.edubotics.ai/).
 
 ## ✨ Key Features
 - Modular and Extensible: Easily create, modify, and extend to the core modules.

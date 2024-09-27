@@ -1,6 +1,7 @@
 from pydantic import BaseModel, conint, confloat, HttpUrl
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import yaml
+from .prompts import prompts
 
 
 class FaissParams(BaseModel):
@@ -112,6 +113,10 @@ class APIConfig(BaseModel):
     timeout: conint(gt=0) = 60
 
 
+class PromptsConfig(BaseModel):
+    prompts: Dict[str, Any] = prompts
+
+
 class Config(BaseModel):
     log_dir: str = "storage/logs"
     log_chunk_dir: str = "storage/logs/chunks"
@@ -126,6 +131,7 @@ class Config(BaseModel):
     token_config: TokenConfig
     misc: MiscConfig
     api_config: APIConfig
+    prompts_dict: PromptsConfig = PromptsConfig(prompts=prompts)
 
 
 class ConfigManager:
@@ -141,6 +147,9 @@ class ConfigManager:
 
         with open(self.project_config_path, "r") as f:
             project_config_data = yaml.safe_load(f)
+
+        # Add prompts to the project config
+        project_config_data["prompts_dict"] = prompts
 
         # Merge the two configurations
         merged_config = {**config_data, **project_config_data}

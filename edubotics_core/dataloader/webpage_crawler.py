@@ -3,7 +3,7 @@ from aiohttp import ClientSession
 import asyncio
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urldefrag
+from urllib.parse import urljoin, urldefrag, urlparse
 from edubotics_core.config.constants import TIMEOUT
 
 
@@ -19,6 +19,8 @@ class WebpageCrawler:
                 return await response.text(encoding="latin1")
 
     def url_exists(self, url: str) -> bool:
+        if url.startswith("mailto:"):
+            return False
         try:
             response = requests.head(url, timeout=TIMEOUT)
             return response.status_code == 200
@@ -26,6 +28,11 @@ class WebpageCrawler:
             return False
 
     async def get_links(self, session: ClientSession, website_link: str, base_url: str):
+        if not website_link.startswith(base_url):
+            return []
+        elif website_link.startswith("mailto:"):
+            return []
+
         html_data = await self.fetch(session, website_link)
         soup = BeautifulSoup(html_data, "html.parser")
         list_links = []
@@ -35,7 +42,7 @@ class WebpageCrawler:
             normalized_url = self.normalize_url(full_url)  # sections removed
             if (
                 normalized_url not in self.dict_href_links
-                and self.is_child_url(normalized_url, base_url)
+                # and self.is_child_url(normalized_url, base_url)
                 and self.url_exists(normalized_url)
             ):
                 self.dict_href_links[normalized_url] = None
@@ -89,12 +96,16 @@ class WebpageCrawler:
             return checked_urls
 
     def is_webpage(self, url: str) -> bool:
-        try:
-            response = requests.head(url, allow_redirects=True, timeout=TIMEOUT)
-            content_type = response.headers.get("Content-Type", "").lower()
-            return "text/html" in content_type
-        except requests.RequestException:
+
+        if url.endswith(".ipynb") or url.endswith(".pdf"):
             return False
+        else:
+            try:
+                response = requests.head(url, allow_redirects=True, timeout=TIMEOUT)
+                content_type = response.headers.get("Content-Type", "").lower()
+                return "text/html" in content_type
+            except requests.RequestException:
+                return False
 
     def clean_url_list(self, urls):
         files, webpages = [], []
@@ -112,5 +123,42 @@ class WebpageCrawler:
 
     def normalize_url(self, url: str):
         # Strip the fragment identifier
+        if url.startswith("url: "):
+            url = url[5:]
         defragged_url, _ = urldefrag(url)
         return defragged_url
+
+    async def find_target_url(self, base_url: str, target_url: str, depth: int) -> str:
+        async with aiohttp.ClientSession() as session:
+            visited = set()  # To keep track of visited URLs
+            return await self._search_links(
+                session, base_url, target_url, visited, depth
+            )
+
+    async def _search_links(
+        self,
+        session: ClientSession,
+        current_url: str,
+        target_url: str,
+        visited: set,
+        depth: int,
+    ) -> str:
+        if current_url.startswith("mailto:"):
+            return None
+        if current_url in visited or depth < 0:
+            return None
+        visited.add(current_url)
+
+        base_url = urlparse(current_url).netloc
+        print(f"base_url: {base_url}")
+        links = await self.get_links(session, current_url, base_url)
+        for link in links:
+            if link == target_url:
+                return link
+            found_url = await self._search_links(
+                session, link, target_url, visited, depth - 1
+            )
+            if found_url:
+                return found_url
+
+        return None

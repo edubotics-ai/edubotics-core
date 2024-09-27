@@ -7,7 +7,6 @@ from langchain_core.language_models import LanguageModelLike
 from langchain_core.runnables import Runnable, RunnableBranch, RunnablePassthrough
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
     DEFAULT_DOCUMENT_SEPARATOR,
@@ -21,6 +20,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 import inspect
 from langchain_core.messages import BaseMessage
+from pydantic import BaseModel, Field
 
 CHAT_TURN_TYPE = Union[Tuple[str, str], BaseMessage]
 
@@ -240,7 +240,7 @@ def create_stuff_documents_chain(
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
 ) -> Runnable[Dict[str, Any], Any]:
     """Create a chain for passing a list of Documents to a model."""
-    _validate_prompt(prompt)
+    _validate_prompt(prompt, "context")
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
 

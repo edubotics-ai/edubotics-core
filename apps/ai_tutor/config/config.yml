@@ -8,7 +8,7 @@ vectorstore:
   data_path: 'storage/data' # str
   url_file_path: 'storage/data/urls.txt' # str
   expand_urls: True # bool
-  db_option : 'RAGatouille' # str [FAISS, Chroma, RAGatouille, RAPTOR]
+  db_option : 'FAISS' # str [FAISS, Chroma, RAGatouille, RAPTOR]
   db_path : 'vectorstores' # str
   model : 'sentence-transformers/all-MiniLM-L6-v2' # str [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002']
   search_top_k : 3 # int
@@ -25,7 +25,7 @@ vectorstore:
     index_name: "new_idx" # str
 
 llm_params: 
-  llm_arch: 'langchain' # [langchain]
+  llm_arch: 'langgraph' # [langchain, langgraph]
   use_history: True # bool
   generate_follow_up: False # bool
   memory_window: 3 # int

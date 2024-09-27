@@ -1,6 +1,7 @@
 from pydantic import BaseModel, conint, confloat, HttpUrl
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import yaml
+from .prompts import prompts
 
 
 class FaissParams(BaseModel):
@@ -24,7 +25,8 @@ class VectorStoreConfig(BaseModel):
     db_option: str = "RAGatouille"  # Options: [FAISS, Chroma, RAGatouille, RAPTOR]
     db_path: str = "vectorstores"
     model: str = (
-        "sentence-transformers/all-MiniLM-L6-v2"  # Options: [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002]
+        # Options: [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002]
+        "sentence-transformers/all-MiniLM-L6-v2"
     )
     search_top_k: conint(gt=0) = 3
     score_threshold: confloat(ge=0.0, le=1.0) = 0.2
@@ -95,8 +97,24 @@ class MetadataConfig(BaseModel):
     slide_base_link: HttpUrl = "https://dl4ds.github.io"
 
 
+class TokenConfig(BaseModel):
+    cooldown_time: conint(gt=0) = 60
+    regen_time: conint(gt=0) = 180
+    tokens_left: conint(gt=0) = 2000
+    all_time_tokens_allocated: conint(gt=0) = 1000000
+
+
+class MiscConfig(BaseModel):
+    github_repo: HttpUrl = "https://github.com/edubotics-ai/edubot-core"
+    docs_website: HttpUrl = "https://dl4ds.github.io/dl4ds_tutor/"
+
+
 class APIConfig(BaseModel):
     timeout: conint(gt=0) = 60
+
+
+class PromptsConfig(BaseModel):
+    prompts: Dict[str, Any] = prompts
 
 
 class Config(BaseModel):
@@ -110,7 +128,10 @@ class Config(BaseModel):
     splitter_options: SplitterOptions
     retriever: RetrieverConfig
     metadata: MetadataConfig
+    token_config: TokenConfig
+    misc: MiscConfig
     api_config: APIConfig
+    prompts_dict: PromptsConfig = PromptsConfig(prompts=prompts)
 
 
 class ConfigManager:
@@ -126,6 +147,9 @@ class ConfigManager:
 
         with open(self.project_config_path, "r") as f:
             project_config_data = yaml.safe_load(f)
+
+        # Add prompts to the project config
+        project_config_data["prompts_dict"] = prompts
 
         # Merge the two configurations
         merged_config = {**config_data, **project_config_data}

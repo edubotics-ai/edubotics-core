@@ -17,10 +17,12 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urljoin
 import html2text
 import bs4
-import PyPDF2
 from edubotics_core.dataloader.pdf_readers.base import PDFReader
 from edubotics_core.dataloader.pdf_readers.llama import LlamaParser
 from edubotics_core.dataloader.pdf_readers.gpt import GPTParser
+from edubotics_core.dataloader.repo_readers.github import GithubReader
+from edubotics_core.dataloader.repo_readers.helpers import read_notebook_from_file
+from edubotics_core.dataloader.metadata_extractor import LLMMetadataExtractor
 from edubotics_core.dataloader.helpers import get_metadata
 from edubotics_core.config.constants import TIMEOUT
 
@@ -55,9 +57,10 @@ class HTMLReader:
 
             resp = requests.head(absolute_url, timeout=TIMEOUT)
             if resp.status_code != 200:
-                logger.warning(
-                    f"Link {absolute_url} is broken. Status code: {resp.status_code}"
-                )
+                # logger.warning(
+                #    f"Link {absolute_url} is broken. Status code: {resp.status_code}"
+                # )
+                pass
 
         return str(soup)
 
@@ -75,29 +78,23 @@ class HTMLReader:
 
 
 class FileReader:
-    def __init__(self, logger, kind):
+    def __init__(self, logger, config, kind):
         self.logger = logger
+        self.config = config
         self.kind = kind
+
         if kind == "llama":
             self.pdf_reader = LlamaParser()
         elif kind == "gpt":
             self.pdf_reader = GPTParser()
         else:
             self.pdf_reader = PDFReader()
+
         self.web_reader = HTMLReader()
+        self.github_reader = GithubReader()
         self.logger.info(
             f"Initialized FileReader with {kind} PDF reader and HTML reader"
         )
-
-    def extract_text_from_pdf(self, pdf_path):
-        text = ""
-        with open(pdf_path, "rb") as file:
-            reader = PyPDF2.PdfReader(file)
-            num_pages = len(reader.pages)
-            for page_num in range(num_pages):
-                page = reader.pages[page_num]
-                text += page.extract_text()
-        return text
 
     def read_pdf(self, temp_file_path: str):
         documents = self.pdf_reader.parse(temp_file_path)
@@ -134,6 +131,31 @@ class FileReader:
         else:
             self.logger.error(f"Failed to fetch .tex file from URL: {tex_url}")
             return None
+
+    def read_github_repo(self, github_url: str):
+        repo_contents = self.github_reader.get_repo_contents(github_url)
+        docs = [
+            Document(page_content=content, metadata={"source": file})
+            for file, content in repo_contents.items()
+            if content is not None
+        ]
+        for i, doc in enumerate(docs):
+            doc.metadata["page"] = i
+
+        return docs
+
+    def read_notebook(self, notebook_path):
+        if "github.com" in notebook_path and "blob" in notebook_path:
+            notebook_path = notebook_path.replace(
+                "github.com", "raw.githubusercontent.com"
+            )
+            notebook_path = notebook_path.replace("/blob/", "/")
+            self.logger.info(f"Changed notebook path to {notebook_path}")
+
+        return read_notebook_from_file(
+            notebook_path,
+            headers_to_split_on=self.config["content"]["notebookheaders_to_split_on"],
+        )
 
 
 class ChunkProcessor:
@@ -223,7 +245,7 @@ class ChunkProcessor:
     def chunk_docs(self, file_reader, uploaded_files, weblinks):
         addl_metadata = get_metadata(
             *self.config["metadata"]["metadata_links"], self.config
-        )  # For any additional metadata
+        )  # For any additional metadata'''
 
         # remove already processed files if reparse_files is False
         if not self.config["vectorstore"]["reparse_files"]:
@@ -280,17 +302,29 @@ class ChunkProcessor:
         file_data = {}
         file_metadata = {}
 
-        for doc in documents:
-            # if len(doc.page_content) <= 400: # better approach to filter out non-informative documents
-            #     continue
-
-            page_num = doc.metadata.get("page", 0)
+        for i, doc in enumerate(documents):
+            page_num = doc.metadata.get("page", i)
             file_data[page_num] = doc.page_content
 
             # Create a new dictionary for metadata in each iteration
-            metadata = addl_metadata.get(file_path, {}).copy()
-            metadata["page"] = page_num
+            metadata = doc.metadata
             metadata["source"] = file_path
+            metadata["page"] = page_num
+
+            if self.config["metadata"]["lectures_pattern"] in file_path:
+                addl_metadata_copy = addl_metadata.copy()
+                metadata.update(addl_metadata_copy)
+                metadata["content_type"] = "lecture"
+            elif self.config["metadata"]["assignments_pattern"] in file_path:
+                addl_metadata = LLMMetadataExtractor(
+                    fields=self.config["metadata"]["assignment_metadata_fields"]
+                ).extract_metadata(file_path)
+
+                metadata.update(addl_metadata)
+                metadata["content_type"] = "assignment"
+            else:
+                metadata["content_type"] = "other"
+
             file_metadata[page_num] = metadata
 
             if self.config["vectorstore"]["db_option"] not in ["RAGatouille"]:
@@ -318,6 +352,7 @@ class ChunkProcessor:
             "docx": file_reader.read_docx,
             "srt": file_reader.read_srt,
             "tex": file_reader.read_tex_from_url,
+            "ipynb": file_reader.read_notebook,
         }
         if file_type not in read_methods:
             self.logger.warning(f"Unsupported file type: {file_type}")
@@ -340,14 +375,16 @@ class ChunkProcessor:
             self.logger.error(f"Error processing file {file_name}: {str(e)}")
 
     def process_weblink(self, link, link_index, file_reader, addl_metadata):
+        self.logger.info(f"Reading link {link_index + 1} : {link}")
+
         if link in self.document_data:
             return
-
-        self.logger.info(f"Reading link {link_index + 1} : {link}")
 
         try:
             if "youtube" in link:
                 documents = file_reader.read_youtube_transcript(link)
+            elif "github.com" in link:
+                documents = file_reader.read_github_repo(link)
             else:
                 documents = file_reader.read_html(link)
 
@@ -405,7 +442,7 @@ class ChunkProcessor:
 class DataLoader:
     def __init__(self, config, logger=None):
         self.file_reader = FileReader(
-            logger=logger, kind=config["llm_params"]["pdf_reader"]
+            logger=logger, config=config, kind=config["llm_params"]["pdf_reader"]
         )
         self.chunk_processor = ChunkProcessor(config, logger=logger)
 
@@ -419,10 +456,7 @@ if __name__ == "__main__":
     import yaml
     import argparse
 
-    parser = argparse.ArgumentParser(description="Process some links.")
-    parser.add_argument(
-        "--links", nargs="+", required=True, help="List of links to process."
-    )
+    parser = argparse.ArgumentParser(description="Data Loader")
     parser.add_argument(
         "--config_file", type=str, help="Path to the main config file", required=True
     )
@@ -434,7 +468,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    links_to_process = args.links
 
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
@@ -455,6 +488,15 @@ if __name__ == "__main__":
         if file != "urls.txt"
     ]
 
+    urls_file = os.path.join(STORAGE_DIR, "urls.txt")
+    with open(urls_file, "r") as f:
+        weblinks = f.readlines()
+
+    weblinks = [link.strip() for link in weblinks]
+
+    print(f"Uploaded files: {uploaded_files}")
+    print(f"Web links: {weblinks}")
+
     data_loader = DataLoader(config, logger=logger)
     # Just for testing
     (
@@ -463,8 +505,8 @@ if __name__ == "__main__":
         documents,
         document_metadata,
     ) = data_loader.get_chunks(
-        links_to_process,
-        [],
+        uploaded_files,
+        weblinks,
     )
 
     print(document_names[:5])

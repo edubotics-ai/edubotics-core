@@ -6,6 +6,9 @@ from edubotics_core.chat.langchain.langchain_rag import (
     Langchain_RAG_V2,
     QuestionGenerator,
 )
+from edubotics_core.chat.langgraph.langgraph_agentic_rag import (
+    LanggraphAgenticRAG,
+)
 
 
 class LLMTutor:
@@ -23,9 +26,11 @@ class LLMTutor:
         self.user = user
         self.logger = logger
         self.vector_db = VectorStoreManager(config, logger=self.logger).load_database()
-        self.qa_prompt = get_prompt(config, "qa")  # Initialize qa_prompt
+        self.qa_prompt = get_prompt(
+            config, "qa", all_prompts=self.config["prompts_dict"]["prompts"]
+        )  # Initialize qa_prompt
         self.rephrase_prompt = get_prompt(
-            config, "rephrase"
+            config, "rephrase", all_prompts=self.config["prompts_dict"]["prompts"]
         )  # Initialize rephrase_prompt
 
         # TODO: Removed this functionality for now, don't know if we need it
@@ -57,7 +62,7 @@ class LLMTutor:
 
         if "llm_params.llm_style" in changes:
             self.qa_prompt = get_prompt(
-                self.config, "qa"
+                self.config, "qa", all_prompts=self.config["prompts_dict"]["prompts"]
             )  # Update qa_prompt if ELI5 changes
 
     def get_config_changes(self, old_config, new_config):
@@ -117,12 +122,21 @@ class LLMTutor:
                 config=self.config,
                 callbacks=callbacks,
             )
-
-            self.question_generator = QuestionGenerator()
+        elif self.config["llm_params"]["llm_arch"] == "langgraph":
+            self.qa_chain = LanggraphAgenticRAG(
+                llm=llm,
+                memory=memory,
+                retriever=retriever,
+                qa_prompt=qa_prompt,
+                rephrase_prompt=rephrase_prompt,
+                config=self.config,
+                callbacks=callbacks,
+            )
         else:
             raise ValueError(
                 f"Invalid LLM Architecture: {self.config['llm_params']['llm_arch']}"
             )
+        self.question_generator = QuestionGenerator()
         return self.qa_chain
 
     def load_llm(self):
