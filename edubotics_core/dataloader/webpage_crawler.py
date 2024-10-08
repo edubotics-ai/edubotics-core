@@ -26,6 +26,8 @@ class WebpageCrawler:
             return response.status_code == 200
         except requests.ConnectionError:
             return False
+        except requests.exceptions.Timeout:
+            return False
 
     async def get_links(self, session: ClientSession, website_link: str, base_url: str):
         if not website_link.startswith(base_url):
@@ -104,7 +106,7 @@ class WebpageCrawler:
                 response = requests.head(url, allow_redirects=True, timeout=TIMEOUT)
                 content_type = response.headers.get("Content-Type", "").lower()
                 return "text/html" in content_type
-            except requests.RequestException:
+            except (requests.RequestException, ValueError, requests.exceptions.Timeout):
                 return False
 
     def clean_url_list(self, urls):
