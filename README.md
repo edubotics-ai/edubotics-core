@@ -24,8 +24,10 @@
         <img src="https://img.shields.io/github/contributors/edubotics-ai/edubot-core.svg" alt="GitHub Contributors">
     </a>
   
-  ![Discord](https://img.shields.io/discord/1293271626036805653?style=flat&logo=discord&label=Discord)
-    
+  <a>
+    <img alt="Discord" src="https://img.shields.io/discord/1293271626036805653?style=flat&logo=discord&label=Discord">
+  </a>
+
 </p>
 
 ## Welcome to edubotics-core by Edubotics AI! 👋
