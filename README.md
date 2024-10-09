@@ -24,7 +24,7 @@
         <img src="https://img.shields.io/github/contributors/edubotics-ai/edubot-core.svg" alt="GitHub Contributors">
     </a>
   
-  <a>
+  <a href="https://discord.com/channels/1293271626036805653">
     <img alt="Discord" src="https://img.shields.io/discord/1293271626036805653?style=flat&logo=discord&label=Discord">
   </a>
 
