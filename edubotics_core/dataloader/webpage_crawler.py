@@ -42,7 +42,7 @@ class WebpageCrawler:
             href = link["href"].strip()
             full_url = urljoin(base_url, href)
             normalized_url = self.normalize_url(full_url)  # sections removed
-            url_without_extension = normalized_url.rsplit('.', 1)[0]
+            url_without_extension = normalized_url.rsplit(".", 1)[0]
             if (
                 normalized_url not in self.dict_href_links
                 # and self.is_child_url(normalized_url, base_url)

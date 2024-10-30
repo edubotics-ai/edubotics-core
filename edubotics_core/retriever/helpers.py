@@ -37,8 +37,9 @@ class VectorStoreRetrieverScore(VectorStoreRetriever):
         cohere_client = cohere.Client(COHERE_API_KEY)
 
         docs_content = [doc.page_content for doc in docs if doc.page_content != ""]
-        response = cohere_client.rerank(query=query, documents=docs_content,
-                                        top_n=5, model='rerank-english-v3.0')
+        response = cohere_client.rerank(
+            query=query, documents=docs_content, top_n=5, model="rerank-english-v3.0"
+        )
 
         final_docs = []
         for result in response.results:

@@ -247,8 +247,9 @@ class ChunkProcessor:
             for key, value in metadata.items():
                 chunk.metadata[key] = value
 
-            source_name = os.path.basename(
-                source) if os.path.basename(source) != '' else source
+            source_name = (
+                os.path.basename(source) if os.path.basename(source) != "" else source
+            )
 
             chunk.metadata["source"] = source
             chunk.metadata["page"] = i
@@ -296,15 +297,25 @@ class ChunkProcessor:
             )
 
         document_names = [doc["document_name"] for doc in self.document_data]
-        documents = ["".join([chunk.page_content for chunk in doc["chunks"]])
-                     for doc in self.document_data]
+        documents = [
+            "".join([chunk.page_content for chunk in doc["chunks"]])
+            for doc in self.document_data
+        ]
         document_metadata = [doc["metadata"] for doc in self.document_data]
 
         self.document_data = [
             {
                 "document_name": doc["document_name"],
                 "metadata": doc["metadata"],
-                "chunks": [{"content": chunk.page_content, "source": chunk.metadata["source"], "page": chunk.metadata["page"], "chunk_id": chunk.metadata["chunk_id"]} for chunk in doc["chunks"]],
+                "chunks": [
+                    {
+                        "content": chunk.page_content,
+                        "source": chunk.metadata["source"],
+                        "page": chunk.metadata["page"],
+                        "chunk_id": chunk.metadata["chunk_id"],
+                    }
+                    for chunk in doc["chunks"]
+                ],
             }
             for doc in self.document_data
         ]
@@ -325,7 +336,7 @@ class ChunkProcessor:
         if "README" in doc_name:
             doc_name = file_path
 
-        if doc_name == '':
+        if doc_name == "":
             doc_name = file_path
 
         doc_metadata = {
@@ -422,15 +433,11 @@ class ChunkProcessor:
     def save_document_data(self):
         if not os.path.exists(f"{self.config['log_chunk_dir']}"):
             os.makedirs(f"{self.config['log_chunk_dir']}")
-            self.logger.info(
-                f"Creating directory {self.config['log_chunk_dir']}"
-            )
+            self.logger.info(f"Creating directory {self.config['log_chunk_dir']}")
         self.logger.info(
             f"Saving document content to {self.config['log_chunk_dir']}/doc_content.json"
         )
-        with open(
-            f"{self.config['log_chunk_dir']}/doc_content.json", "w"
-        ) as json_file:
+        with open(f"{self.config['log_chunk_dir']}/doc_content.json", "w") as json_file:
             json.dump(self.document_data, json_file, indent=4)
 
     def load_document_data(self):
