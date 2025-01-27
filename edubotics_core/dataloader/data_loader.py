@@ -1,5 +1,7 @@
 import os
+from pprint import pprint
 import re
+import traceback
 import requests
 import pysrt
 from langchain_community.document_loaders import (
@@ -55,11 +57,11 @@ class HTMLReader:
             absolute_url = urljoin(base_url, href)
             link["href"] = absolute_url
 
-            resp = requests.head(absolute_url, timeout=TIMEOUT)
-            if resp.status_code != 200:
-                # logger.warning(
-                #    f"Link {absolute_url} is broken. Status code: {resp.status_code}"
-                # )
+            try:
+                resp = requests.head(absolute_url, timeout=TIMEOUT)
+                if resp.status_code != 200:
+                    pass
+            except Exception as e:
                 pass
 
         return str(soup)
@@ -132,7 +134,7 @@ class FileReader:
         return loader.load()
 
     def read_html(self, url: str):
-        return [Document(page_content=self.web_reader.read_html(url))]
+        return [Document(page_content=self.web_reader.read_html(url), metadata={"source": url})]
 
     def read_tex_from_url(self, tex_url):
         response = requests.get(tex_url, timeout=TIMEOUT)
@@ -247,13 +249,15 @@ class ChunkProcessor:
             for key, value in metadata.items():
                 chunk.metadata[key] = value
 
-            source_name = (
+            chunk_name = (
                 os.path.basename(source) if os.path.basename(source) != "" else source
             )
+            if "README" in chunk_name:
+                chunk_name = "/".join(source.split("/")[-3:])
 
             chunk.metadata["source"] = source
             chunk.metadata["page"] = i
-            chunk.metadata["chunk_id"] = f"{source_name}_{i}"
+            chunk.metadata["chunk_id"] = f"{chunk_name}_{i}"
 
         if self.config["splitter_options"]["remove_leftover_delimiters"]:
             document_chunks = self.remove_delimiters(document_chunks)
@@ -295,15 +299,19 @@ class ChunkProcessor:
                 [file_reader] * len(weblinks),
                 [addl_metadata] * len(weblinks),
             )
-
-        document_names = [doc["document_name"] for doc in self.document_data]
         documents = [
             "".join([chunk.page_content for chunk in doc["chunks"]])
             for doc in self.document_data
         ]
+        chunks = [
+            chunk
+            for doc in self.document_data
+            for chunk in doc["chunks"]
+        ]
+        document_names = [doc["document_name"] for doc in self.document_data]
         document_metadata = [doc["metadata"] for doc in self.document_data]
 
-        self.document_data = [
+        self.document_data_dict = [
             {
                 "document_name": doc["document_name"],
                 "metadata": doc["metadata"],
@@ -322,11 +330,12 @@ class ChunkProcessor:
 
         self.save_document_data()
 
+        total_chunks = sum([len(doc["chunks"]) for doc in self.document_data])
         self.logger.info(
-            f"Total document chunks extracted: {len(self.document_chunks_full)}"
+            f"Total document chunks extracted: {(total_chunks)}"
         )
 
-        return self.document_chunks_full, document_names, documents, document_metadata
+        return chunks, document_names, documents, document_metadata
 
     def process_documents(
         self, documents, file_path, file_type, metadata_source, addl_metadata
@@ -378,7 +387,7 @@ class ChunkProcessor:
         # self.document_metadata[file_path] = doc_metadata
 
     def process_file(self, file_path, file_index, file_reader, addl_metadata):
-        print(f"Processing file {file_index + 1} : {file_path}")
+        self.logger.info(f"Processing file {file_index + 1} : {file_path}")
         file_name = os.path.basename(file_path)
 
         file_type = file_name.split(".")[-1]
@@ -426,9 +435,17 @@ class ChunkProcessor:
             else:
                 documents = file_reader.read_html(link)
 
-            self.process_documents(documents, link, "txt", "link", addl_metadata)
+            if len(set([doc.metadata["source"] for doc in documents])) > 1:
+                self.logger.warning(
+                    f"Documents from link {link_index + 1} : {link} have multiple sources")
+                for doc in documents:
+                    self.process_documents(
+                        [doc], doc.metadata["source"], "txt", "link", addl_metadata)
+            else:
+                self.process_documents(documents, link, "txt", "link", addl_metadata)
         except Exception as e:
             self.logger.error(f"Error Reading link {link_index + 1} : {link}: {str(e)}")
+            self.logger.error(f"Error traceback: {traceback.format_exc()}")
 
     def save_document_data(self):
         if not os.path.exists(f"{self.config['log_chunk_dir']}"):
@@ -438,14 +455,14 @@ class ChunkProcessor:
             f"Saving document content to {self.config['log_chunk_dir']}/doc_content.json"
         )
         with open(f"{self.config['log_chunk_dir']}/doc_content.json", "w") as json_file:
-            json.dump(self.document_data, json_file, indent=4)
+            json.dump(self.document_data_dict, json_file, indent=4)
 
     def load_document_data(self):
         try:
             with open(
                 f"{self.config['log_chunk_dir']}/doc_content.json", "r"
             ) as json_file:
-                self.document_data = json.load(json_file)
+                self.document_data_dict = json.load(json_file)
             self.logger.info(
                 f"Loaded document content from {self.config['log_chunk_dir']}/doc_content.json. Total documents: {len(self.document_data)}"
             )
@@ -453,7 +470,7 @@ class ChunkProcessor:
             self.logger.warning(
                 f"Document content not found in {self.config['log_chunk_dir']}/doc_content.json"
             )
-            self.document_data = {}
+            self.document_data_dict = {}
 
 
 class DataLoader:
@@ -475,13 +492,18 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Data Loader")
     parser.add_argument(
-        "--config_file", type=str, help="Path to the main config file", required=True
+        "--config_file",
+        type=str,
+        help="Path to the main config file",
+        # required=True,
+        default="config/config.yml",
     )
     parser.add_argument(
         "--project_config_file",
         type=str,
         help="Path to the project config file",
-        required=True,
+        # required=True,
+        default="config/project_config.yml",
     )
 
     args = parser.parse_args()
@@ -528,3 +550,4 @@ if __name__ == "__main__":
 
     print(document_names[:5])
     print(len(document_chunks))
+    print(document_chunks[2].page_content[:100])

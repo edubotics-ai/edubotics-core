@@ -1,0 +1,61 @@
+retriever:
+  retriever_hf_paths:
+    RAGatouille: "XThomasBU/Colbert_Index"
+
+metadata:
+  base_link: "https://tools4ds.github.io/fa2024/"
+  metadata_links:
+    [
+      "https://tools4ds.github.io/fa2024/lectures/",
+      "https://tools4ds.github.io/fa2024/schedule_a1/",
+    ]
+  slide_base_link: "https://tools4ds.github.io/fa2024/lectures/"
+
+  # Assignment base link is used to find the webpage where the assignment is described/posted
+  assignment_base_link: "https://tools4ds.github.io/fa2024/assignments/"
+
+  # Define content types - assignments, lectures, etc.
+  content_types:
+    - "lecture"
+    - "assignment"
+    - "discussion"
+    - "project"
+    - "other"
+
+  # These need to be patterns from URLs that can be used to identify the type of content uniquely
+  lectures_pattern: "/lectures/"
+  assignments_pattern: "/assignments/"
+  discussion_pattern: "/discussion/"
+  project_pattern: "/project/"
+
+  # These are fields that can be extracted from the webpages of the course content
+  lecture_metadata_fields:
+    - "title"
+    - "tldr"
+    - "date"
+    - "lecture_recording"
+    - "suggested_readings"
+
+  assignment_metadata_fields:
+    - "title"
+    - "release_date"
+    - "due_date"
+    - "source_file"
+
+token_config:
+  cooldown_time: 60
+  regen_time: 180
+  tokens_left: 50000
+  all_time_tokens_allocated: 1000000
+
+content:
+  notebookheaders_to_split_on:
+    - ["##", "Section"]
+    - ["#", "Title"]
+
+misc:
+  github_repo: "https://github.com/edubotics-ai/edubot-core"
+  docs_website: "https://dl4ds.github.io/dl4ds_tutor/"
+
+api_config:
+  timeout: 30

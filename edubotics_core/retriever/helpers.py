@@ -3,7 +3,7 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.document import Document
 from langchain_core.callbacks import AsyncCallbackManagerForRetrieverRun
 from typing import List
-from config.constants import COHERE_API_KEY
+from edubotics_core.config.constants import COHERE_API_KEY
 import cohere
 
 

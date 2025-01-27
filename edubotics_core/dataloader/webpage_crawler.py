@@ -45,9 +45,9 @@ class WebpageCrawler:
             url_without_extension = normalized_url.rsplit(".", 1)[0]
             if (
                 normalized_url not in self.dict_href_links
-                # and self.is_child_url(normalized_url, base_url)
                 and self.url_exists(normalized_url)
                 and url_without_extension not in self.dict_href_links
+                and self.is_relevant_link(full_url, base_url)
             ):
                 self.dict_href_links[normalized_url] = None
                 list_links.append(normalized_url)
@@ -166,3 +166,43 @@ class WebpageCrawler:
                 return found_url
 
         return None
+
+    def is_relevant_link(self, url: str, base_url: str) -> bool:
+        """
+        Determines if a link is relevant to the tutor based on multiple criteria.
+
+        Args:
+            url: The URL to check
+            base_url: The base URL of the course/platform
+        """
+        # Skip if it's not a valid URL format
+        if not url or url.startswith("mailto:") or url.startswith("tel:"):
+            return False
+
+        # Skip common irrelevant file types
+        irrelevant_extensions = [
+            '.zip', '.exe', '.dmg', '.pkg', '.mp3', '.mp4',
+            '.avi', '.mov', '.jpg', '.jpeg', '.png', '.gif'
+        ]
+        if any(url.lower().endswith(ext) for ext in irrelevant_extensions):
+            return False
+
+        # Skip social media and common external platforms
+        irrelevant_domains = [
+            'facebook.com', 'twitter.com',
+            'instagram.com'
+        ]
+        domain = urlparse(url).netloc.lower()
+        if any(site in domain for site in irrelevant_domains):
+            return False
+
+        # Check for relevant URL patterns
+        relevant_patterns = [
+            'lecture', 'assignment', 'course',
+            'material', 'resource', 'syllabus',
+            'schedule', 'homework', 'quiz', 'lab', 'project'
+            'discussion', 'schedule', 'notebook', 'slides'
+        ]
+        if any(pattern in url for pattern in relevant_patterns):
+            return True
+        return False

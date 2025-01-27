@@ -1,3 +1,5 @@
+import os
+from cohere import Document
 import requests
 import base64
 from edubotics_core.dataloader.repo_readers.helpers import extract_notebook_content
@@ -65,10 +67,10 @@ class GithubReader:
             branch (str, optional): The branch to fetch the contents from. Defaults to 'main'.
             path (str, optional): The path to the repository. Defaults to ''.
         """
-        repo_owner, repo_name, branch = self.parse_github_url(url)
+        repo_owner, repo_name, branch, path = self.parse_github_url(url)
 
         # top level path is ''
-        return self.read_github_repo_contents(repo_owner, repo_name, branch)
+        return self.read_github_repo_contents(repo_owner, repo_name, branch, path)
 
     def read_github_repo_contents(self, repo_owner, repo_name, branch="main", path=""):
         """
@@ -100,16 +102,11 @@ class GithubReader:
                     file_path = item["path"]
                     extension = file_path.split(".")[-1]
 
-                    if self.repo_allow_list:
-                        if not any(
-                            pattern in file_path for pattern in self.repo_allow_list
-                        ):
-                            continue
                     if file_path in self.ignore_files or extension in self.ignore_ext:
                         continue
 
                     file_content = self.get_github_file_content(
-                        repo_owner, repo_name, file_path, branch
+                        repo_owner, repo_name, file_path, branch,
                     )
 
                     full_path = f"https://github.com/{repo_owner}/{repo_name}/blob/{branch}/{file_path}"
@@ -156,7 +153,6 @@ class GithubReader:
             decoded_content = base64.b64decode(content).decode("utf-8")
 
             if not decoded_content.strip():
-                print(f"File {file_path} is empty.")
                 return None
 
             if file_path.endswith(".ipynb"):
@@ -164,7 +160,6 @@ class GithubReader:
 
             return decoded_content
         else:
-            print(f"Failed to fetch file: {response.status_code}")
             return None
 
     @staticmethod
@@ -190,26 +185,22 @@ class GithubReader:
         repo_owner = path_parts[0]
         repo_name = path_parts[1]
         branch = "main"  # Default branch
+        path = os.path.join(*path_parts[4:])
 
         if len(path_parts) > 3 and path_parts[2] == "tree":
             branch = path_parts[3]
 
-        return repo_owner, repo_name, branch
+        return repo_owner, repo_name, branch, path
 
 
 # Usage example
 if __name__ == "__main__":
     # Set up argparse to get username and github_url as arguments
-    parser = argparse.ArgumentParser(description="Read GitHub repository contents.")
-    parser.add_argument(
-        "--github_url", type=str, help="GitHub repository URL", required=True
-    )
 
-    args = parser.parse_args()
-    github_url = args.github_url
+    github_url = "https://github.com/DL4DS/sp2024_notebooks/tree/main/discussion/disc4"
 
     reader = GithubReader()  # Initialize the GithubReader
-    owner, name, branch = GithubReader.parse_github_url(github_url)
+    owner, name, branch, path = GithubReader.parse_github_url(github_url)
     print(f"Owner: {owner}, Repo: {name}, Branch: {branch}")
     repo_contents = reader.get_repo_contents(github_url)
 

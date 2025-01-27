@@ -1,5 +1,5 @@
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from edubotics_core.config.constants import OPENAI_API_KEY, HUGGINGFACE_TOKEN
 
 
@@ -11,7 +11,7 @@ class EmbeddingModelLoader:
         if self.config["vectorstore"]["model"] in ["text-embedding-ada-002"]:
             embedding_model = OpenAIEmbeddings(
                 deployment="SL-document_embedder",
-                model=self.config["vectorestore"]["model"],
+                model=self.config["vectorstore"]["model"],
                 show_progress_bar=True,
                 openai_api_key=OPENAI_API_KEY,
                 disallowed_special=(),

@@ -3,6 +3,9 @@ from edubotics_core.dataloader.helpers import get_urls_from_file
 from edubotics_core.dataloader.webpage_crawler import WebpageCrawler
 from edubotics_core.dataloader.data_loader import DataLoader
 from edubotics_core.vectorstore.embedding_model_loader import EmbeddingModelLoader
+from edubotics_core.vectorstore.helpers import determine_content_type
+from langchain_core.documents import Document
+
 import logging
 import os
 import time
@@ -21,7 +24,7 @@ class VectorStoreManager:
         self.webpage_crawler = WebpageCrawler()
         self.vector_db = VectorStore(self.config)
 
-        self.logger.info("VectorDB instance instantiated")
+        self.logger.info("Vector database instantiated")
 
     def _setup_logging(self):
         logger = logging.getLogger(__name__)
@@ -84,15 +87,15 @@ class VectorStoreManager:
         documents: list,
         document_metadata: list,
     ):
-        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma", "RAPTOR"]:
+        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma", "RAPTOR", "MVS"]:
             self.embedding_model = self.create_embedding_model()
         else:
             self.embedding_model = None
 
-        self.logger.info("Initializing vector_db")
+        self.logger.info("Initializing vector database...")
         self.logger.info(
-            "\tUsing {} as db_option".format(self.config["vectorstore"]["db_option"])
-        )
+            f"There are {len(document_chunks)} chunks. ")
+
         self.vector_db._create_database(
             document_chunks,
             document_names,
@@ -106,8 +109,6 @@ class VectorStoreManager:
         data_loader = DataLoader(self.config, self.logger)
         self.logger.info("Loading data")
         local_files, urls = self.load_files()
-        # print(f"Local files: {local_files}")
-        # print(f"URLs: {urls}")
         files, webpages = self.webpage_crawler.clean_url_list(urls)
         files.extend(local_files)
         self.logger.info(f"Number of files: {len(files)}")
@@ -146,9 +147,6 @@ class VectorStoreManager:
             raise ValueError(
                 f"Error loading database, check if it exists. if not run python -m edubotics_core.vectorstore.store_manager / Resteart the HF Space: {e}"
             )
-            # print(f"Creating database")
-            # self.create_database()
-            # self.loaded_vector_db = self.vector_db._load_database(self.embedding_model)
         end_time = time.time()  # End time for loading database
         self.logger.info(
             f"Time taken to load database {self.config['vectorstore']['db_option']}: {end_time - start_time} seconds"
@@ -194,7 +192,6 @@ def main():
 
     # combine the two configs
     config.update(project_config)
-    print(config)
     print(f"Trying to create database with config: {config}")
     vector_db = VectorStoreManager(config)
     if config["vectorstore"]["load_from_HF"]:
@@ -208,20 +205,12 @@ def main():
                 ]
             )
         else:
-            # print(f"HF_PATH not available for {config['vectorstore']['db_option']}")
-            # print("Creating database")
-            # vector_db.create_database()
             raise ValueError(
                 f"HF_PATH not available for {config['vectorstore']['db_option']}"
             )
     else:
         vector_db.create_database()
     print("Created database")
-
-    print("Trying to load the database")
-    vector_db = VectorStoreManager(config)
-    vector_db.load_database()
-    print("Loaded database")
 
     print(f"View the logs at {config['log_dir']}/vector_db.log")
 

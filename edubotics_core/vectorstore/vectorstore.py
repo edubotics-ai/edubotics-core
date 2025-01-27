@@ -1,6 +1,7 @@
 from edubotics_core.vectorstore.faiss import FaissVectorStore
 from edubotics_core.vectorstore.chroma import ChromaVectorStore
 from edubotics_core.vectorstore.colbert import ColbertVectorStore
+from edubotics_core.vectorstore.mvs import MultiVectorStore
 from edubotics_core.vectorstore.raptor import RAPTORVectoreStore
 from huggingface_hub import snapshot_download
 import os
@@ -16,6 +17,7 @@ class VectorStore:
             "Chroma": ChromaVectorStore,
             "RAGatouille": ColbertVectorStore,
             "RAPTOR": RAPTORVectoreStore,
+            "MVS": MultiVectorStore,
         }
 
     def _create_database(
@@ -29,7 +31,8 @@ class VectorStore:
         db_option = self.config["vectorstore"]["db_option"]
         vectorstore_class = self.vectorstore_classes.get(db_option)
         if not vectorstore_class:
-            raise ValueError(f"Invalid db_option: {db_option}")
+            raise ValueError(
+                f"Invalid vector database option: {db_option}. Please pick from: {self.vectorstore_classes.keys()}")
 
         self.vectorstore = vectorstore_class(self.config)
 
@@ -38,7 +41,8 @@ class VectorStore:
                 documents, document_names, document_metadata
             )
         else:
-            self.vectorstore.create_database(document_chunks, embedding_model)
+            self.vectorstore.create_database(
+                document_chunks, embedding_model)
 
     def _load_database(self, embedding_model):
         db_option = self.config["vectorstore"]["db_option"]

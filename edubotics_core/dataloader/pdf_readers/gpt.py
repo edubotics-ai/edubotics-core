@@ -31,7 +31,7 @@ class GPTParser:
 
         encoded_images = [self.encode_image(image) for image in images]
 
-        chunks = [encoded_images[i : i + 5] for i in range(0, len(encoded_images), 5)]
+        chunks = [encoded_images[i: i + 5] for i in range(0, len(encoded_images), 5)]
 
         headers = {
             "Content-Type": "application/json",
@@ -80,6 +80,7 @@ class GPTParser:
             Document(page_content=page, metadata={"source": pdf_path, "page": i})
             for i, page in enumerate(output)
         ]
+
         return documents
 
     def encode_image(self, image):
