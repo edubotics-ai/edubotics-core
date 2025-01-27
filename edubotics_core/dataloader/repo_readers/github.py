@@ -106,7 +106,10 @@ class GithubReader:
                         continue
 
                     file_content = self.get_github_file_content(
-                        repo_owner, repo_name, file_path, branch,
+                        repo_owner,
+                        repo_name,
+                        file_path,
+                        branch,
                     )
 
                     full_path = f"https://github.com/{repo_owner}/{repo_name}/blob/{branch}/{file_path}"

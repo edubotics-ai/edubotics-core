@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 # Load the variables from .env
 load_dotenv()
 
-content_types = ['assignment', "lecture", "discussion", "other"]
+content_types = ["assignment", "lecture", "discussion", "other"]
 NUM_VECTORSTORES = len(content_types)
 VS_PATH = "vectorstores"
 
@@ -26,8 +26,9 @@ VS_PATH = "vectorstores"
 class RouteQuery(BaseModel):
     """Route a user query to the most relevant vector store."""
 
-    datasource: Literal['assignment', "lecture",
-                        "discussion", "other", "not_needed"] = Field(
+    datasource: Literal[
+        "assignment", "lecture", "discussion", "other", "not_needed"
+    ] = Field(
         ...,
         description="Given a user question choose to route it to the relevant vector store or none.",
     )
@@ -46,7 +47,7 @@ class GraphState(TypedDict):
     messages: Annotated[list, add_messages]
     documents: List[str]
     documents_sources: List[str]
-    type: Literal['retrieve', 'generate']
+    type: Literal["retrieve", "generate"]
     next: str
 
 

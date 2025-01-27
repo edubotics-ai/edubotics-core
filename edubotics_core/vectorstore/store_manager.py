@@ -87,14 +87,18 @@ class VectorStoreManager:
         documents: list,
         document_metadata: list,
     ):
-        if self.config["vectorstore"]["db_option"] in ["FAISS", "Chroma", "RAPTOR", "MVS"]:
+        if self.config["vectorstore"]["db_option"] in [
+            "FAISS",
+            "Chroma",
+            "RAPTOR",
+            "MVS",
+        ]:
             self.embedding_model = self.create_embedding_model()
         else:
             self.embedding_model = None
 
         self.logger.info("Initializing vector database...")
-        self.logger.info(
-            f"There are {len(document_chunks)} chunks. ")
+        self.logger.info(f"There are {len(document_chunks)} chunks. ")
 
         self.vector_db._create_database(
             document_chunks,

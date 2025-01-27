@@ -11,9 +11,11 @@ class MvsRetriever:
         self.retrievers = {}
         for content_type in self.config["vectorstore"]["content_types"]:
             path = os.path.join(
-                self.config["vectorstore"]["db_path"], "mvs", f"FAISS_{content_type}")
+                self.config["vectorstore"]["db_path"], "mvs", f"FAISS_{content_type}"
+            )
             self.retrievers[content_type] = FaissRetriever().return_retriever(
-                path, self.config)
+                path, self.config
+            )
 
     def return_retriever(self):
         return self.retrievers

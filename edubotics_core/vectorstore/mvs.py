@@ -8,10 +8,9 @@ import os
 
 
 class MultiVectorStore(VectorStoreBase):
-
     """
-        Implementation of the multi-vector approach, where each vector store corresponds to a different content type.
-        A parent folder in the db_path called "mvs" is created, and within it, a folder for each vector store (content type) is created.
+    Implementation of the multi-vector approach, where each vector store corresponds to a different content type.
+    A parent folder in the db_path called "mvs" is created, and within it, a folder for each vector store (content type) is created.
     """
 
     def __init__(self, config):
@@ -21,8 +20,7 @@ class MultiVectorStore(VectorStoreBase):
         self.local_path = os.path.join(
             self.config["vectorstore"]["db_path"],
             "mvs",
-            self.config["vectorstore"]["db_option"]
-            + "_",
+            self.config["vectorstore"]["db_option"] + "_",
         )
 
     def _init_vector_db(self):
@@ -42,7 +40,10 @@ class MultiVectorStore(VectorStoreBase):
 
         for content_type in self.content_types:
             content_map[content_type] = list(
-                filter(lambda x: determine_content_type(x) == content_type, document_chunks))
+                filter(
+                    lambda x: determine_content_type(x) == content_type, document_chunks
+                )
+            )
 
         for content_type in content_map:
             content_chunks = content_map[content_type]
@@ -54,7 +55,8 @@ class MultiVectorStore(VectorStoreBase):
                     documents=content_chunks, embedding=embedding_model
                 )
                 self.vectorstores[content_type].save_local(
-                    self.local_path + (content_type or ""))
+                    self.local_path + (content_type or "")
+                )
             else:
                 print(f"No content chunks found for {content_type}")
 
@@ -83,7 +85,8 @@ class MultiVectorStore(VectorStoreBase):
         for content_type in self.content_types:
             if content_type in vectorstores:
                 retriever = FaissRetriever().return_retriever(
-                    vectorstores[content_type], self.config)
+                    vectorstores[content_type], self.config
+                )
                 retrievers[content_type] = retriever
             else:
                 print(f"No vector store found for {content_type}")
@@ -94,7 +97,9 @@ class MultiVectorStore(VectorStoreBase):
         """
         Returns the total number of documents in all vector stores.
         """
-        return sum(len(self.vectorstores[content_type]) for content_type in self.content_types)
+        return sum(
+            len(self.vectorstores[content_type]) for content_type in self.content_types
+        )
 
     def __str__(self):
         """

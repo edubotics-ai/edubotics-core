@@ -134,7 +134,11 @@ class FileReader:
         return loader.load()
 
     def read_html(self, url: str):
-        return [Document(page_content=self.web_reader.read_html(url), metadata={"source": url})]
+        return [
+            Document(
+                page_content=self.web_reader.read_html(url), metadata={"source": url}
+            )
+        ]
 
     def read_tex_from_url(self, tex_url):
         response = requests.get(tex_url, timeout=TIMEOUT)
@@ -303,11 +307,7 @@ class ChunkProcessor:
             "".join([chunk.page_content for chunk in doc["chunks"]])
             for doc in self.document_data
         ]
-        chunks = [
-            chunk
-            for doc in self.document_data
-            for chunk in doc["chunks"]
-        ]
+        chunks = [chunk for doc in self.document_data for chunk in doc["chunks"]]
         document_names = [doc["document_name"] for doc in self.document_data]
         document_metadata = [doc["metadata"] for doc in self.document_data]
 
@@ -331,9 +331,7 @@ class ChunkProcessor:
         self.save_document_data()
 
         total_chunks = sum([len(doc["chunks"]) for doc in self.document_data])
-        self.logger.info(
-            f"Total document chunks extracted: {(total_chunks)}"
-        )
+        self.logger.info(f"Total document chunks extracted: {(total_chunks)}")
 
         return chunks, document_names, documents, document_metadata
 
@@ -437,10 +435,12 @@ class ChunkProcessor:
 
             if len(set([doc.metadata["source"] for doc in documents])) > 1:
                 self.logger.warning(
-                    f"Documents from link {link_index + 1} : {link} have multiple sources")
+                    f"Documents from link {link_index + 1} : {link} have multiple sources"
+                )
                 for doc in documents:
                     self.process_documents(
-                        [doc], doc.metadata["source"], "txt", "link", addl_metadata)
+                        [doc], doc.metadata["source"], "txt", "link", addl_metadata
+                    )
             else:
                 self.process_documents(documents, link, "txt", "link", addl_metadata)
         except Exception as e:

@@ -32,7 +32,8 @@ class VectorStore:
         vectorstore_class = self.vectorstore_classes.get(db_option)
         if not vectorstore_class:
             raise ValueError(
-                f"Invalid vector database option: {db_option}. Please pick from: {self.vectorstore_classes.keys()}")
+                f"Invalid vector database option: {db_option}. Please pick from: {self.vectorstore_classes.keys()}"
+            )
 
         self.vectorstore = vectorstore_class(self.config)
 
@@ -41,8 +42,7 @@ class VectorStore:
                 documents, document_names, document_metadata
             )
         else:
-            self.vectorstore.create_database(
-                document_chunks, embedding_model)
+            self.vectorstore.create_database(document_chunks, embedding_model)
 
     def _load_database(self, embedding_model):
         db_option = self.config["vectorstore"]["db_option"]

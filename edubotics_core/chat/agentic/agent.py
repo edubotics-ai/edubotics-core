@@ -22,7 +22,9 @@ load_dotenv()
 
 
 class Agent:
-    def __init__(self, thread_id: str = None, config: dict = None, prompts: dict = None):
+    def __init__(
+        self, thread_id: str = None, config: dict = None, prompts: dict = None
+    ):
         self.config = config
         self.retrievers = {}
         self.content_types = self.config["metadata"]["content_types"]
@@ -44,7 +46,8 @@ class Agent:
         api_key = os.environ["OPENAI_API_KEY"]
 
         self.rag_prompt = ChatPromptTemplate.from_template(
-            prompts["openai"]["prompt_with_history"]["normal"])
+            prompts["openai"]["prompt_with_history"]["normal"]
+        )
         self.route_prompt = ChatPromptTemplate.from_template(router_template)
         self.model = ChatOpenAI(
             temperature=0.5,
@@ -97,16 +100,21 @@ class Agent:
 
     async def stream(self, question: str):
         config = {"configurable": {"thread_id": self.thread_id}}
-        messages_with_history = self.conversation_history + \
-            [HumanMessage(content=question)]
+        messages_with_history = self.conversation_history + [
+            HumanMessage(content=question)
+        ]
         token_count = 0
-        for event in self.graph.stream({"messages": messages_with_history}, config, stream_mode=['messages', 'updates']):
-            if event[0] == 'messages' and event[1][1]['langgraph_node'] == 'generate':
+        for event in self.graph.stream(
+            {"messages": messages_with_history},
+            config,
+            stream_mode=["messages", "updates"],
+        ):
+            if event[0] == "messages" and event[1][1]["langgraph_node"] == "generate":
                 ai_message = event[1][0]
 
                 if isinstance(ai_message, AIMessageChunk):
                     if ai_message.usage_metadata:
-                        tokens = ai_message.usage_metadata.get('output_tokens', 0)
+                        tokens = ai_message.usage_metadata.get("output_tokens", 0)
                         token_count += tokens
 
                     yield {"content": ai_message.content, "total_tokens": token_count}
@@ -117,7 +125,8 @@ class Agent:
     def run(self, question: str) -> dict:
         config = {"configurable": {"thread_id": self.thread_id}}
         last_state = self.graph.invoke(
-            {"messages": [HumanMessage(content=question)]}, config)
+            {"messages": [HumanMessage(content=question)]}, config
+        )
         response = last_state["messages"][-1].content
         documents = last_state["documents"]
         self.updates.append(last_state)
@@ -131,10 +140,10 @@ class Agent:
             return []
         else:
             last_update = self.updates[-1]
-            if 'generate' in last_update:
-                return last_update['generate']['documents_sources']
-            elif 'documents' in last_update:
-                return last_update['documents']
+            if "generate" in last_update:
+                return last_update["generate"]["documents_sources"]
+            elif "documents" in last_update:
+                return last_update["documents"]
             else:
                 return []
 
@@ -224,10 +233,19 @@ class Agent:
 
         # RAG generation
         response = self.rag_chain.invoke(
-            {"context": documents, "input": question, "chat_history": conversation_history})
+            {
+                "context": documents,
+                "input": question,
+                "chat_history": conversation_history,
+            }
+        )
         ai_message = AIMessage(content=response)
 
-        return {"documents_sources": documents_sources, "messages": [ai_message], "type": "generate"}
+        return {
+            "documents_sources": documents_sources,
+            "messages": [ai_message],
+            "type": "generate",
+        }
 
     def route_question(self, state):
         """
@@ -289,7 +307,12 @@ class Agent:
             if message_type == "user_message":
                 content = step["output"]
                 self.conversation_history.append(HumanMessage(content=content))
-            elif message_type in ["assistant_message", "assistant_message_chunk", "ai_message", "ai_message_chunk"]:
+            elif message_type in [
+                "assistant_message",
+                "assistant_message_chunk",
+                "ai_message",
+                "ai_message_chunk",
+            ]:
                 content = step["output"]
                 self.conversation_history.append(AIMessage(content=content))
 
@@ -302,7 +325,10 @@ if __name__ == "__main__":
 
     from .prompts import prompts
 
-    with open("/Users/faridkarimli/Desktop/Programming/AI/edubot-core/edubotics_core/chat/agentic/config.yml", "r") as f:
+    with open(
+        "/Users/faridkarimli/Desktop/Programming/AI/edubot-core/edubotics_core/chat/agentic/config.yml",
+        "r",
+    ) as f:
         config = yaml.safe_load(f)
 
     agent = Agent(thread_id="123", config=config, prompts=prompts)

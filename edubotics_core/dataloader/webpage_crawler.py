@@ -181,27 +181,44 @@ class WebpageCrawler:
 
         # Skip common irrelevant file types
         irrelevant_extensions = [
-            '.zip', '.exe', '.dmg', '.pkg', '.mp3', '.mp4',
-            '.avi', '.mov', '.jpg', '.jpeg', '.png', '.gif'
+            ".zip",
+            ".exe",
+            ".dmg",
+            ".pkg",
+            ".mp3",
+            ".mp4",
+            ".avi",
+            ".mov",
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
         ]
         if any(url.lower().endswith(ext) for ext in irrelevant_extensions):
             return False
 
         # Skip social media and common external platforms
-        irrelevant_domains = [
-            'facebook.com', 'twitter.com',
-            'instagram.com'
-        ]
+        irrelevant_domains = ["facebook.com", "twitter.com", "instagram.com"]
         domain = urlparse(url).netloc.lower()
         if any(site in domain for site in irrelevant_domains):
             return False
 
         # Check for relevant URL patterns
         relevant_patterns = [
-            'lecture', 'assignment', 'course',
-            'material', 'resource', 'syllabus',
-            'schedule', 'homework', 'quiz', 'lab', 'project'
-            'discussion', 'schedule', 'notebook', 'slides'
+            "lecture",
+            "assignment",
+            "course",
+            "material",
+            "resource",
+            "syllabus",
+            "schedule",
+            "homework",
+            "quiz",
+            "lab",
+            "project" "discussion",
+            "schedule",
+            "notebook",
+            "slides",
         ]
         if any(pattern in url for pattern in relevant_patterns):
             return True
