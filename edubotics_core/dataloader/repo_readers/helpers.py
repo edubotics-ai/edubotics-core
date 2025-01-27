@@ -3,6 +3,7 @@ import nbformat
 import requests
 import argparse
 from langchain_text_splitters import MarkdownHeaderTextSplitter
+from langchain.docstore.document import Document
 
 
 def read_notebook_from_url(notebook_url):
@@ -71,8 +72,8 @@ def extract_notebook_content(
         headers_to_split_on=headers_to_split_on, strip_headers=False
     )
 
-    chunks = markdown_splitter.split_text(content)
-    return chunks
+    # chunks = markdown_splitter.split_text(content)
+    return content
 
 
 if __name__ == "__main__":

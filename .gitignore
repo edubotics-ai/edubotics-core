@@ -166,6 +166,7 @@ cython_debug/
 */__pycache__/*
 .chainlit/translations/
 code/.chainlit/translations/
+**/.chainlit/translations/
 storage/logs/*
 vectorstores/*
 

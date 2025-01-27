@@ -1,5 +1,7 @@
 import os
+from pprint import pprint
 import re
+import traceback
 import requests
 import pysrt
 from langchain_community.document_loaders import (
@@ -55,11 +57,11 @@ class HTMLReader:
             absolute_url = urljoin(base_url, href)
             link["href"] = absolute_url
 
-            resp = requests.head(absolute_url, timeout=TIMEOUT)
-            if resp.status_code != 200:
-                # logger.warning(
-                #    f"Link {absolute_url} is broken. Status code: {resp.status_code}"
-                # )
+            try:
+                resp = requests.head(absolute_url, timeout=TIMEOUT)
+                if resp.status_code != 200:
+                    pass
+            except Exception as e:
                 pass
 
         return str(soup)
@@ -101,8 +103,18 @@ class FileReader:
         return documents
 
     def read_txt(self, temp_file_path: str):
-        loader = TextLoader(temp_file_path, autodetect_encoding=True)
-        return loader.load()
+        if temp_file_path.startswith("http"):
+            return self.read_txt_from_url(temp_file_path)
+        else:
+            loader = TextLoader(temp_file_path, autodetect_encoding=True)
+            return loader.load()
+
+    def read_txt_from_url(self, url: str):
+        response = requests.get(url, timeout=TIMEOUT)
+        if response.status_code == 200:
+            return [Document(page_content=response.text)]
+        else:
+            return None
 
     def read_docx(self, temp_file_path: str):
         loader = Docx2txtLoader(temp_file_path)
@@ -122,7 +134,11 @@ class FileReader:
         return loader.load()
 
     def read_html(self, url: str):
-        return [Document(page_content=self.web_reader.read_html(url))]
+        return [
+            Document(
+                page_content=self.web_reader.read_html(url), metadata={"source": url}
+            )
+        ]
 
     def read_tex_from_url(self, tex_url):
         response = requests.get(tex_url, timeout=TIMEOUT)
@@ -152,10 +168,12 @@ class FileReader:
             notebook_path = notebook_path.replace("/blob/", "/")
             self.logger.info(f"Changed notebook path to {notebook_path}")
 
-        return read_notebook_from_file(
+        notebook_content = read_notebook_from_file(
             notebook_path,
             headers_to_split_on=self.config["content"]["notebookheaders_to_split_on"],
         )
+
+        return [Document(page_content=notebook_content)]
 
 
 class ChunkProcessor:
@@ -163,8 +181,8 @@ class ChunkProcessor:
         self.config = config
         self.logger = logger
 
-        self.document_data = {}
-        self.document_metadata = {}
+        self.document_data = []
+        self.document_metadata = []
         self.document_chunks_full = []
 
         # TODO: Fix when reparse_files is False
@@ -217,7 +235,7 @@ class ChunkProcessor:
         self, documents, file_type="txt", source="", page=0, metadata={}
     ):
         # TODO: Clear up this pipeline of re-adding metadata
-        documents = [Document(page_content=documents, source=source, page=page)]
+        # documents = [Document(page_content=documents, source=source, page=page)]
         if (
             file_type == "pdf"
             and self.config["splitter_options"]["chunking_mode"] == "fixed"
@@ -227,13 +245,23 @@ class ChunkProcessor:
             document_chunks = self.splitter.split_documents(documents)
 
         # add the source and page number back to the metadata
-        for chunk in document_chunks:
-            chunk.metadata["source"] = source
-            chunk.metadata["page"] = page
-
+        for i, chunk in enumerate(document_chunks):
+            # print(
+            #     f"Chunk {i}: {chunk.page_content[:100] + '...' +chunk.page_content[-100:]}"
+            # )
             # add the metadata extracted from the document
             for key, value in metadata.items():
                 chunk.metadata[key] = value
+
+            chunk_name = (
+                os.path.basename(source) if os.path.basename(source) != "" else source
+            )
+            if "README" in chunk_name:
+                chunk_name = "/".join(source.split("/")[-3:])
+
+            chunk.metadata["source"] = source
+            chunk.metadata["page"] = i
+            chunk.metadata["chunk_id"] = f"{chunk_name}_{i}"
 
         if self.config["splitter_options"]["remove_leftover_delimiters"]:
             document_chunks = self.remove_delimiters(document_chunks)
@@ -275,73 +303,89 @@ class ChunkProcessor:
                 [file_reader] * len(weblinks),
                 [addl_metadata] * len(weblinks),
             )
-
-        document_names = [
-            f"{file_name}_{page_num}"
-            for file_name, pages in self.document_data.items()
-            for page_num in pages.keys()
-        ]
         documents = [
-            page for doc in self.document_data.values() for page in doc.values()
+            "".join([chunk.page_content for chunk in doc["chunks"]])
+            for doc in self.document_data
         ]
-        document_metadata = [
-            page for doc in self.document_metadata.values() for page in doc.values()
+        chunks = [chunk for doc in self.document_data for chunk in doc["chunks"]]
+        document_names = [doc["document_name"] for doc in self.document_data]
+        document_metadata = [doc["metadata"] for doc in self.document_data]
+
+        self.document_data_dict = [
+            {
+                "document_name": doc["document_name"],
+                "metadata": doc["metadata"],
+                "chunks": [
+                    {
+                        "content": chunk.page_content,
+                        "source": chunk.metadata["source"],
+                        "page": chunk.metadata["page"],
+                        "chunk_id": chunk.metadata["chunk_id"],
+                    }
+                    for chunk in doc["chunks"]
+                ],
+            }
+            for doc in self.document_data
         ]
 
         self.save_document_data()
 
-        self.logger.info(
-            f"Total document chunks extracted: {len(self.document_chunks_full)}"
-        )
+        total_chunks = sum([len(doc["chunks"]) for doc in self.document_data])
+        self.logger.info(f"Total document chunks extracted: {(total_chunks)}")
 
-        return self.document_chunks_full, document_names, documents, document_metadata
+        return chunks, document_names, documents, document_metadata
 
     def process_documents(
         self, documents, file_path, file_type, metadata_source, addl_metadata
     ):
-        file_data = {}
-        file_metadata = {}
 
-        for i, doc in enumerate(documents):
-            page_num = doc.metadata.get("page", i)
-            file_data[page_num] = doc.page_content
+        doc_name = os.path.basename(file_path)
+        if "README" in doc_name:
+            doc_name = file_path
 
-            # Create a new dictionary for metadata in each iteration
-            metadata = doc.metadata
-            metadata["source"] = file_path
-            metadata["page"] = page_num
+        if doc_name == "":
+            doc_name = file_path
 
-            if self.config["metadata"]["lectures_pattern"] in file_path:
-                addl_metadata_copy = addl_metadata.copy()
-                metadata.update(addl_metadata_copy)
-                metadata["content_type"] = "lecture"
-            elif self.config["metadata"]["assignments_pattern"] in file_path:
-                addl_metadata = LLMMetadataExtractor(
-                    fields=self.config["metadata"]["assignment_metadata_fields"]
-                ).extract_metadata(file_path)
+        doc_metadata = {
+            "source": file_path,
+        }
 
-                metadata.update(addl_metadata)
-                metadata["content_type"] = "assignment"
-            else:
-                metadata["content_type"] = "other"
+        # Processing metadata for documents
+        if self.config["metadata"]["lectures_pattern"] in file_path:
+            addl_metadata_copy = addl_metadata.copy()
+            doc_metadata.update(addl_metadata_copy)
+            doc_metadata["content_type"] = "lecture"
+        elif self.config["metadata"]["assignments_pattern"] in file_path:
+            addl_metadata = LLMMetadataExtractor(
+                fields=self.config["metadata"]["assignment_metadata_fields"]
+            ).extract_metadata(file_path)
 
-            file_metadata[page_num] = metadata
+            doc_metadata.update(addl_metadata)
+            doc_metadata["content_type"] = "assignment"
+        else:
+            doc_metadata["content_type"] = "other"
 
-            if self.config["vectorstore"]["db_option"] not in ["RAGatouille"]:
-                document_chunks = self.process_chunks(
-                    doc.page_content,
-                    file_type,
-                    source=file_path,
-                    page=page_num,
-                    metadata=metadata,
-                )
-                self.document_chunks_full.extend(document_chunks)
+        # Chunking
+        if self.config["vectorstore"]["db_option"] not in ["RAGatouille"]:
+            document_chunks = self.process_chunks(
+                documents,
+                file_type,
+                source=file_path,
+                metadata=doc_metadata,
+            )
+            self.document_chunks_full.extend(document_chunks)
 
-        self.document_data[file_path] = file_data
-        self.document_metadata[file_path] = file_metadata
+        file_data = {
+            "document_name": doc_name,
+            "metadata": doc_metadata,
+            "chunks": document_chunks,
+        }
+
+        self.document_data.append(file_data)
+        # self.document_metadata[file_path] = doc_metadata
 
     def process_file(self, file_path, file_index, file_reader, addl_metadata):
-        print(f"Processing file {file_index + 1} : {file_path}")
+        self.logger.info(f"Processing file {file_index + 1} : {file_path}")
         file_name = os.path.basename(file_path)
 
         file_type = file_name.split(".")[-1]
@@ -353,6 +397,7 @@ class ChunkProcessor:
             "srt": file_reader.read_srt,
             "tex": file_reader.read_tex_from_url,
             "ipynb": file_reader.read_notebook,
+            "md": file_reader.read_txt,
         }
         if file_type not in read_methods:
             self.logger.warning(f"Unsupported file type: {file_type}")
@@ -388,55 +433,44 @@ class ChunkProcessor:
             else:
                 documents = file_reader.read_html(link)
 
-            self.process_documents(documents, link, "txt", "link", addl_metadata)
+            if len(set([doc.metadata["source"] for doc in documents])) > 1:
+                self.logger.warning(
+                    f"Documents from link {link_index + 1} : {link} have multiple sources"
+                )
+                for doc in documents:
+                    self.process_documents(
+                        [doc], doc.metadata["source"], "txt", "link", addl_metadata
+                    )
+            else:
+                self.process_documents(documents, link, "txt", "link", addl_metadata)
         except Exception as e:
             self.logger.error(f"Error Reading link {link_index + 1} : {link}: {str(e)}")
+            self.logger.error(f"Error traceback: {traceback.format_exc()}")
 
     def save_document_data(self):
-        if not os.path.exists(f"{self.config['log_chunk_dir']}/docs"):
-            os.makedirs(f"{self.config['log_chunk_dir']}/docs")
-            self.logger.info(
-                f"Creating directory {self.config['log_chunk_dir']}/docs for document data"
-            )
+        if not os.path.exists(f"{self.config['log_chunk_dir']}"):
+            os.makedirs(f"{self.config['log_chunk_dir']}")
+            self.logger.info(f"Creating directory {self.config['log_chunk_dir']}")
         self.logger.info(
-            f"Saving document content to {self.config['log_chunk_dir']}/docs/doc_content.json"
+            f"Saving document content to {self.config['log_chunk_dir']}/doc_content.json"
         )
-        if not os.path.exists(f"{self.config['log_chunk_dir']}/metadata"):
-            os.makedirs(f"{self.config['log_chunk_dir']}/metadata")
-            self.logger.info(
-                f"Creating directory {self.config['log_chunk_dir']}/metadata for document metadata"
-            )
-        self.logger.info(
-            f"Saving document metadata to {self.config['log_chunk_dir']}/metadata/doc_metadata.json"
-        )
-        with open(
-            f"{self.config['log_chunk_dir']}/docs/doc_content.json", "w"
-        ) as json_file:
-            json.dump(self.document_data, json_file, indent=4)
-        with open(
-            f"{self.config['log_chunk_dir']}/metadata/doc_metadata.json", "w"
-        ) as json_file:
-            json.dump(self.document_metadata, json_file, indent=4)
+        with open(f"{self.config['log_chunk_dir']}/doc_content.json", "w") as json_file:
+            json.dump(self.document_data_dict, json_file, indent=4)
 
     def load_document_data(self):
         try:
             with open(
-                f"{self.config['log_chunk_dir']}/docs/doc_content.json", "r"
+                f"{self.config['log_chunk_dir']}/doc_content.json", "r"
             ) as json_file:
-                self.document_data = json.load(json_file)
-            with open(
-                f"{self.config['log_chunk_dir']}/metadata/doc_metadata.json", "r"
-            ) as json_file:
-                self.document_metadata = json.load(json_file)
+                self.document_data_dict = json.load(json_file)
             self.logger.info(
-                f"Loaded document content from {self.config['log_chunk_dir']}/docs/doc_content.json. Total documents: {len(self.document_data)}"
+                f"Loaded document content from {self.config['log_chunk_dir']}/doc_content.json. Total documents: {len(self.document_data)}"
             )
         except FileNotFoundError:
             self.logger.warning(
-                f"Document content not found in {self.config['log_chunk_dir']}/docs/doc_content.json"
+                f"Document content not found in {self.config['log_chunk_dir']}/doc_content.json"
             )
-            self.document_data = {}
-            self.document_metadata = {}
+            self.document_data_dict = {}
 
 
 class DataLoader:
@@ -458,13 +492,18 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Data Loader")
     parser.add_argument(
-        "--config_file", type=str, help="Path to the main config file", required=True
+        "--config_file",
+        type=str,
+        help="Path to the main config file",
+        # required=True,
+        default="config/config.yml",
     )
     parser.add_argument(
         "--project_config_file",
         type=str,
         help="Path to the project config file",
-        required=True,
+        # required=True,
+        default="config/project_config.yml",
     )
 
     args = parser.parse_args()
@@ -511,3 +550,4 @@ if __name__ == "__main__":
 
     print(document_names[:5])
     print(len(document_chunks))
+    print(document_chunks[2].page_content[:100])

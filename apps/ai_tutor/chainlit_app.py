@@ -31,6 +31,9 @@ import base64
 from langchain_community.callbacks import get_openai_callback
 from datetime import datetime, timezone
 from config.config_manager import config_manager
+from edubotics_core.chat.agentic.agent import Agent
+
+from config.prompts import prompts
 
 USER_TIMEOUT = 60_000
 SYSTEM = "System"
@@ -40,7 +43,8 @@ YOU = "User"
 ERROR = "Error"
 
 # set config
-config = config_manager.get_config().dict()
+config = config_manager.get_config()
+print(config)
 
 
 async def setup_data_layer():
@@ -81,6 +85,8 @@ class Chatbot:
         Initialize the Chatbot class.
         """
         self.config = config
+        # Initialize Agent instance
+        self.agent = Agent(config=config, prompts=prompts)
 
     @no_type_check
     async def setup_llm(self):
@@ -172,10 +178,14 @@ class Chatbot:
                 cl.input_widget.Select(
                     id="retriever_method",
                     label="Retriever (Default FAISS)",
-                    values=["FAISS", "Chroma", "RAGatouille", "RAPTOR"],
-                    initial_index=["FAISS", "Chroma", "RAGatouille", "RAPTOR"].index(
-                        config["vectorstore"]["db_option"]
-                    ),
+                    values=["FAISS", "Chroma", "RAGatouille", "RAPTOR", "MVS"],
+                    initial_index=[
+                        "FAISS",
+                        "Chroma",
+                        "RAGatouille",
+                        "RAPTOR",
+                        "MVS",
+                    ].index(config["vectorstore"]["db_option"]),
                 ),
                 cl.input_widget.Slider(
                     id="memory_window",
@@ -297,14 +307,15 @@ class Chatbot:
             }
 
         memory = cl.user_session.get("memory", [])
-        self.llm_tutor = LLMTutor(self.config, user=self.user)
+        # Replace LLMTutor usage with Agent if needed
+        # self.llm_tutor = LLMTutor(self.config, user=self.user)
+        # self.chain = self.llm_tutor.qa_bot(memory=memory)
 
-        self.chain = self.llm_tutor.qa_bot(
-            memory=memory,
-        )
-        self.question_generator = self.llm_tutor.question_generator
-        cl.user_session.set("llm_tutor", self.llm_tutor)
-        cl.user_session.set("chain", self.chain)
+        # cl.user_session.set("llm_tutor", self.llm_tutor)
+        # cl.user_session.set("chain", self.chain)
+
+        self.agent.set_thread_id(cl.context.session.thread_id)
+        cl.user_session.set("agent", self.agent)
 
     async def stream_response(self, response):
         """
@@ -344,6 +355,7 @@ class Chatbot:
 
         # update user info with last message time
         user = cl.user_session.get("user")
+
         await reset_tokens_for_user(
             user,
             self.config["token_config"]["tokens_left"],
@@ -355,7 +367,11 @@ class Chatbot:
 
         # see if user has token credits left
         # if not, return message saying they have run out of tokens
-        if user.metadata["tokens_left"] <= 0 and "admin" not in user.metadata["role"]:
+        if (
+            user.metadata["tokens_left"] <= 0
+            and "admin" not in user.metadata["role"]
+            and config["chat_logging"]["log_chat"]
+        ):
             current_datetime = get_time()
             cooldown, cooldown_end_time = await check_user_cooldown(
                 user,
@@ -425,84 +441,83 @@ class Chatbot:
             ),
         }
 
+        response = cl.Message(content="")
         with get_openai_callback() as token_count_cb:
-            if stream:
-                res = chain.stream(user_query=user_query_dict, config=chain_config)
-                res = await self.stream_response(res)
-            else:
-                res = await chain.invoke(
-                    user_query=user_query_dict,
-                    config=chain_config,
-                )
-        token_count += token_count_cb.total_tokens
+            async for chunk in self.agent.stream(message.content):
+                content = chunk["content"]
+                tokens = chunk["total_tokens"]
+                await response.stream_token(content)
 
-        answer = res.get("answer", res.get("result"))
+        token_count = tokens
 
-        answer_with_sources, source_elements, sources_dict = get_sources(
-            res, answer, stream=stream, view_sources=view_sources
-        )
-        answer_with_sources = answer_with_sources.replace("$$", "$")
+        answer = response.content
+        sources = self.agent.get_sources()
 
-        actions = []
+        if len(sources) > 0:
+            sources_text = "\n\nSources: \n" + "\n".join(
+                [f"- {source}" for source in sources]
+            )
+            response.content += sources_text
 
-        if self.config["llm_params"]["generate_follow_up"]:
-            cb_follow_up = cl.AsyncLangchainCallbackHandler()
-            config = {
-                "callbacks": (
-                    [cb_follow_up]
-                    if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
-                    else None
-                )
-            }
-            with get_openai_callback() as token_count_cb:
-                list_of_questions = await self.question_generator.generate_questions(
-                    query=user_query_dict["input"],
-                    response=answer,
-                    chat_history=res.get("chat_history"),
-                    context=res.get("context"),
-                    config=config,
-                )
+        await response.send()
 
-            token_count += token_count_cb.total_tokens
+        # answer_with_sources, source_elements, sources_dict = get_sources(
+        #     res, answer, stream=stream, view_sources=view_sources
+        # )
+        # answer_with_sources = answer_with_sources.replace("$$", "$")
 
-            for question in list_of_questions:
-                actions.append(
-                    cl.Action(
-                        name="follow up question",
-                        value="example_value",
-                        description=question,
-                        label=question,
-                    )
-                )
+        # actions = []
 
-        # # update user info with token count
-        tokens_left = await update_user_from_chainlit(user, token_count)
+        # if self.config["llm_params"]["generate_follow_up"]:
+        #     cb_follow_up = cl.AsyncLangchainCallbackHandler()
+        #     config = {
+        #         "callbacks": (
+        #             [cb_follow_up]
+        #             if cl_data._data_layer and self.config["chat_logging"]["callbacks"]
+        #             else None
+        #         )
+        #     }
+        #     with get_openai_callback() as token_count_cb:
+        #         list_of_questions = await self.question_generator.generate_questions(
+        #             query=user_query_dict["input"],
+        #             response=answer,
+        #             chat_history=res.get("chat_history"),
+        #             context=res.get("context"),
+        #             config=config,
+        #         )
 
-        answer_with_sources += (
-            '\n\n<footer><span style="font-size: 0.8em; text-align: right; display: block;">Tokens Left: '
-            + str(tokens_left)
-            + "</span></footer>\n"
-        )
+        #     token_count += token_count_cb.total_tokens
 
-        await cl.Message(
-            content=answer_with_sources,
-            elements=source_elements,
-            author=LLM,
-            actions=actions,
-        ).send()
+        #     for question in list_of_questions:
+        #         actions.append(
+        #             cl.Action(
+        #                 name="follow up question",
+        #                 value="example_value",
+        #                 description=question,
+        #                 label=question,
+        #             )
+        #         )
+
+        # # # update user info with token count
+        # tokens_left = await update_user_from_chainlit(user, token_count)
+
+        # answer_with_sources += (
+        #     '\n\n<footer><span style="font-size: 0.8em; text-align: right; display: block;">Tokens Left: '
+        #     + str(tokens_left)
+        #     + "</span></footer>\n"
+        # )
+
+        # await cl.Message(
+        #     content=answer_with_sources,
+        #     elements=source_elements,
+        #     author=LLM,
+        #     actions=actions,
+        # ).send()
 
     async def on_chat_resume(self, thread: ThreadDict):
-        # thread_config = None
-        steps = thread["steps"]
-        k = self.config["llm_params"][
-            "memory_window"
-        ]  # on resume, alwyas use the default memory window
-        conversation_list = get_history_chat_resume(steps, k, SYSTEM, LLM)
-        # thread_config = get_last_config(
-        #     steps
-        # )  # TODO: Returns None for now - which causes config to be reloaded with default values
-        cl.user_session.set("memory", conversation_list)
-        await self.start()
+        thread_id = thread["id"]
+        self.agent.set_thread_id(thread_id)
+        self.agent.populate_conversation_history(thread)
 
     @cl.header_auth_callback
     def header_auth_callback(headers: dict) -> Optional[cl.User]:

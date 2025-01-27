@@ -26,7 +26,7 @@ from config.config_manager import config_manager
 import hashlib
 
 # set config
-config = config_manager.get_config().dict()
+config = config_manager.get_config()
 
 # set constants
 GITHUB_REPO = config["misc"]["github_repo"]

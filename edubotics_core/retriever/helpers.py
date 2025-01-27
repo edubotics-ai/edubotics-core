@@ -3,6 +3,8 @@ from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.schema.document import Document
 from langchain_core.callbacks import AsyncCallbackManagerForRetrieverRun
 from typing import List
+from edubotics_core.config.constants import COHERE_API_KEY
+import cohere
 
 
 class VectorStoreRetrieverScore(VectorStoreRetriever):
@@ -30,9 +32,18 @@ class VectorStoreRetrieverScore(VectorStoreRetriever):
                 query, **self.search_kwargs
             )
         )
-        # Make the score part of the document metadata
-        for doc, similarity in docs_and_similarities:
-            doc.metadata["score"] = similarity
-
         docs = [doc for doc, _ in docs_and_similarities]
-        return docs
+
+        cohere_client = cohere.Client(COHERE_API_KEY)
+
+        docs_content = [doc.page_content for doc in docs if doc.page_content != ""]
+        response = cohere_client.rerank(
+            query=query, documents=docs_content, top_n=5, model="rerank-english-v3.0"
+        )
+
+        final_docs = []
+        for result in response.results:
+            doc = docs[result.index]
+            doc.metadata["score"] = result.relevance_score
+            final_docs.append(doc)
+        return final_docs

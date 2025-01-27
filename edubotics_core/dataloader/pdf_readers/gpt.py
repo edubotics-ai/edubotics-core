@@ -80,6 +80,7 @@ class GPTParser:
             Document(page_content=page, metadata={"source": pdf_path, "page": i})
             for i, page in enumerate(output)
         ]
+
         return documents
 
     def encode_image(self, image):
