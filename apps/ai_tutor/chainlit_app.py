@@ -179,9 +179,13 @@ class Chatbot:
                     id="retriever_method",
                     label="Retriever (Default FAISS)",
                     values=["FAISS", "Chroma", "RAGatouille", "RAPTOR", "MVS"],
-                    initial_index=["FAISS", "Chroma", "RAGatouille", "RAPTOR", "MVS"].index(
-                        config["vectorstore"]["db_option"]
-                    ),
+                    initial_index=[
+                        "FAISS",
+                        "Chroma",
+                        "RAGatouille",
+                        "RAPTOR",
+                        "MVS",
+                    ].index(config["vectorstore"]["db_option"]),
                 ),
                 cl.input_widget.Slider(
                     id="memory_window",
@@ -450,8 +454,9 @@ class Chatbot:
         sources = self.agent.get_sources()
 
         if len(sources) > 0:
-            sources_text = "\n\nSources: \n" + \
-                "\n".join([f"- {source}" for source in sources])
+            sources_text = "\n\nSources: \n" + "\n".join(
+                [f"- {source}" for source in sources]
+            )
             response.content += sources_text
 
         await response.send()
