@@ -1,14 +1,15 @@
 from pydantic import BaseModel, conint, confloat, HttpUrl
 from typing import Optional, List
 import yaml
+import os
 
 
 class FaissParams(BaseModel):
     index_path: str = "vectorstores/faiss.index"
     index_type: str = "Flat"  # Options: [Flat, HNSW, IVF]
-    index_dimension: conint(gt=0) = 384
-    index_nlist: conint(gt=0) = 100
-    index_nprobe: conint(gt=0) = 10
+    index_dimension: int = 384
+    index_nlist: int = 100
+    index_nprobe: int = 10
 
 
 class ColbertParams(BaseModel):
@@ -27,19 +28,19 @@ class VectorStoreConfig(BaseModel):
         # Options: [sentence-transformers/all-MiniLM-L6-v2, text-embedding-ada-002]
         "sentence-transformers/all-MiniLM-L6-v2"
     )
-    search_top_k: conint(gt=0) = 3
-    score_threshold: confloat(ge=0.0, le=1.0) = 0.2
+    search_top_k: int = 3
+    score_threshold: float = 0.2
 
     faiss_params: Optional[FaissParams] = None
     colbert_params: Optional[ColbertParams] = None
 
 
 class OpenAIParams(BaseModel):
-    temperature: confloat(ge=0.0, le=1.0) = 0.7
+    temperature: float = 0.7
 
 
 class LocalLLMParams(BaseModel):
-    temperature: confloat(ge=0.0, le=1.0) = 0.7
+    temperature: float = 0.7
     repo_id: str = "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF"  # HuggingFace repo id
     filename: str = (
         "tinyllama-1.1b-chat-v1.0.Q5_0.gguf"  # Specific name of gguf file in the repo
@@ -53,7 +54,7 @@ class LLMParams(BaseModel):
     llm_arch: str = "langchain"  # Options: [langchain]
     use_history: bool = True
     generate_follow_up: bool = False
-    memory_window: conint(ge=1) = 3
+    memory_window: int = 3
     llm_style: str = "Normal"  # Options: [Normal, ELI5]
     llm_loader: str = (
         "gpt-4o-mini"  # Options: [local_llm, gpt-3.5-turbo-1106, gpt-4, gpt-4o-mini]
@@ -76,11 +77,11 @@ class SplitterOptions(BaseModel):
     remove_leftover_delimiters: bool = True
     remove_chunks: bool = False
     chunking_mode: str = "semantic"  # Options: [fixed, semantic]
-    chunk_size: conint(gt=0) = 300
-    chunk_overlap: conint(ge=0) = 30
+    chunk_size: int = 300
+    chunk_overlap: int = 30
     chunk_separators: List[str] = ["\n\n", "\n", " ", ""]
-    front_chunks_to_remove: Optional[conint(ge=0)] = None
-    last_chunks_to_remove: Optional[conint(ge=0)] = None
+    front_chunks_to_remove: Optional[int] = None
+    last_chunks_to_remove: Optional[int] = None
     delimiters_to_remove: List[str] = ["\t", "\n", "   ", "  "]
 
 
@@ -94,13 +95,21 @@ class MetadataConfig(BaseModel):
         "https://dl4ds.github.io/sp2024/schedule/",
     ]
     slide_base_link: HttpUrl = "https://dl4ds.github.io"
+    assignment_base_link: HttpUrl = "https://dl4ds.github.io/sp2024/assignments/"
+    content_types: List[str]
+    lectures_pattern: str
+    assignments_pattern: str
+    discussion_pattern: str
+    project_pattern: str
+    lecture_metadata_fields: List[str]
+    assignment_metadata_fields: List[str]
 
 
 class TokenConfig(BaseModel):
-    cooldown_time: conint(gt=0) = 60
-    regen_time: conint(gt=0) = 180
-    tokens_left: conint(gt=0) = 2000
-    all_time_tokens_allocated: conint(gt=0) = 1000000
+    cooldown_time: int = 60
+    regen_time: int = 180
+    tokens_left: int = 2000
+    all_time_tokens_allocated: int = 1000000
 
 
 class MiscConfig(BaseModel):
@@ -109,7 +118,7 @@ class MiscConfig(BaseModel):
 
 
 class APIConfig(BaseModel):
-    timeout: conint(gt=0) = 60
+    timeout: int = 60
 
 
 class Config(BaseModel):
@@ -148,7 +157,8 @@ class ConfigManager:
         return Config(**merged_config)
 
     def get_config(self) -> Config:
-        return ConfigWrapper(self.config)
+        print(self.config)
+        return ConfigWrapper(self.config).dict()
 
     def validate_config(self):
         # If any required fields are missing, raise an error
@@ -182,8 +192,9 @@ class ConfigWrapper:
         return self._config.dict()
 
 
-# Usage
+config_path = os.path.join(os.getcwd(), "config/config.yml")
+project_config_path = os.path.join(os.getcwd(), "config/project_config.yml")
+
 config_manager = ConfigManager(
-    config_path="config/config.yml", project_config_path="config/project_config.yml"
+    config_path=config_path, project_config_path=project_config_path
 )
-# config = config_manager.get_config().dict()
